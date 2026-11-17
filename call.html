@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gọi video – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+.callbox{position:relative;width:100%;aspect-ratio:3/4;max-height:72vh;background:#16121c;border-radius:20px;overflow:hidden;margin:0 auto}
+@media(min-width:700px){.callbox{aspect-ratio:16/10}}
+.callbox video{width:100%;height:100%;object-fit:cover;display:block}
+#vMe{position:absolute;right:10px;top:10px;width:28%;height:auto;aspect-ratio:3/4;border-radius:14px;border:2px solid rgba(255,255,255,.7);z-index:2;background:#000;transform:scaleX(-1)}
+#vMe.back{transform:none}
+.cstate{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#fff;padding:20px;z-index:1}
+.cstate .av{width:96px;height:96px;font-size:50px;margin-bottom:10px}
+.ctimer{position:absolute;left:12px;top:12px;z-index:3;background:rgba(0,0,0,.45);color:#fff;border-radius:999px;padding:4px 12px;font-weight:700;font-variant-numeric:tabular-nums}
+.cbar{display:flex;justify-content:center;gap:12px;margin:14px 0}
+.cbar button{width:58px;height:58px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:24px;cursor:pointer}
+.cbar button.off{background:#555;color:#fff}
+.cbar .end{background:#e53935;border-color:#e53935;color:#fff}
+.cbar .start{background:#2ecc71;border-color:#2ecc71;color:#fff;width:auto;border-radius:999px;padding:0 22px;font-size:17px;font-weight:800}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stats div{background:var(--soft);border-radius:14px;padding:10px 4px}
+.stats b{display:block;font-size:20px;font-family:var(--head),serif;color:var(--accent)}
+.stats span{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="callbox" id="box">
+    <video id="vThem" autoplay playsinline></video>
+    <video id="vMe" autoplay playsinline muted class="hidden"></video>
+    <div class="ctimer hidden" id="timer">00:00</div>
+    <div class="cstate" id="cstate"><div class="av" id="pav">🙂</div><b id="cmsg" style="font-size:18px"></b><span id="csub" class="note" style="color:#ddd"></span></div>
+  </div>
+  <div class="cbar" id="preBar">
+    <button class="start" id="btnVideo">📹 Gọi video</button>
+    <button class="start" id="btnAudio" style="background:var(--accent);border-color:var(--accent)">📞 Gọi thoại</button>
+  </div>
+  <div class="cbar hidden" id="inBar">
+    <button id="btnMic" title="Tắt/bật mic">🎤</button>
+    <button id="btnCam" title="Tắt/bật camera">📷</button>
+    <button id="btnFlip" title="Đổi camera">🔄</button>
+    <button class="end" id="btnEnd" title="Kết thúc">✆</button>
+  </div>
+  <p class="note center" id="hint">Bấm gọi, máy người ấy sẽ nhận lời mời. Khi người ấy vào, cuộc gọi tự kết nối.</p>
+
+  <div class="card">
+    <h3>⏱️ Thời gian gọi nhau</h3>
+    <div class="stats"><div><b id="sToday">0'</b><span>Hôm nay</span></div><div><b id="sWeek">0'</b><span>7 ngày qua</span></div><div><b id="sAll">0'</b><span>Tổng cộng</span></div></div>
+    <p class="note center" id="sLong"></p>
+    <h3 style="margin-top:14px">📜 Lịch sử cuộc gọi</h3>
+    <div class="list" id="hist"></div>
+  </div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { $, $$, esc, toast, vib, sb, boot, header, joinMain, invite, featureChannel } from './common.js';
+const PAGE = 'call';
+header('Gọi video');
+const ctx = await boot();
+const ME = ctx.me.id, YOU = ctx.partnerId, CALLER = ME < YOU; // one fixed side places the WebRTC call
+$('#pav').textContent = ctx.partnerProfile.emoji || '🙂';
+const ICE = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }] };
+const pid = id => 'tmx-' + ctx.couple.channel_key.slice(0, 8) + '-' + id.slice(0, 8);
+const ch = featureChannel(ctx, 'call');
+const send = (event, payload = {}) => ch.send({ type: 'broadcast', event, payload });
+
+let iStarted = false, readyLoop = null;
+let state = 'idle', kind = 'video', stream = null, peer = null, call = null, startedAt = null, tick = null, facing = 'user', micOn = true, camOn = true, logged = false;
+function setMsg(m, s = '') { $('#cmsg').textContent = m; $('#csub').textContent = s; $('#cstate').classList.toggle('hidden', !m) }
+function setState(s) {
+  state = s;
+  $('#preBar').classList.toggle('hidden', s !== 'idle'); $('#inBar').classList.toggle('hidden', s === 'idle');
+  $('#hint').classList.toggle('hidden', s !== 'idle'); $('#timer').classList.toggle('hidden', s !== 'live');
+  $('#btnCam').classList.toggle('hidden', kind !== 'video'); $('#btnFlip').classList.toggle('hidden', kind !== 'video');
+  if (s === 'idle') setMsg(ctx.partnerName, ctx.partnerHere ? `${ctx.partnerName} đang ở trang gọi` : (ctx.partnerOnline ? `${ctx.partnerName} đang online` : `${ctx.partnerName} đang offline`));
+}
+joinMain(ctx, PAGE, () => { if (state === 'idle') setState('idle'); if (ctx.partnerHere && state === 'waiting') announceReady() });
+
+async function getMedia() {
+  const want = { audio: { echoCancellation: true, noiseSuppression: true }, video: kind === 'video' ? { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } } : false };
+  stream = await navigator.mediaDevices.getUserMedia(want);
+  if (kind === 'video') { $('#vMe').srcObject = stream; $('#vMe').classList.remove('hidden'); $('#vMe').classList.toggle('back', facing !== 'user') }
+}
+function initPeer() {
+  return new Promise((res, rej) => {
+    if (typeof Peer === 'undefined') { rej(new Error('Không tải được thư viện gọi (PeerJS)')); return }
+    peer = new Peer(pid(ME), { config: ICE, debug: 1 });
+    peer.on('open', () => res());
+    peer.on('error', e => { if (e.type === 'unavailable-id') { peer.destroy(); setTimeout(() => initPeer().then(res, rej), 1500) } else if (e.type === 'peer-unavailable') { /* partner not ready yet */ } else { console.warn(e); if (state !== 'live') toast('Lỗi kết nối: ' + e.type) } });
+    peer.on('call', c => { if (call) call.close(); call = c; c.answer(stream); bindCall(c) });
+    peer.on('disconnected', () => { try { peer.reconnect() } catch (e) { } });
+  });
+}
+function bindCall(c) {
+  c.on('stream', s => {
+    $('#vThem').srcObject = s; $('#vThem').play().catch(() => { });
+    if (state !== 'live') { setState('live'); setMsg(kind === 'audio' ? ctx.partnerName : '', kind === 'audio' ? 'Đang gọi thoại…' : ''); startedAt = Date.now(); tick = setInterval(renderTimer, 1000); renderTimer(); vib(60) }
+  });
+  c.on('close', () => { if (state === 'live') endCall(true) });
+}
+function renderTimer() { const s = Math.floor((Date.now() - startedAt) / 1000); $('#timer').textContent = fmt(s) }
+const fmt = s => (s >= 3600 ? Math.floor(s / 3600) + ':' : '') + String(Math.floor(s / 60) % 60).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+
+async function startCall(k, viaInvite) {
+  kind = k; logged = false; iStarted = !viaInvite;
+  try { await getMedia() } catch (e) { toast('Không mở được ' + (k === 'video' ? 'camera/micro' : 'micro') + '. Cho phép quyền trong trình duyệt nhé'); return }
+  setState('waiting'); setMsg('Đang chờ ' + ctx.partnerName + '…', viaInvite ? 'Đang kết nối' : 'Đã gửi lời mời gọi');
+  try { await initPeer() } catch (e) { toast(e.message); endCall(false); return }
+  if (!viaInvite) { invite(ctx, PAGE, kind === 'video' ? 'gọi video 📹' : 'gọi thoại 📞'); send('ring', { kind }) }
+  announceReady(); clearInterval(readyLoop); readyLoop = setInterval(() => { if (state === 'waiting') announceReady(); else clearInterval(readyLoop) }, 3000);
+  ringTimer = setTimeout(() => { if (state === 'waiting') { toast(ctx.partnerName + ' chưa bắt máy'); } }, 45000);
+}
+let ringTimer = null;
+function announceReady() { send('ready', { kind }) }
+function placeCall() { if (!peer || !stream || call) return; call = peer.call(pid(YOU), stream); if (call) bindCall(call) }
+
+async function endCall(remote) {
+  clearInterval(tick); clearTimeout(ringTimer); clearInterval(readyLoop);
+  if (state === 'live' && startedAt && !logged) {
+    logged = true; const dur = Math.round((Date.now() - startedAt) / 1000);
+    if (iStarted && dur > 2) { await sb.from('calls').insert({ kind, started_at: new Date(startedAt).toISOString(), ended_at: new Date().toISOString(), duration_sec: dur }); }
+    toast('Đã gọi ' + fmt(dur)); setTimeout(loadHistory, 1200);
+  }
+  if (!remote) send('hangup');
+  try { call && call.close() } catch (e) { } call = null;
+  try { peer && peer.destroy() } catch (e) { } peer = null;
+  stream && stream.getTracks().forEach(t => t.stop()); stream = null;
+  $('#vThem').srcObject = null; $('#vMe').srcObject = null; $('#vMe').classList.add('hidden');
+  startedAt = null; micOn = true; camOn = true; $('#btnMic').classList.remove('off'); $('#btnCam').classList.remove('off');
+  setState('idle');
+}
+
+ch.on('broadcast', { event: 'ready' }, ({ payload }) => {
+  if (state === 'idle') { kind = payload.kind || 'video'; ringIn(); return }
+  if (state === 'waiting') { if (CALLER) setTimeout(placeCall, 400); else announceReady() }
+})
+  .on('broadcast', { event: 'ring' }, ({ payload }) => { if (state === 'idle') { kind = payload.kind || 'video'; ringIn() } })
+  .on('broadcast', { event: 'hangup' }, () => { if (state !== 'idle') { toast(ctx.partnerName + ' đã kết thúc cuộc gọi'); endCall(true) } })
+  .subscribe();
+
+function ringIn() {
+  vib([300, 200, 300, 200, 300]);
+  setMsg(`${ctx.partnerName} đang gọi ${kind === 'video' ? 'video' : 'thoại'}…`, 'Bấm nút xanh để nghe');
+  $('#btnVideo').textContent = kind === 'video' ? '📹 Nghe máy' : '📹 Nghe (video)'; $('#btnAudio').textContent = kind === 'audio' ? '📞 Nghe máy' : '📞 Nghe (chỉ tiếng)';
+  incoming = true;
+}
+let incoming = false;
+$('#btnVideo').onclick = () => startCall('video', incoming);
+$('#btnAudio').onclick = () => startCall('audio', incoming);
+$('#btnEnd').onclick = () => { incoming = false; $('#btnVideo').textContent = '📹 Gọi video'; $('#btnAudio').textContent = '📞 Gọi thoại'; endCall(false) };
+$('#btnMic').onclick = () => { micOn = !micOn; stream && stream.getAudioTracks().forEach(t => t.enabled = micOn); $('#btnMic').classList.toggle('off', !micOn) };
+$('#btnCam').onclick = () => { camOn = !camOn; stream && stream.getVideoTracks().forEach(t => t.enabled = camOn); $('#btnCam').classList.toggle('off', !camOn) };
+$('#btnFlip').onclick = async () => {
+  if (!stream || kind !== 'video') return;
+  try {
+    facing = facing === 'user' ? 'environment' : 'user';
+    const ns = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } }); const nt = ns.getVideoTracks()[0];
+    const old = stream.getVideoTracks()[0]; if (old) { stream.removeTrack(old); old.stop() } stream.addTrack(nt);
+    $('#vMe').srcObject = stream; $('#vMe').classList.toggle('back', facing !== 'user');
+    const pc = call && call.peerConnection; if (pc) { const s = pc.getSenders().find(x => x.track && x.track.kind === 'video'); s && s.replaceTrack(nt) }
+  } catch (e) { toast('Không đổi được camera'); facing = 'user' }
+};
+window.addEventListener('beforeunload', () => { if (state !== 'idle') { send('hangup') } });
+
+/* history + stats */
+async function loadHistory() {
+  const { data } = await sb.from('calls').select('*').order('started_at', { ascending: false }).limit(500);
+  const rows = data || []; const now = Date.now(); const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
+  const sum = f => Math.round(rows.filter(f).reduce((a, r) => a + r.duration_sec, 0) / 60);
+  const hm = m => m >= 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}` : m + "'";
+  $('#sToday').textContent = hm(sum(r => new Date(r.started_at) >= startToday));
+  $('#sWeek').textContent = hm(sum(r => now - new Date(r.started_at) < 7 * 864e5));
+  $('#sAll').textContent = hm(sum(() => true));
+  const longest = rows.reduce((a, r) => r.duration_sec > (a ? a.duration_sec : 0) ? r : a, null);
+  $('#sLong').textContent = longest ? `Cuộc gọi dài nhất: ${fmt(longest.duration_sec)} (${new Date(longest.started_at).toLocaleDateString('vi-VN')}) · ${rows.length} cuộc gọi` : 'Chưa có cuộc gọi nào.';
+  $('#hist').innerHTML = rows.slice(0, 30).map(r => `<div class="vrow"><span class="k">${r.kind === 'video' ? '📹' : '📞'}</span><div class="t"><b>${fmt(r.duration_sec)}</b><span class="note" style="margin:0">${new Date(r.started_at).toLocaleString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · ${r.started_by === ME ? 'bạn gọi' : esc(ctx.partnerName) + ' gọi'}</span></div></div>`).join('');
+}
+sb.channel('calls-db').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls' }, () => loadHistory()).subscribe();
+setState('idle'); loadHistory();
+const auto = new URLSearchParams(location.search).get('k'); if (auto === 'video' || auto === 'audio') { setTimeout(() => { setMsg(`${ctx.partnerName} đang gọi bạn`, 'Bấm nút xanh để nghe'); incoming = true }, 300) }
+</script>
+</body>
+</html>

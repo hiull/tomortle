@@ -157,6 +157,7 @@
     <div class="card">
       <h3>✨ Làm cùng nhau</h3>
       <div class="tiles">
+        <a class="tile" href="call.html"><i>📹</i>Gọi video<small>Lưu thời gian gọi</small></a>
         <a class="tile" id="tileBooth"><i>📸</i>Photobooth<small>Mời người ấy chụp</small></a>
         <a class="tile" href="watch.html"><i>🎬</i>Xem phim chung<small>YouTube đồng bộ</small></a>
         <a class="tile" href="watch.html?mode=music"><i>🎵</i>Nghe nhạc chung<small>Chung hàng chờ</small></a>
@@ -212,6 +213,21 @@
 
 <div class="fx" id="fx"></div>
 <div id="toast"></div>
+<script>
+/* watchdog: show a helpful message instead of an endless loading heart */
+(function(){
+  var errs=[];
+  function box(msg){
+    var l=document.getElementById('scrLoading'); if(!l||!l.classList.contains('active')) return;
+    l.style.fontSize='16px'; l.style.animation='none';
+    l.innerHTML='<div class="card" style="max-width:420px;text-align:center;font-size:15px"><div style="font-size:40px">💔</div><b>Nhà đang tải chậm hoặc bị lỗi</b><p class="note">'+msg+'</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn primary" onclick="location.reload()">Tải lại</button><button class="btn" id="wdClear">Xoá bộ nhớ đệm & tải lại</button></div></div>';
+    document.getElementById('wdClear').onclick=async function(){try{var rs=await navigator.serviceWorker.getRegistrations();for(var r of rs)await r.unregister();var ks=await caches.keys();for(var k of ks)await caches.delete(k)}catch(e){}location.reload()};
+  }
+  window.addEventListener('error',function(e){errs.push((e.message||'')+'');});
+  window.addEventListener('unhandledrejection',function(e){errs.push(((e.reason&&e.reason.message)||e.reason||'')+'');});
+  setTimeout(function(){box(errs.length?('Chi tiết lỗi: '+errs.slice(-2).join(' | ').replace(/[<>]/g,'')):'Có thể mạng chậm hoặc máy chủ đang bận. Thử tải lại nhé.')},12000);
+})();
+</script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

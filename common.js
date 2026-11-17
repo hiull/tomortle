@@ -1,9 +1,15 @@
 // Shared helpers for Tomortle × Molly feature pages
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+// Load supabase-js with CDN fallbacks (some networks block one CDN)
+let supa = null;
+for (const u of ['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm', 'https://esm.sh/@supabase/supabase-js@2.45.4', 'https://unpkg.com/@supabase/supabase-js@2.45.4/dist/module/index.js?module']) {
+  try { supa = await import(u); if (supa && supa.createClient) break } catch (e) { console.warn('CDN failed', u, e) }
+}
+if (!supa) throw new Error('Không tải được thư viện kết nối (Supabase). Kiểm tra mạng rồi tải lại trang.');
+const { createClient } = supa;
 
 export const SB_URL = 'https://yktkofupegtvrviynnjk.supabase.co';
 export const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrdGtvZnVwZWd0dnJ2aXlubmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5MTI5MjMsImV4cCI6MjExMDQ4ODkyM30.dRsXfxiAjIXUkwPQ65p2oMl6HfogL0QZdg27feOs9nQ';
-export const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+export const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 
 export const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 export const store = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v) } catch (e) { return d } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch (e) { } } };
