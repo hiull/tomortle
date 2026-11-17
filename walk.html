@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dạo phố cùng nhau – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.sv{position:relative;width:100%;aspect-ratio:3/4;max-height:66vh;border-radius:20px;overflow:hidden;background:#1d1a26;border:1px solid var(--line)}
+@media(min-width:700px){.sv{aspect-ratio:16/10}}
+.sv iframe{width:100%;height:100%;border:0;display:block}
+.sv .empty{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#fff;padding:20px}
+.sv .tag{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px;z-index:2}
+.pl{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.pl button{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:10px 8px;text-align:left;cursor:pointer;color:var(--ink);font-family:inherit;font-size:14px}
+.pl button b{display:block}.pl button small{color:var(--muted);font-size:12px}
+.pl button.on{border-color:var(--accent);background:var(--soft)}
+.togg{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sv" id="sv"><div class="tag hidden" id="tag"></div><div class="empty" id="empty"><div style="font-size:48px">🚶‍♀️🚶</div><b>Chọn một nơi để cùng dạo</b><span class="note" style="color:#ccc">Khi bạn chọn, màn hình người ấy cũng tới đúng chỗ đó.</span></div></div>
+  <div class="togg">
+    <a class="btn" id="openMaps" target="_blank" rel="noopener">🗺️ Mở trong Google Maps</a>
+    <a class="btn" href="call.html" target="_blank" rel="noopener">📞 Vừa đi vừa gọi</a>
+    <button class="btn" id="hrt">💗</button>
+  </div>
+  <p class="note" style="text-align:center">Kéo để nhìn quanh, chạm mũi tên trên đường để bước đi. Nếu khung không hiện, bấm "Mở trong Google Maps".</p>
+  <div class="card"><h3>📍 Đi đâu hôm nay?</h3><div class="pl" id="pl"></div></div>
+  <div class="card hidden" id="ourBox"><h3>⭐ Nơi hai đứa muốn đến (trên Bản đồ)</h3><div class="pl" id="our"></div></div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { sb, $, $$, esc, toast, boot, header, joinMain, featureChannel, hearts, notifyPush, loadState, saveState } from './common.js';
+header('Dạo phố cùng nhau');
+const ctx = await boot();
+joinMain(ctx, 'walk');
+const P = [
+  ['Hồ Gươm, Hà Nội', 21.0288, 105.8525, 0], ['Phố cổ Hội An', 15.8771, 108.3274, 90], ['Hồ Xuân Hương, Đà Lạt', 11.9403, 108.4419, 0], ['Nhà thờ Đức Bà, Sài Gòn', 10.7798, 106.6990, 120],
+  ['Tháp Eiffel, Paris', 48.8566, 2.2950, 320], ['Tháp Namsan, Seoul', 37.5512, 126.9882, 0], ['Shibuya, Tokyo', 35.6595, 139.7005, 200], ['Fushimi Inari, Kyoto', 34.9671, 135.7727, 90],
+  ['Venice, Ý', 45.4337, 12.3380, 60], ['Santorini, Hy Lạp', 36.4618, 25.3753, 250], ['Times Square, New York', 40.7580, -73.9855, 180], ['Marina Bay, Singapore', 1.2833, 103.8607, 70]
+];
+const ch = featureChannel(ctx, 'walk');
+let cur = await loadState('walk', null);
+function svUrl(p) { return `https://maps.google.com/maps?layer=c&cbll=${p.lat},${p.lon}&cbp=11,${p.h || 0},0,0,0&source=embed&output=svembed` }
+function mapsUrl(p) { return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lon}&heading=${p.h || 0}` }
+function go(p, fromMe) {
+  cur = p; $('#empty').classList.add('hidden'); let f = $('#sv iframe'); if (!f) { f = document.createElement('iframe'); f.allowFullscreen = true; f.referrerPolicy = 'no-referrer-when-downgrade'; $('#sv').appendChild(f) } f.src = svUrl(p);
+  $('#tag').textContent = '📍 ' + p.name + (p.by && p.by !== ctx.me.id ? ` · ${ctx.partnerName} dẫn đi` : ''); $('#tag').classList.remove('hidden'); $('#openMaps').href = mapsUrl(p);
+  $$('.pl button').forEach(b => b.classList.toggle('on', b.dataset.n === p.name)); window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (fromMe) { p.by = ctx.me.id; ch.send({ type: 'broadcast', event: 'go', payload: p }); saveState('walk', p); if (!ctx.partnerHere) notifyPush(ctx, `rủ bạn dạo phố ở ${p.name} 🚶‍♀️`, 'walk.html', 'walk') }
+}
+ch.on('broadcast', { event: 'go' }, ({ payload }) => { go(payload, false); toast(`${ctx.partnerName} dẫn bạn tới ${payload.name} 🚶`) })
+  .on('broadcast', { event: 'heart' }, () => { hearts(10) }).subscribe();
+const btn = (p, sub) => `<button data-n="${esc(p.name)}" data-lat="${p.lat}" data-lon="${p.lon}" data-h="${p.h || 0}"><b>${esc(p.name)}</b><small>${sub || ''}</small></button>`;
+$('#pl').innerHTML = P.map(([name, lat, lon, h]) => btn({ name, lat, lon, h })).join('');
+document.addEventListener('click', e => { const b = e.target.closest('.pl button'); if (!b) return; go({ name: b.dataset.n, lat: +b.dataset.lat, lon: +b.dataset.lon, h: +b.dataset.h }, true) });
+$('#hrt').onclick = () => { hearts(8); ch.send({ type: 'broadcast', event: 'heart', payload: {} }) };
+const { data: pl } = await sb.from('places').select('*').eq('kind', 'want').limit(20);
+if (pl && pl.length) { $('#ourBox').classList.remove('hidden'); $('#our').innerHTML = pl.map(p => btn({ name: p.name, lat: p.lat, lon: p.lon, h: 0 }, p.note || '')).join('') }
+if (cur) go(cur, false);
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tổng kết tháng – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.mh{display:flex;align-items:center;justify-content:space-between}.mh b{font-family:var(--head),serif;font-size:22px}
+.big{text-align:center;padding:10px 0}.big .n{font-size:46px;font-weight:800;color:var(--accent);line-height:1}.big .l{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.st{background:var(--soft);border-radius:16px;padding:12px}.st i{font-style:normal;font-size:24px}.st b{display:block;font-size:22px;color:var(--ink)}.st span{font-size:12.5px;color:var(--muted)}
+.best{width:100%;border-radius:16px;display:block;margin-top:8px;max-height:420px;object-fit:cover}
+.line{font-size:15px;margin:6px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="mh"><button class="btn small" id="pm">‹</button><b id="mt"></b><button class="btn small" id="nm">›</button></div>
+    <div class="big"><div class="n" id="score">…</div><div class="l">khoảnh khắc hai đứa dành cho nhau</div></div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="card" id="bestBox"><h3>🌟 Ảnh được thương nhất tháng</h3><img class="best" id="best" alt=""></div>
+  <div class="card"><h3>💬 Điểm nhấn</h3><div id="lines"></div></div>
+  <button class="btn primary block" id="dl">⬇️ Tải ảnh tổng kết (đăng story)</button>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { sb, $, esc, toast, boot, header, joinMain, mediaUrl } from './common.js';
+header('Tổng kết tháng');
+const ctx = await boot();
+joinMain(ctx, 'recap');
+const now = new Date(); let ym = new Date(now.getFullYear(), now.getMonth() - (now.getDate() <= 3 ? 1 : 0), 1);
+const q = new URLSearchParams(location.search).get('m'); if (q) { const [y, m] = q.split('-').map(Number); ym = new Date(y, m - 1, 1) }
+let S = null;
+async function load() {
+  const a = new Date(ym), b = new Date(ym.getFullYear(), ym.getMonth() + 1, 1); const A = a.toISOString(), B = b.toISOString();
+  $('#mt').textContent = `Tháng ${ym.getMonth() + 1}/${ym.getFullYear()}`; $('#score').textContent = '…';
+  const rng = (t, col = 'created_at') => sb.from(t).select('*').gte(col, A).lt(col, B).limit(5000);
+  const [C, L, N, V, G, D, AL, BU, SV, PL, EV, MO] = await Promise.all([rng('calls', 'started_at'), rng('letters'), rng('notes'), rng('voices'), rng('vgifts'), sb.from('daily_answers').select('*').gte('day', A.slice(0, 10)).lt('day', B.slice(0, 10)), rng('album'), sb.from('bucket').select('*').gte('done_at', A).lt('done_at', B), rng('savings'), rng('places'), rng('events'), rng('moods')]);
+  const d = x => x.data || [];
+  const calls = d(C), mins = Math.round(calls.reduce((s, c) => s + (c.duration_sec || 0), 0) / 60), longest = Math.round(Math.max(0, ...calls.map(c => c.duration_sec || 0)) / 60);
+  const days = {}; d(D).forEach(r => (days[r.day] = (days[r.day] || 0) + 1)); const bothDays = Object.values(days).filter(n => n >= 2).length;
+  const gifts = d(G).reduce((s, g) => s + (g.qty || 1), 0), saved = d(SV).reduce((s, r) => s + Math.max(0, Number(r.amount)), 0);
+  const lettersMe = d(L).filter(l => l.from_id === ctx.me.id).length, lettersPa = d(L).length - lettersMe;
+  S = { calls: calls.length, mins, longest, letters: d(L).length, lettersMe, lettersPa, notes: d(N).length, voices: d(V).length, gifts, bothDays, photos: d(AL).length, bucket: d(BU).length, bucketT: d(BU).map(b => b.title), saved, places: d(PL).length, events: d(EV).length };
+  const score = S.calls + S.letters + S.notes + S.voices + d(G).length + S.bothDays + S.photos + S.bucket + d(SV).length + S.places;
+  S.score = score; $('#score').textContent = score;
+  const T = [['📹', S.mins + ' phút', `gọi nhau · ${S.calls} cuộc`], ['💌', S.letters, `bức thư · bạn ${S.lettersMe}, ${esc(ctx.partnerName)} ${S.lettersPa}`], ['❓', S.bothDays, 'ngày cùng trả lời câu hỏi'], ['📸', S.photos, 'ảnh mới trong Album'], ['🎁', S.gifts, 'món quà đã tặng'], ['📝', S.notes, 'note dán tủ lạnh'], ['🎙️', S.voices, 'lời nhắn thoại'], ['🐷', S.saved.toLocaleString('vi-VN') + 'đ', 'bỏ heo quỹ gặp nhau'], ['🌟', S.bucket, 'điều trong bucket list đã làm'], ['🗺️', S.places, 'địa điểm mới ghim']];
+  $('#grid').innerHTML = T.map(([i, n, l]) => `<div class="st"><i>${i}</i><b>${n}</b><span>${l}</span></div>`).join('');
+  const lines = [];
+  if (longest) lines.push(`☎️ Cuộc gọi dài nhất: <b>${longest} phút</b>`);
+  if (S.bucketT.length) lines.push(`🎉 Đã cùng làm: <b>${S.bucketT.map(esc).join(', ')}</b>`);
+  const moods = {}; d(MO).forEach(m => moods[m.mood] = (moods[m.mood] || 0) + 1); const topM = Object.entries(moods).sort((a, b) => b[1] - a[1])[0]; if (topM) lines.push(`🌤️ Cảm xúc xuất hiện nhiều nhất: <b>${esc(topM[0])}</b> (${topM[1]} lần)`);
+  if (ctx.couple.started_on) { const n = Math.floor((b - new Date(ctx.couple.started_on)) / 864e5); lines.push(`💞 Cuối tháng này là ngày thứ <b>${n}</b> bên nhau`) }
+  if (!score) lines.push('Tháng này còn trống, cùng tạo kỷ niệm nhé 🥺');
+  $('#lines').innerHTML = lines.map(l => `<p class="line">${l}</p>`).join('');
+  const best = d(AL).sort((x, y) => (y.liked_by || []).length - (x.liked_by || []).length)[0];
+  $('#bestBox').classList.toggle('hidden', !best); S.best = null; if (best) { const u = await mediaUrl(best.path); $('#best').src = u; S.best = u }
+  try { localStorage.setItem('recapSeen-' + ym.getFullYear() + '-' + (ym.getMonth() + 1), '1') } catch (e) { }
+}
+$('#pm').onclick = () => { ym = new Date(ym.getFullYear(), ym.getMonth() - 1, 1); load() };
+$('#nm').onclick = () => { ym = new Date(ym.getFullYear(), ym.getMonth() + 1, 1); load() };
+$('#dl').onclick = async () => {
+  if (!S) return; const c = document.createElement('canvas'); c.width = 1080; c.height = 1920; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, 1920); gr.addColorStop(0, '#ffe3ee'); gr.addColorStop(1, '#fff7fa'); g.fillStyle = gr; g.fillRect(0, 0, 1080, 1920);
+  await document.fonts.load('800 80px "Baloo 2"'); await document.fonts.load('600 40px "Be Vietnam Pro"');
+  g.textAlign = 'center'; g.fillStyle = '#ff7aa2'; g.font = '800 64px "Baloo 2"'; g.fillText('Tomortle × Molly', 540, 150);
+  g.fillStyle = '#4a2c3a'; g.font = '800 92px "Baloo 2"'; g.fillText(`Tháng ${ym.getMonth() + 1}/${ym.getFullYear()}`, 540, 270);
+  let y = 340;
+  if (S.best) { try { const im = new Image(); im.crossOrigin = 'anonymous'; im.src = S.best; await im.decode(); const w = 760, h = 760, s = Math.max(w / im.width, h / im.height); g.save(); g.beginPath(); g.roundRect(160, y, w, h, 40); g.clip(); g.drawImage(im, 540 - im.width * s / 2, y + h / 2 - im.height * s / 2, im.width * s, im.height * s); g.restore(); y += h + 50 } catch (e) { } }
+  g.fillStyle = '#ff7aa2'; g.font = '800 130px "Baloo 2"'; g.fillText(S.score, 540, y + 110); g.fillStyle = '#8a6f7c'; g.font = '600 38px "Be Vietnam Pro"'; g.fillText('khoảnh khắc dành cho nhau', 540, y + 165); y += 230;
+  const items = [['📹', S.mins + ' phút gọi'], ['💌', S.letters + ' bức thư'], ['📸', S.photos + ' ảnh'], ['❓', S.bothDays + ' ngày hỏi đáp'], ['🎁', S.gifts + ' món quà'], ['🌟', S.bucket + ' điều đã làm']];
+  g.font = '600 44px "Be Vietnam Pro"'; items.forEach(([i, t], k) => { const x = k % 2 ? 790 : 290, yy = y + Math.floor(k / 2) * 110; g.fillStyle = '#fff'; g.beginPath(); g.roundRect(x - 230, yy - 60, 460, 90, 30); g.fill(); g.fillStyle = '#4a2c3a'; g.fillText(i + ' ' + t, x, yy) });
+  c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `tong-ket-${ym.getFullYear()}-${ym.getMonth() + 1}.png`; a.click() }, 'image/png'); toast('Đã tải ảnh tổng kết ♡');
+};
+load();
+</script>
+</body>
+</html>

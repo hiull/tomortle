@@ -1,4 +1,4 @@
-import { sb, giftPopup, markGiftsSeen, mediaUrl, initBell, refreshBell } from './common.js';
+import { sb, giftPopup, markGiftsSeen, mediaUrl, initBell, refreshBell, notifyPush, pushState, enablePush, testPush } from './common.js';
 
 const VERSION = 'Đợt 3 · 2026-11-17';
 
@@ -171,7 +171,7 @@ async function enterHome() {
   if (!homeBuilt) buildHome();
   renderProfiles(); renderDays(); renderCountdown(); renderLamp(couple.lamp_color, null);
   loadMoods(); loadWeather(); loadInbox(true);
-  show('scrHome'); maybeInstallBox(); connectRealtime(); initBell({ me, partnerId, partnerName: partnerProfile.display_name || 'Người ấy' });
+  show('scrHome'); maybeInstallBox(); connectRealtime(); renderPushBox(); initBell({ me, partnerId, partnerName: partnerProfile.display_name || 'Người ấy' });
   $('#sVersion').textContent = VERSION;
 }
 
@@ -318,12 +318,26 @@ function connectRealtime() {
 }
 async function refreshPartner() { const { data } = await sb.from('profiles').select('*').eq('id', partnerId).maybeSingle(); if (data) { partnerProfile = data; renderProfiles() } }
 async function refreshCouple() { const { data } = await sb.from('couple').select('*').maybeSingle(); if (data) { couple = data; renderDays(); renderCountdown(); renderLamp(couple.lamp_color, null) } }
-const send = (event, payload = {}) => channel && channel.send({ type: 'broadcast', event, payload });
+const PUSHMAP = { miss: ['đang nhớ bạn lắm 💗', './?tab=touch'], lamp: ['vừa bật đèn nhớ bạn 💡', './?tab=touch'] };
+const send = (event, payload = {}) => { channel && channel.send({ type: 'broadcast', event, payload }); const t = PUSHMAP[event]; if (t && myProfile) notifyPush({ myName: myProfile.display_name || 'Người ấy' }, t[0], t[1], event) };
+async function renderPushBox() {
+  const box = document.getElementById('pushBox'); if (!box) return; const st = await pushState(); const dis = localStorage.getItem('pushDismiss');
+  if (st === 'on' || st === 'unsupported' || (dis && Date.now() - +dis < 3 * 864e5)) { box.classList.add('hidden'); return }
+  box.classList.remove('hidden');
+  box.innerHTML = st === 'ios-install' ? `<div class="row" style="gap:10px;align-items:center"><span style="font-size:28px">🔔</span><div style="flex:1"><b>Nhận thông báo trên iPhone</b><div class="note" style="margin:2px 0">Bấm nút Chia sẻ <b>⬆️</b> → <b>Thêm vào MH chính</b>, rồi mở app từ icon đó để bật thông báo (cần iOS 16.4 trở lên).</div></div><button class="btn small ghost" id="pushX">✕</button></div>`
+    : st === 'denied' ? `<div class="row" style="gap:10px;align-items:center"><span style="font-size:28px">🔕</span><div style="flex:1"><b>Thông báo đang bị chặn</b><div class="note" style="margin:2px 0">Vào cài đặt trình duyệt / Cài đặt máy → cho phép thông báo cho trang này.</div></div><button class="btn small ghost" id="pushX">✕</button></div>`
+    : `<div class="row" style="gap:10px;align-items:center"><span style="font-size:28px">🔔</span><div style="flex:1"><b>Bật thông báo về điện thoại</b><div class="note" style="margin:2px 0">Để không bỏ lỡ thư, quà, lời nhắn ngay cả khi đã tắt app.</div></div><button class="btn small primary" id="pushOn">Bật</button><button class="btn small ghost" id="pushX">✕</button></div>`;
+  const x = document.getElementById('pushX'); if (x) x.onclick = () => { localStorage.setItem('pushDismiss', Date.now()); box.classList.add('hidden') };
+  const on = document.getElementById('pushOn'); if (on) on.onclick = async () => { try { await enablePush(); toast('Đã bật thông báo 🔔'); try { await testPush() } catch (e) { } renderPushBox() } catch (e) { toast(e.message || 'Không bật được thông báo') } };
+}
 
 /* ---------- INBOX (đợt 3) ---------- */
+function setTab(t) { const h = document.getElementById('scrHome'); h.dataset.on = t; document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.t === t)); try { localStorage.setItem('homeTab', t) } catch (e) { } window.scrollTo(0, 0) }
+document.getElementById('tabbar').onclick = e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.t) };
+setTab(new URLSearchParams(location.search).get('tab') || localStorage.getItem('homeTab') || 'today');
 function setBadge(id, n) { const el = document.getElementById(id); if (!el) return; el.textContent = n > 99 ? '99+' : n; el.classList.toggle('hidden', !n) }
 let greetShownId = null;
-async function loadInbox(first) {try{const t=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);sb.rpc('daily_status',{d:t}).then(({data})=>{const b=document.getElementById('bDaily');if(!b||!data)return;if(!data.me){b.textContent=data.partner?'💬':'!';b.classList.remove('hidden')}else b.classList.add('hidden')})}catch(e){}
+async function loadInbox(first) {try{const t=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);sb.rpc('daily_status',{d:t}).then(({data})=>{const b=document.getElementById('bDaily');if(!b||!data)return;if(!data.me){b.textContent=data.partner?'💬':'!';b.classList.remove('hidden')}else b.classList.add('hidden');const tm=document.getElementById('tbMemo');if(tm){tm.textContent=data.me?'':'1';tm.classList.toggle('hidden',!!data.me)}})}catch(e){}
   if (!me || !partnerId) return;
   const [L, N, V, G] = await Promise.all([
     sb.from('letters').select('id', { count: 'exact', head: true }).eq('to_id', me.id).is('opened_at', null),
@@ -332,6 +346,7 @@ async function loadInbox(first) {try{const t=new Date(Date.now()-new Date().getT
     sb.from('vgifts').select('*').eq('to_id', me.id).is('seen_at', null).order('created_at', { ascending: true }).limit(30)
   ]);
   setBadge('bLetters', L.count || 0); setBadge('bNotes', N.count || 0); setBadge('bVoice', (V.data || []).length); setBadge('bGifts', (G.data || []).length);
+  setBadge('tbSend', (L.count || 0) + (N.count || 0) + (V.data || []).length + (G.data || []).length);
   // greeting card
   const h = new Date().getHours(); const want = (h >= 5 && h < 11) ? 'morning' : (h >= 20 || h < 2) ? 'night' : null;
   const v = (V.data || []).find(x => x.kind === want) || (V.data || []).find(x => x.kind === 'any');
@@ -377,7 +392,7 @@ function onTouch(p) {
   }
 }
 let touchToastAt = 0;
-function toastTouch() { if (Date.now() - touchToastAt < 8000) return; touchToastAt = Date.now(); if (document.querySelector('#scrHome.active')) { const r = $('#pad').getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) toast((partnerProfile.display_name || 'Người ấy') + ' đang chạm vào bạn 🤲', 'Xem', () => $('#pad').scrollIntoView({ behavior: 'smooth', block: 'center' })) } }
+function toastTouch() { if (Date.now() - touchToastAt < 8000) return; touchToastAt = Date.now(); if (document.querySelector('#scrHome.active')) { if ($('#scrHome').dataset.on !== 'touch') { toast((partnerProfile.display_name || 'Người ấy') + ' đang chạm vào bạn 🤲', 'Chạm lại', () => setTab('touch')); return } const r = $('#pad').getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) toast((partnerProfile.display_name || 'Người ấy') + ' đang chạm vào bạn 🤲', 'Xem', () => $('#pad').scrollIntoView({ behavior: 'smooth', block: 'center' })) } }
 
 /* ---------- HUG & MISS ---------- */
 let iHold = false, theyHold = false, hugEl = null, hugVib = null, theyHoldTimer = null;
@@ -394,6 +409,7 @@ function setupHug() {
 function onHug(p) {
   theyHold = !!p.on; clearTimeout(theyHoldTimer);
   if (theyHold) theyHoldTimer = setTimeout(() => { theyHold = false; updateHug() }, 3000);
+  if (theyHold && $('#scrHome').dataset.on !== 'touch' && !onHug.t) { onHug.t = 1; setTimeout(() => onHug.t = 0, 8000); toast((partnerProfile.display_name || 'Người ấy') + ' đang dang tay ôm bạn 🤗', 'Ôm lại', () => setTab('touch')) }
   updateHug();
 }
 function updateHug() {

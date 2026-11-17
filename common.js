@@ -93,6 +93,7 @@ export function joinMain(ctx, page, onPresence) {
 export function invite(ctx, page, title) {
   const url = location.href.split('#')[0];
   ctx.main && ctx.main.send({ type: 'broadcast', event: 'invite', payload: { page, title, url } });
+  notifyPush(ctx, 'rủ bạn: ' + title, url, 'invite');
   toast(`Đã rủ ${ctx.partnerName} ♡`);
 }
 
@@ -178,7 +179,8 @@ export function fmtLeft(ms) {
   if (d > 0) return `${d} ngày ${h} giờ`; if (h > 0) return `${h} giờ ${m} phút`; return `${m} phút ${s} giây`;
 }
 export function ago(t) { if (!t) return ''; const s = (Date.now() - new Date(t)) / 1000; if (s < 60) return 'vừa xong'; if (s < 3600) return Math.floor(s / 60) + ' phút trước'; if (s < 86400) return Math.floor(s / 3600) + ' giờ trước'; return Math.floor(s / 86400) + ' ngày trước' }
-export function ping(ctx, event, payload = {}) { ctx.main && ctx.main.send({ type: 'broadcast', event, payload }) }
+const PUSH_TXT = { letter: ['gửi bạn một bức thư 💌', 'letters.html'], vgift: ['tặng bạn quà 🎁', 'gifts.html'], note: ['dán note mới lên tủ lạnh 📝', 'fridge.html'], voice: ['gửi bạn lời nhắn thoại 🎙️', 'voice.html'], 'letter-opened': ['đã mở thư của bạn 💌', 'letters.html'] };
+export function ping(ctx, event, payload = {}) { ctx.main && ctx.main.send({ type: 'broadcast', event, payload }); const t = PUSH_TXT[event]; if (t) notifyPush(ctx, t[0], t[1], event) }
 
 export function giftPopup(fromName, gifts, message, onClose) {
   const list = (Array.isArray(gifts) ? gifts : [{ gift: gifts, qty: 1 }]).filter(Boolean);
@@ -191,7 +193,7 @@ export function giftPopup(fromName, gifts, message, onClose) {
 }
 export function markGiftsSeen() { return sb.rpc('vgifts_seen_all').then(() => { }, () => { }) }
 
-export function hey(ctx, page, text, url) { ctx.main && ctx.main.send({ type: 'broadcast', event: 'hey', payload: { page, text, url: url || (page + '.html') } }) }
+export function hey(ctx, page, text, url) { ctx.main && ctx.main.send({ type: 'broadcast', event: 'hey', payload: { page, text, url: url || (page + '.html') } }); notifyPush(ctx, text, url || (page + '.html'), page) }
 export const todayStr = (d = new Date()) => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10) };
 
 /* ---------- 🔔 notification bell (all pages) ---------- */
@@ -258,6 +260,7 @@ export async function refreshBell() {
       (B.data || []).forEach(b => push({ i: b.done ? '🎉' : '🌟', t: `${P_} ${b.done ? 'đã làm xong' : 'thêm vào bucket list'}: ${b.title}`, s: '', at: b.done_at || b.created_at, u: 'bucket.html' }));
       (S.data || []).filter(s => s.amount > 0).forEach(s => push({ i: '🐷', t: `${P_} bỏ heo ${Number(s.amount).toLocaleString('vi-VN')}đ`, s: s.note || '', at: s.created_at, u: 'fund.html' }));
       (P.data || []).forEach(p => push({ i: p.kind === 'been' ? '❤️' : '⭐', t: `${P_} ghim ${p.name} lên bản đồ`, s: '', at: p.created_at, u: 'map.html' }));
+      { const d0 = new Date(); if (d0.getDate() <= 5) { const pm = new Date(d0.getFullYear(), d0.getMonth() - 1, 1); const k = 'recapSeen-' + pm.getFullYear() + '-' + (pm.getMonth() + 1); if (!store.get(k, null) && !localStorage.getItem(k)) push({ i: '📊', t: `Tổng kết tháng ${pm.getMonth() + 1} của hai đứa đã có!`, s: 'Xem lại cả tháng đã làm gì cho nhau', at: new Date(d0.getFullYear(), d0.getMonth(), 1).toISOString(), u: 'recap.html' }, true) } }
       it.sort((a, b) => (b.isNew - a.isNew) || (b.ts - a.ts));
       const prevN = BELL.items.filter(x => x.isNew).length;
       BELL.items = it; const n = it.filter(x => x.isNew).length;
@@ -289,4 +292,27 @@ export async function getIce(fallback) {
     sessionStorage.setItem('iceCache', JSON.stringify({ list, exp: Date.now() + 50 * 60e3 }));
     return { iceServers: list };
   } catch (e) { console.warn('ICE', e); return fallback || { iceServers: base } }
+}
+
+/* ---------- Web Push ---------- */
+export const VAPID_PUBLIC = 'BPr9Gm27iHkxeN5Yk8-2iM-oCYjpivEI_EJr6Q6vJIIW6ThKE_U6dacEwFagCEd1srMPWSNnkVhU8z0m_4DK_7Y';
+const b64u = s => { const p = '='.repeat((4 - s.length % 4) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)) };
+export const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+export const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+export const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+export async function pushState() { if (!pushSupported()) return isIOS() && !isStandalone() ? 'ios-install' : 'unsupported'; if (Notification.permission === 'denied') return 'denied'; try { const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); return sub && Notification.permission === 'granted' ? 'on' : 'off' } catch (e) { return 'off' } }
+export async function enablePush() {
+  if (!pushSupported()) throw new Error(isIOS() && !isStandalone() ? 'Trên iPhone/iPad: thêm app ra Màn hình chính trước (Chia sẻ → Thêm vào MH chính), rồi mở từ icon đó' : 'Trình duyệt này chưa hỗ trợ thông báo');
+  const perm = await Notification.requestPermission(); if (perm !== 'granted') throw new Error('Bạn chưa cho phép thông báo');
+  const reg = await navigator.serviceWorker.register('sw.js'); await navigator.serviceWorker.ready;
+  const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(VAPID_PUBLIC) });
+  const { error } = await sb.from('push_subs').upsert({ endpoint: sub.endpoint, sub: sub.toJSON(), ua: navigator.userAgent.slice(0, 200) }); if (error) throw error;
+  return true;
+}
+export async function disablePush() { try { const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription(); if (sub) { await sb.from('push_subs').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe() } } catch (e) { } }
+export async function testPush() { const { data, error } = await sb.functions.invoke('notify', { body: { title: 'Tomortle × Molly', body: 'Thông báo đã hoạt động 💗', url: './', test: true } }); if (error) throw error; return data }
+const pushLast = {};
+export function notifyPush(ctx, text, url, tag = 'tmx') {
+  try { if (Date.now() - (pushLast[tag] || 0) < 15000) return; pushLast[tag] = Date.now();
+    sb.functions.invoke('notify', { body: { title: ctx.myName || 'Tomortle × Molly', body: text, url: url || './', tag } }).catch(() => { }) } catch (e) { }
 }

@@ -90,8 +90,9 @@
     <div class="install hidden card" id="installBox"><span>📲</span><span class="sp" id="installText">Cài Tomortle × Molly ra màn hình chính để mở nhanh như app.</span><button class="btn small primary" id="btnInstall">Cài</button><button class="btn small ghost" id="btnInstallX">✕</button></div>
 
     <div class="card hidden" id="greetBox"></div>
+    <div class="card hidden" id="pushBox"></div>
 
-    <div class="card">
+    <div class="card" data-tab="today">
       <div class="couple">
         <div><div class="av" id="avMe"><span></span><i class="dot on"></i></div><div class="pname" id="nmMe"></div><div class="pstatus" id="stMe"></div></div>
         <div class="bigheart">♥</div>
@@ -100,17 +101,17 @@
       <div class="days" id="daysBox"></div>
     </div>
 
-    <div class="card">
+    <div class="card" data-tab="today">
       <h3>⏳ Đếm ngược ngày gặp <small><button class="btn small" id="btnMeet">Đặt lịch</button></small></h3>
       <div id="cdBox"></div>
     </div>
 
-    <div class="card">
+    <div class="card" data-tab="today">
       <h3>💬 Mình đang…</h3>
       <div class="chips" id="statusChips"></div>
     </div>
 
-    <div class="card">
+    <div class="card" data-tab="today">
       <h3>🌤️ Hôm nay thế nào?</h3>
       <div class="moods" id="moodBtns"></div>
       <div class="two" style="margin-top:10px">
@@ -119,7 +120,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" data-tab="today">
       <h3>📍 Bên ấy <small id="wxCity"></small></h3>
       <div class="two">
         <div class="mini"><b>Giờ bên ấy</b><span class="big" id="wxTime">--:--</span></div>
@@ -127,7 +128,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" data-tab="touch">
       <h3>🤲 Chạm & ôm <small id="touchNote"></small></h3>
       <div class="pad" id="pad"><div class="tip">Chạm và giữ vào đây.<br>Người ấy sẽ thấy và cảm được ngón tay bạn.</div></div>
       <div class="actions3">
@@ -137,12 +138,12 @@
       <div class="hint-partner" id="hugHint"></div>
     </div>
 
-    <div class="card">
+    <div class="card" data-tab="touch">
       <h3>💡 Đèn nhớ nhau <small><button class="btn small" id="btnLampFull">Toàn màn hình</button></small></h3>
       <div class="lampwrap"><div class="lamp" id="lamp"></div><div><div class="swatches" id="swatches"></div><p class="note" id="lampNote">Chọn một màu để bật đèn bên máy người ấy.</p></div></div>
     </div>
 
-    <div class="card">
+    <div class="card" data-tab="send">
       <h3>💝 Gửi gắm</h3>
       <div class="tiles">
         <a class="tile" href="letters.html" style="position:relative"><i>💌</i>Thư & quà<small>Hẹn giờ mở</small><span class="badge2 hidden" id="bLetters" style="position:absolute;top:6px;right:6px"></span></a>
@@ -154,7 +155,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" data-tab="together">
       <h3>✨ Làm cùng nhau</h3>
       <div class="tiles">
         <a class="tile" href="room.html"><i>🏠</i>Phòng chung<small>Đi dạo · trang trí</small></a>
@@ -165,9 +166,12 @@
         <a class="tile" href="games.html"><i>🎮</i>Game đôi<small>Caro · Hiểu nhau · Thẻ</small></a>
         <a class="tile" href="draw.html"><i>🎨</i>Vẽ cùng nhau<small>Chung một tờ giấy</small></a>
         <a class="tile" href="study.html"><i>📚</i>Học cùng nhau<small>Pomodoro chung</small></a>
+        <a class="tile" href="heart.html"><i>💓</i>Nhịp tim<small>Gửi nhịp đập cho nhau</small></a>
+        <a class="tile" href="walk.html"><i>🚶</i>Dạo phố<small>Street View cùng nhau</small></a>
+        <a class="tile" href="call.html"><i>🌙</i>Ngủ cùng<small>Gọi thoại tới sáng</small></a>
       </div>
     </div>
-    <div class="card">
+    <div class="card" data-tab="memo">
       <h3>📒 Kỷ niệm & kế hoạch</h3>
       <div class="tiles">
         <a class="tile" href="daily.html" style="position:relative"><i>❓</i>Câu hỏi<small>Mỗi ngày một câu</small><span class="badge2 hidden" id="bDaily" style="position:absolute;top:6px;right:6px"></span></a>
@@ -176,8 +180,17 @@
         <a class="tile" href="bucket.html"><i>🌟</i>Bucket list<small>Sẽ làm cùng nhau</small></a>
         <a class="tile" href="fund.html"><i>🐷</i>Quỹ gặp nhau<small>Bỏ heo mua vé</small></a>
         <a class="tile" href="map.html"><i>🗺️</i>Bản đồ<small>Khoảng cách · nơi đến</small></a>
+        <a class="tile" href="recap.html"><i>📊</i>Tổng kết tháng<small>Hai đứa đã làm gì</small></a>
+        <a class="tile" href="backup.html"><i>💾</i>Sao lưu<small>Tải kỷ niệm về máy</small></a>
       </div>
     </div>
+      <nav class="tabbar" id="tabbar">
+      <button data-t="today" class="on"><i>🏠</i>Hôm nay</button>
+      <button data-t="touch"><i>🤲</i>Chạm</button>
+      <button data-t="send"><i>💝</i>Gửi gắm<b class="hidden" id="tbSend"></b></button>
+      <button data-t="together"><i>✨</i>Làm cùng</button>
+      <button data-t="memo"><i>📒</i>Kỷ niệm<b class="hidden" id="tbMemo"></b></button>
+    </nav>
   </section>
 </div>
 

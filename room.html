@@ -51,6 +51,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 </head>
 <body>
 <div class="app">
+  <div class="chips" id="roomTabs" style="align-items:center"></div>
   <div class="roomwrap" id="wrap">
     <canvas id="room"></canvas>
     <div class="hud">
@@ -128,6 +129,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 <div id="toast"></div><div class="fx" id="fx"></div>
 <script type="module">
 const DEMO=new URLSearchParams(location.search).has('demo');
+const KIND=new URLSearchParams(location.search).get('r')==='balcony'?'balcony':'room';const RK=KIND==='balcony'?'room-balcony':'room';const PAGE=RK;const UNLOCK=30;
 const C=DEMO?null:await import('./common.js');
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -169,13 +171,19 @@ const CAT={
  easel:{n:'Giá vẽ',e:'🎨',w:1,d:1,h:56,c:'#d4a373'},
  teddy:{n:'Gấu bông',e:'🧸',w:1,d:1,h:34,c:'#d4a373'},
  vase:{n:'Bình hoa',e:'💐',w:1,d:1,h:42,c:'#ffafcc'},
+ swing:{n:'Xích đu đôi',e:'🎠',w:2,d:1,h:64,c:'#f6e1ea',sit:[[.3,.45],[.7,.45]]},
+ bench:{n:'Ghế dài',e:'🪵',w:2,d:1,h:34,c:'#c69c72',sit:[[.3,.4],[.7,.4]]},
+ telescope:{n:'Kính thiên văn',e:'🔭',w:1,d:1,h:50,c:'#3d5a80'},
+ flowerbed:{n:'Luống hoa',e:'🌷',w:2,d:1,h:26,c:'#9c6b4f'},
+ grill:{n:'Bếp nướng',e:'🍢',w:1,d:1,h:34,c:'#2b2d42'},
+ lantern:{n:'Đèn lồng',e:'🏮',w:1,d:1,h:30,c:'#ff8fab'},
 };
-const WCAT={window:{n:'Cửa sổ',e:'🌤️',s:2},frame:{n:'Khung ảnh',e:'🖼️',s:1},calendar:{n:'Lịch hẹn',e:'📅',s:1},clock:{n:'Đồng hồ',e:'🕰️',s:1},mirror:{n:'Gương',e:'✨',s:1},garland:{n:'Dây cờ',e:'🎏',s:2},door:{n:'Cửa ra vào',e:'🚪',s:1,fixed:1}};
+const WCAT={window:{n:'Cửa sổ',e:'🌤️',s:2},frame:{n:'Khung ảnh',e:'🖼️',s:1},calendar:{n:'Lịch hẹn',e:'📅',s:1},clock:{n:'Đồng hồ',e:'🕰️',s:1},mirror:{n:'Gương',e:'✨',s:1},garland:{n:'Dây cờ',e:'🎏',s:2},fairy:{n:'Dây đèn',e:'✨',s:3},door:{n:'Cửa ra vào',e:'🚪',s:1,fixed:1}};
 const PAL=['#ffb3c9','#ff8fab','#f4a6c0','#f9d5e5','#fff1e6','#cdb4db','#b8a1e3','#bde0fe','#a2d2ff','#b5e48c','#90be6d','#ffd166','#e9c46a','#d4a373','#a26769','#8d6e63','#ffffff','#6d6875','#e63946','#2a9d8f'];
 const WALLC=['#f9cfe0','#ffe5ec','#fde2c8','#fff5e1','#e8f1d8','#dbe7f3','#e9dff5','#d8c3a5','#c9e4de','#f2b5c4'];
 const FLOORC=['#f1d3b3','#e3b58c','#c69c72','#fde4ec','#f6f0e8','#d8e2dc','#cdb4db','#9c6b4f'];
-const WPAT={plain:'Trơn',polka:'Chấm bi',stripes:'Kẻ sọc',hearts:'Trái tim',gingham:'Caro',flowers:'Hoa nhí'};
-const FPAT={wood:'Gỗ',checker:'Ô cờ',tiles:'Gạch',carpet:'Thảm'};
+const WPAT={plain:'Trơn',brick:'Gạch',polka:'Chấm bi',stripes:'Kẻ sọc',hearts:'Trái tim',gingham:'Caro',flowers:'Hoa nhí'};
+const FPAT={wood:'Gỗ',deck:'Sàn gỗ ngoài trời',grass:'Cỏ',checker:'Ô cờ',tiles:'Gạch',carpet:'Thảm'};
 let uid=0;const nid=()=>Date.now().toString(36)+(uid++).toString(36);
 function defRoom(){return{v:1,wall:{c:'#f9cfe0',p:'polka'},floor:{c:'#f1d3b3',p:'wood'},light:true,music:false,rain:false,
  items:[
@@ -186,9 +194,12 @@ function defRoom(){return{v:1,wall:{c:'#f9cfe0',p:'polka'},floor:{c:'#f1d3b3',p:
  ].map(o=>Object.assign({id:nid(),c:CAT[o.t].c},o)),
  walls:[{t:'window',w:'A',p:3},{t:'clock',w:'A',p:5},{t:'calendar',w:'A',p:6},{t:'garland',w:'A',p:0},{t:'frame',w:'B',p:1},{t:'mirror',w:'B',p:3},{t:'door',w:'B',p:5}].map(o=>Object.assign({id:nid()},o)),
  pet:null,plant:{w:0,at:0,by:null}}}
+function defBalcony(){return{v:1,kind:'balcony',wall:{c:'#e8d6c0',p:'brick'},floor:{c:'#c69c72',p:'deck'},light:true,music:false,rain:false,
+ items:[{t:'swing',x:2,y:1,r:0},{t:'telescope',x:6,y:1,r:0},{t:'flowerbed',x:5,y:0,r:0},{t:'bench',x:4,y:5,r:2},{t:'grill',x:7,y:5,r:3},{t:'lantern',x:1,y:6,r:0},{t:'plant',x:0,y:1,r:1},{t:'rug',x:3,y:3,r:0},{t:'chair',x:6,y:7,r:0},{t:'vase',x:7,y:3,r:0}].map(o=>Object.assign({id:nid(),c:CAT[o.t].c},o)),
+ walls:[{t:'door',w:'B',p:5},{t:'fairy',w:'B',p:1},{t:'clock',w:'B',p:4}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 const UK=id=>'room-u-'+id;
-let [R,UM,UP]=await Promise.all([loadS('room',null),loadS(UK(ME),{}),loadS(UK(PA),{})]);
-if(!R||!R.items)R=defRoom();
+let [R,UM,UP]=await Promise.all([loadS(RK,null),loadS(UK(ME),{}),loadS(UK(PA),{})]);
+if(!R||!R.items)R=KIND==='balcony'?defBalcony():defRoom();R.kind=KIND;
 R.items=R.items.filter(i=>CAT[i.t]);R.walls=(R.walls||[]).filter(w=>WCAT[w.t]);R.plant=R.plant||{w:0,at:0};
 UM=UM||{};UP=UP||{};
 
@@ -264,12 +275,14 @@ const wallX=wi=>wi.w==='A'?wi.p*LT:(N-wi.p-WCAT[wi.t].s)*LT;
 function drawWall(w){
  const base=w==='A'?R.wall.c:shade(R.wall.c,-.07);
  g.save();g.transform(...wallM(w));g.beginPath();g.rect(0,0,LA,WH);g.clip();
+ if(R.kind==='balcony'&&w==='A'){drawSkyRail();g.restore();return}
  g.fillStyle=base;g.fillRect(0,0,LA,WH);
  const p=R.wall.p,acc='rgba(255,255,255,.7)',dk=shade(R.wall.c,-.18);
  if(p==='polka'){g.fillStyle=acc;for(let y=12,r=0;y<WH;y+=20,r++)for(let x=(r%2)*11+6;x<LA;x+=22){g.beginPath();g.arc(x,y,3.2,0,7);g.fill()}}
  else if(p==='stripes'){g.fillStyle='rgba(255,255,255,.45)';for(let x=0;x<LA;x+=18)g.fillRect(x,0,8,WH)}
  else if(p==='hearts'){for(let y=14,r=0;y<WH;y+=24,r++)for(let x=(r%2)*13+8;x<LA;x+=26)heart(x,y,7,'rgba(255,255,255,.65)')}
  else if(p==='gingham'){g.fillStyle='rgba(255,255,255,.35)';for(let x=0;x<LA;x+=24)g.fillRect(x,0,12,WH);for(let y=0;y<WH;y+=24)g.fillRect(0,y,LA,12)}
+ else if(p==='brick'){g.strokeStyle='rgba(120,70,60,.22)';g.lineWidth=1;for(let y=0,r=0;y<WH;y+=12,r++){g.beginPath();g.moveTo(0,y);g.lineTo(LA,y);g.stroke();for(let x=(r%2)*14;x<LA;x+=28){g.beginPath();g.moveTo(x,y);g.lineTo(x,y+12);g.stroke()}}}
  else if(p==='flowers'){const R2=rnd(7+(w==='A'?0:9));for(let i=0;i<60;i++){const x=R2()*LA,y=R2()*(WH-30);g.fillStyle='rgba(255,255,255,.75)';for(let k=0;k<5;k++){const a=k*1.2566;g.beginPath();g.arc(x+Math.cos(a)*2.6,y+Math.sin(a)*2.6,1.9,0,7);g.fill()}g.fillStyle='#ffd166';g.beginPath();g.arc(x,y,1.3,0,7);g.fill()}}
  // wainscot
  g.fillStyle=shade(R.wall.c,-.1);g.fillRect(0,WH-30,LA,30);g.fillStyle='rgba(255,255,255,.6)';g.fillRect(0,WH-32,LA,3);
@@ -279,6 +292,19 @@ function drawWall(w){
  g.fillStyle=dk;for(let x=0;x<LA;x+=10){g.beginPath();g.arc(x+5,5,1,0,7);g.fill()}
  g.restore();
 }
+function drawSkyRail(){const t=NOW/1000,ph=dayPhase();const sky=g.createLinearGradient(0,0,0,WH);
+ if(ph==='day'){sky.addColorStop(0,'#7cc4f2');sky.addColorStop(1,'#d9f1ff')}else if(ph==='dusk'||ph==='dawn'){sky.addColorStop(0,'#6b5bb5');sky.addColorStop(.6,'#f39bb0');sky.addColorStop(1,'#ffd29a')}else{sky.addColorStop(0,'#0b1236');sky.addColorStop(1,'#2a3570')}
+ g.fillStyle=sky;g.fillRect(0,0,LA,WH);
+ if(ph==='night'){const r2=rnd(11);for(let i=0;i<60;i++){g.globalAlpha=.35+.65*Math.abs(Math.sin(t*1.5+i));g.fillStyle='#fff';const x=r2()*LA,y=r2()*(WH-60);g.fillRect(x,y,1.5,1.5)}g.globalAlpha=1;circ(LA*.72,30,13,'#fff6d5');circ(LA*.72+5,26,11,'#0b1236');
+  if(Math.floor(t)%9===0){const f=(t%1);g.strokeStyle='rgba(255,255,255,'+(1-f)+')';g.lineWidth=1.5;g.beginPath();g.moveTo(LA*.2+f*80,20+f*30);g.lineTo(LA*.2+f*80-14,20+f*30-7);g.stroke()}}
+ else if(ph==='day'){circ(LA*.8,28,12,'#ffe27a');g.fillStyle='rgba(255,255,255,.9)';for(const[cx0,cy,k]of[[40,40,1],[150,25,.8],[230,55,1.1]]){const cx=(cx0+t*5*k)%(LA+60)-30;[[0,0,9],[10,-4,11],[21,0,8]].forEach(([dx,dy,r])=>{g.beginPath();g.arc(cx+dx*k,cy+dy*k,r*k,0,7);g.fill()})}}
+ else circ(LA*.3,WH-50,16,'#ffcf7a');
+ // distant city/trees silhouette
+ g.fillStyle=ph==='night'?'#1a2350':'rgba(90,120,110,.55)';for(let x=0;x<LA;x+=16){const h=20+((x*37)%23);g.fillRect(x,WH-48-h,14,h+20)}
+ if(ph==='night'){g.fillStyle='#ffe08a';const r3=rnd(5);for(let i=0;i<30;i++){g.fillRect(r3()*LA,WH-48-r3()*30,2,2)}}
+ if(R.rain){g.strokeStyle='rgba(220,235,255,.7)';g.lineWidth=1;for(let i=0;i<70;i++){const rx=(i*23.7+t*40)%LA,ry=(i*41+t*260)%WH;g.beginPath();g.moveTo(rx,ry);g.lineTo(rx-3,ry+8);g.stroke()}}
+ // railing
+ g.fillStyle='#fffaf7';g.fillRect(0,WH-52,LA,5);g.fillRect(0,WH-30,LA,3);for(let x=4;x<LA;x+=13)g.fillRect(x,WH-48,3,48);g.fillStyle='rgba(0,0,0,.08)';g.fillRect(0,WH-47,LA,2)}
 function drawFloor(){
  const F=R.floor,c=F.c;
  // slab sides
@@ -289,6 +315,8 @@ function drawFloor(){
  if(F.p==='wood'){g.strokeStyle=shade(c,-.12);g.lineWidth=1;for(let k=0;k<=N*2;k++){const a=iso(0,k/2),b=iso(N,k/2);g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();for(let j=(k%2)*1.5+.7;j<N;j+=3){const p=iso(j,k/2),q=iso(j,k/2+.5);g.beginPath();g.moveTo(p[0],p[1]);g.lineTo(q[0],q[1]);g.stroke()}}}
  else if(F.p==='checker'){for(let x=0;x<N;x++)for(let y=0;y<N;y++)if((x+y)%2)poly([iso(x,y),iso(x+1,y),iso(x+1,y+1),iso(x,y+1)],shade(c,.45),null)}
  else if(F.p==='tiles'){g.strokeStyle='rgba(255,255,255,.75)';g.lineWidth=1.5;for(let k=0;k<=N;k++){let a=iso(0,k),b=iso(N,k);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();a=iso(k,0);b=iso(k,N);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke()}}
+ else if(F.p==='deck'){g.strokeStyle=shade(c,-.2);g.lineWidth=1.5;for(let k=0;k<=N*3;k++){const a=iso(0,k/3),b=iso(N,k/3);g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke()}}
+ else if(F.p==='grass'){const r2=rnd(9);g.fillStyle=shade(c,-.15);for(let i=0;i<700;i++){const p=iso(r2()*N,r2()*N);g.fillRect(p[0],p[1]-2,1.2,3)}g.fillStyle='#fff';for(let i=0;i<20;i++){const p=iso(r2()*N,r2()*N);circ(p[0],p[1],1.5,i%2?'#fff':'#ffd166')}}
  else{const r2=rnd(3);g.fillStyle=shade(c,-.1);for(let i=0;i<500;i++){const p=iso(r2()*N,r2()*N);g.fillRect(p[0],p[1],1.4,1.4)}}
  // soft shadow along walls
  const gr=g.createLinearGradient(...iso(0,0),...iso(.6,.6));gr.addColorStop(0,'rgba(80,30,50,.12)');gr.addColorStop(1,'rgba(80,30,50,0)');g.fillStyle=gr;poly([iso(0,0),iso(N,0),iso(N,.5),iso(.5,N),iso(0,N)],gr,null);
@@ -309,7 +337,7 @@ function drawShell(){
 
 /* ================= wall items ================= */
 function wallPoly(wi,y0,y1){const x0=wallX(wi),x1=x0+WCAT[wi.t].s*LT;return[toWall(wi.w,x0,y0),toWall(wi.w,x1,y0),toWall(wi.w,x1,y1),toWall(wi.w,x0,y1)]}
-const WBOX={window:[22,96],frame:[34,74],calendar:[34,80],clock:[30,62],mirror:[30,104],garland:[10,36],door:[46,WH]};
+const WBOX={fairy:[8,40],window:[22,96],frame:[34,74],calendar:[34,80],clock:[30,62],mirror:[30,104],garland:[10,36],door:[46,WH]};
 function drawWallItem(wi){
  const s=WCAT[wi.t].s,x0=wallX(wi),L=s*LT,t=NOW/1000;
  g.save();g.transform(...wallM(wi.w));
@@ -344,6 +372,7 @@ function drawWallItem(wi){
  }else if(wi.t==='garland'){
   g.strokeStyle='#c48a5a';g.lineWidth=1;g.beginPath();g.moveTo(x0+4,12);g.quadraticCurveTo(x0+L/2,30,x0+L-4,12);g.stroke();const cols=['#ff8fab','#ffd166','#a2d2ff','#b5e48c','#cdb4db'];
   for(let i=0;i<7;i++){const u=(i+.5)/7,px=x0+4+(L-8)*u,py=12+18*4*u*(1-u)*.95;g.fillStyle=cols[i%5];g.beginPath();g.moveTo(px-4,py);g.lineTo(px+4,py);g.lineTo(px,py+9);g.closePath();g.fill()}
+ }else if(wi.t==='fairy'){const cols=['#ffd166','#ff8fab','#a2d2ff','#b5e48c','#fff'];g.strokeStyle='#6b5a4e';g.lineWidth=1;g.beginPath();g.moveTo(x0,14);for(let k=0;k<=3;k++){const xa=x0+k*L/3;g.quadraticCurveTo(xa-L/6,30,xa,14)}g.stroke();for(let i=0;i<15;i++){const u=(i+.5)/15,px=x0+L*u,seg=(u*3)%1,py=14+16*4*seg*(1-seg)*.9+3;const on=Math.sin(t*3+i)>-.3;circ(px,py,2.6,on?cols[i%5]:'#ccc');if(on){g.globalAlpha=.35;circ(px,py,5,cols[i%5]);g.globalAlpha=1}}
  }else if(wi.t==='door'){
   const X=x0+4,Y=48,Wd=L-8,Hh=WH-Y;rr(X-3,Y-3,Wd+6,Hh+3,4,'#fffaf7','rgba(120,70,90,.3)');rr(X,Y,Wd,Hh,3,'#c9926a','rgba(90,50,30,.35)');
   rr(X+4,Y+6,Wd-8,Hh*.38,2,shade('#c9926a',.12));rr(X+4,Y+Hh*.48,Wd-8,Hh*.44,2,shade('#c9926a',.12));heart(X+Wd/2,Y+20,8,'#ff8fab');circ(X+Wd-6,Y+Hh*.55,2,'#ffd166');
@@ -392,6 +421,12 @@ function drawItem(it){
  case'easel':{const top=lp3(it,.5,.6,56);g.strokeStyle='#a5714a';g.lineWidth=2;[[.2,.35],[.8,.35],[.5,.85]].forEach(([a,b])=>{const f=lp3(it,a,b,0);g.beginPath();g.moveTo(...top);g.lineTo(...f);g.stroke()});
   const q=[lp3(it,.12,.4,18),lp3(it,.88,.4,18),lp3(it,.88,.45,52),lp3(it,.12,.45,52)];poly(q,frontVis(it)?'#fffaf2':'#e8d6c0');if(frontVis(it)){const m=lp3(it,.4,.42,36),m2=lp3(it,.62,.42,30);circ(m[0],m[1],5,'#ff8fab');circ(m2[0],m2[1],4,'#a2d2ff');heart(lp3(it,.55,.42,42)[0],lp3(it,.55,.42,42)[1],7,'#e63946')}break}
  case'teddy':{const b=lp3(it,.5,.5,0);drawBear(b[0],b[1],c,1);break}
+ case'swing':{const sw=Math.sin(t*1.6)*.02;parts(it,[[0,.06,.42,.58,0,62,'#fffaf7',.5,.5],[.94,1,.42,.58,0,62,'#fffaf7',.5,.5],[0,1,.44,.56,62,4,'#fffaf7',.5,.5]]);const a=lp3(it,.15,.5,62),b2=lp3(it,.85,.5,62),c1=lp3(it,.15,.45+sw,18),c2=lp3(it,.85,.45+sw,18);g.strokeStyle='#c9a227';g.lineWidth=1.2;g.beginPath();g.moveTo(...a);g.lineTo(...c1);g.moveTo(...b2);g.lineTo(...c2);g.stroke();parts(it,[[.1,.9,.3+sw,.6+sw,14,4,c,.5,.5],[.1,.9,.56+sw,.62+sw,18,14,shade(c,.1),.5,.55]]);const f=lp3(it,.5,.6,40);for(let k=0;k<5;k++){const q=k*1.2566;circ(f[0]+Math.cos(q)*3,f[1]-8+Math.sin(q)*3,2.4,'#ff8fab')}circ(f[0],f[1]-8,1.8,'#ffd166');break}
+ case'bench':parts(it,[[.04,.12,.12,.68,0,12,shade(c,-.25),.5,.5],[.88,.96,.12,.68,0,12,shade(c,-.25),.5,.5],[0,1,.08,.7,12,4,c,.5,.5],[0,1,.72,.8,10,24,c]]);break;
+ case'telescope':{const tp=lp3(it,.5,.5,30);g.strokeStyle='#4a4a55';g.lineWidth=1.6;[[.2,.25],[.8,.3],[.5,.85]].forEach(([a,b])=>{const f=lp3(it,a,b,0);g.beginPath();g.moveTo(...tp);g.lineTo(...f);g.stroke()});g.save();g.translate(tp[0],tp[1]);g.rotate(-.75);rr(-6,-26,12,34,5,c,'rgba(0,0,0,.25)');rr(-7,-29,14,6,2,'#ffd166');g.restore();break}
+ case'flowerbed':{parts(it,[[0,1,0,1,0,14,c],[.04,.96,.06,.94,14,2,'#5b3a29',.5,.5]]);const cols=['#ff8fab','#ffd166','#fff','#cdb4db','#e63946'];for(let i=0;i<14;i++){const a=.1+(i%7)*.13,b=.25+Math.floor(i/7)*.45;const p=lp3(it,a,b,16);g.strokeStyle='#6ab04c';g.lineWidth=1.2;g.beginPath();g.moveTo(p[0],p[1]);g.lineTo(p[0],p[1]-9);g.stroke();for(let k=0;k<5;k++){const q=k*1.2566;circ(p[0]+Math.cos(q)*2.4,p[1]-10+Math.sin(q)*2.4,2,cols[i%5])}circ(p[0],p[1]-10,1.2,'#ffd166')}break}
+ case'grill':{const lg=shade(c,-.1);parts(it,[[.25,.32,.25,.32,0,22,lg,.5,.5],[.68,.75,.25,.32,0,22,lg,.5,.5],[.25,.32,.68,.75,0,22,lg,.5,.5],[.68,.75,.68,.75,0,22,lg,.5,.5],[.18,.82,.18,.82,22,10,c,.5,.5]]);const m=lp3(it,.5,.5,32);g.strokeStyle='#bbb';for(let k=-2;k<=2;k++){g.beginPath();g.moveTo(m[0]-14,m[1]+k*2.5);g.lineTo(m[0]+14,m[1]+k*2.5);g.stroke()}rr(m[0]-9,m[1]-3,7,3,1.5,'#c0392b');rr(m[0]+2,m[1]-1,7,3,1.5,'#e9c46a');if(Math.random()<.04)spawn(m[0],m[1]-6,'💨',{size:10,vy:-14,life:1.2});break}
+ case'lantern':{const m=lp3(it,.5,.5,0);g.strokeStyle='#6b5a4e';g.lineWidth=1.5;g.beginPath();g.moveTo(m[0],m[1]);g.lineTo(m[0],m[1]-14);g.stroke();ell(m[0],m[1],8,3,'#6b5a4e');ell(m[0],m[1]-24,11,13,c);g.strokeStyle='rgba(0,0,0,.15)';for(const dx of[-5,0,5]){g.beginPath();g.ellipse(m[0],m[1]-24,Math.abs(dx)+1,13,0,0,7);g.stroke()}rr(m[0]-6,m[1]-39,12,4,1,'#c9a227');rr(m[0]-6,m[1]-13,12,3,1,'#c9a227');break}
  case'vase':{parts(it,[[.22,.78,.22,.78,0,20,'#fffaf7',.5,.5],[.38,.62,.38,.62,20,12,c,.5,.5]]);const m=lp3(it,.5,.5,32);g.strokeStyle='#6ab04c';g.lineWidth=1.2;[[-6,-12],[0,-16],[6,-11],[-2,-9],[4,-14]].forEach(([dx,dy],i)=>{g.beginPath();g.moveTo(m[0],m[1]);g.lineTo(m[0]+dx,m[1]+dy);g.stroke();for(let k=0;k<5;k++){const a=k*1.2566;circ(m[0]+dx+Math.cos(a)*2,m[1]+dy+Math.sin(a)*2,1.7,['#ff8fab','#fff','#ffd166','#cdb4db','#ff8fab'][i])}circ(m[0]+dx,m[1]+dy,1.1,'#ffd166')});break}
  }
 }
@@ -404,9 +439,9 @@ function lightPass(){
  g.save();g.globalCompositeOperation='multiply';g.fillStyle=R.light?`rgba(150,140,210,${.55*k})`:`rgba(70,60,140,${.85*k})`;g.fillRect(0,0,W,H);g.restore();
  g.save();g.globalCompositeOperation='lighter';
  for(const it of R.items){let p=null,r=0,col='';
-  if(it.t==='lamp'&&R.light){p=lp3(it,.5,.5,50);r=95;col='255,210,140'}else if(it.t==='tv'){p=lp3(it,.5,.4,36);r=55;col='170,190,255'}
+  if(it.t==='lamp'&&R.light){p=lp3(it,.5,.5,50);r=95;col='255,210,140'}else if(it.t==='lantern'&&R.light){p=lp3(it,.5,.5,24);r=70;col='255,150,170'}else if(it.t==='grill'){p=lp3(it,.5,.5,32);r=40;col='255,140,60'}else if(it.t==='tv'){p=lp3(it,.5,.4,36);r=55;col='170,190,255'}
   if(!p)continue;const gr=g.createRadialGradient(p[0],p[1],2,p[0],p[1],r);gr.addColorStop(0,`rgba(${col},${.45*k})`);gr.addColorStop(1,`rgba(${col},0)`);g.fillStyle=gr;g.fillRect(p[0]-r,p[1]-r,r*2,r*2)}
- for(const wi of R.walls)if(wi.t==='window'&&ph!=='night'){}
+ for(const wi of R.walls)if(wi.t==='fairy'&&R.light){const x0=wallX(wi),L=WCAT.fairy.s*LT;for(let i=0;i<3;i++){const p=toWall(wi.w,x0+L*(i+.5)/3,24);const gr=g.createRadialGradient(p[0],p[1],2,p[0],p[1],60);gr.addColorStop(0,`rgba(255,220,150,${.35*k})`);gr.addColorStop(1,'rgba(255,220,150,0)');g.fillStyle=gr;g.fillRect(p[0]-60,p[1]-60,120,120)}}
  g.restore();
 }
 
@@ -620,7 +655,7 @@ function send(t,p={}){if(!ch)return;ch.send({type:'broadcast',event:'r',payload:
 function snap(){return{x:me.x,y:me.y,pose:me.pose,seat:me.seat,face:me.face,flip:me.flip,path:me.path.length?me.path[me.path.length-1]:null}}
 function sendSnap(){send('snap',snap())}
 let saveUT;function saveU(){UM.pos={x:me.x,y:me.y};clearTimeout(saveUT);saveUT=setTimeout(()=>saveS(UK(ME),UM),1200)}
-let roomT;function saveRoom(bcast=true){BM=blockedMap();petCache.k=-1;clearTimeout(roomT);roomT=setTimeout(()=>{saveS('room',R);if(bcast)send('room',{R})},300)}
+let roomT;function saveRoom(bcast=true){BM=blockedMap();petCache.k=-1;clearTimeout(roomT);roomT=setTimeout(()=>{saveS(RK,R);if(bcast)send('room',{R})},300)}
 function onMsg(m){
  switch(m.t){
  case'hello':sendSnap();break;
@@ -638,8 +673,8 @@ function onMsg(m){
 }
 function fixMe(){if(me.seat&&!itemById(me.seat.id)){me.seat=null;me.pose='stand'}if(!me.seat){const tx=Math.floor(me.x),ty=Math.floor(me.y);if(!inB(tx,ty)||BM[tx][ty]){const[a,b]=nearestFree(me.x,me.y);me.x=a+.5;me.y=b+.5;me.path=[]}}else applySeat(me,me.seat)}
 if(!DEMO){
- C.joinMain(ctx,'room',()=>{if(ctx.partnerHere){if(!pa.wasLive){sfx.knock();send('hello');sendSnap();const[dx,dy]=doorTile();pa.seat=null;pa.pose='stand';pa.x=dx+.5;pa.y=dy+.5}}else if(pa.wasLive){placeOfflinePartner()}pa.wasLive=ctx.partnerHere});
- ch=C.featureChannel(ctx,'room');ch.on('broadcast',{event:'r'},({payload})=>onMsg(payload)).subscribe(s=>{if(s==='SUBSCRIBED'){send('hello');sendSnap()}});
+ C.joinMain(ctx,PAGE,()=>{if(ctx.partnerHere){if(!pa.wasLive){sfx.knock();send('hello');sendSnap();const[dx,dy]=doorTile();pa.seat=null;pa.pose='stand';pa.x=dx+.5;pa.y=dy+.5}}else if(pa.wasLive){placeOfflinePartner()}pa.wasLive=ctx.partnerHere});
+ ch=C.featureChannel(ctx,PAGE);ch.on('broadcast',{event:'r'},({payload})=>onMsg(payload)).subscribe(s=>{if(s==='SUBSCRIBED'){send('hello');sendSnap()}});
  setInterval(()=>{if(livePa()&&!me.path.length)sendSnap()},5000);
  addEventListener('pagehide',()=>{UM.pos={x:me.x,y:me.y};saveS(UK(ME),UM)});
 }
@@ -703,13 +738,18 @@ function itemMenu(it,sx,sy){const c=CAT[it.t];const B=[];let sub='';
  case'shelf':goUse('📖 Đọc sách',()=>{me.emo={e:'📖',t:NOW+3500};send('emo',{e:'📖'})},1);break;
  case'wardrobe':goUse('👗 Thay đồ',openAvatar,1);break;
  case'teddy':goUse('🧸 Ôm gấu',()=>{burst(me,'💗',5);me.act='hug';me.actT=NOW+1500;send('emo',{e:'🧸',burst:'💗'})},1);break;
+ case'swing':case'bench':B.push(['🪑 Ngồi xuống',()=>sitOn(it,'sit'),1]);break;
+ case'telescope':goUse('🔭 Ngắm sao',()=>{const ph=dayPhase();me.emo={e:ph==='night'?'🌟':'☁️',t:NOW+3000};send('emo',{e:'🔭'});if(ph==='night'){for(let i=0;i<6;i++)setTimeout(()=>spawn(OX+(Math.random()-.5)*200,60+Math.random()*60,'⭐',{vy:-4,life:2}),i*200);toast('Trăng đêm nay '+moonName()+' 🌙')}else toast('Trời còn sáng, tối quay lại ngắm sao nhé ✨')},1);break;
+ case'flowerbed':goUse('🌷 Hái tặng một bông',()=>{burst(me,'🌷',3);send('emo',{e:'🌷',burst:'🌷'});if(livePa())toPartner('kiss')},1);break;
+ case'grill':goUse('🍢 Nướng đồ ăn',()=>{burst(me,'🍢',4);send('emo',{e:'🍢',burst:'🍢'});toast('Thơm quá! Lần gặp nhau đi ăn đồ nướng nhé 😋')},1);break;
+ case'lantern':goUse(R.light?'🌙 Tắt đèn lồng':'🏮 Thắp đèn lồng',()=>{R.light=!R.light;saveRoom();syncHud()},1);break;
  case'vase':goUse('🌸 Ngửi hoa',()=>{me.emo={e:'🌸',t:NOW+2200};send('emo',{e:'🌸'})},1);break;
  }
  menu(sx,sy,c.n,sub,B);return true}
 function wallMenu(wi,sx,sy){const c=WCAT[wi.t];const B=[];let sub='';const front=wi.w==='A'?[wi.p,0]:[0,wi.p];const tiles=new Set();for(let i=0;i<c.s;i++){const t=wi.w==='A'?[wi.p+i,0]:[0,wi.p+i];if(!BM[t[0]][t[1]])tiles.add(t.join(','))}
  const go=fn=>()=>{if(!tiles.size){fn();return}goNear(tiles,null,()=>{me.face='b';me.flip=wi.w==='B';fn()})};
  if(wi.t==='window'){B.push([R.rain?'☀️ Cho tạnh mưa':'🌧️ Cho trời mưa',go(()=>{R.rain=!R.rain;saveRoom();updateAudio()}),1])}
- else if(wi.t==='door'){B.push(['🏠 Ra ngoài (về nhà)',go(()=>nav('./')),1])}
+ else if(wi.t==='door'){if(R.kind==='balcony')B.push(['🛏️ Vào phòng ngủ',go(()=>nav('room.html')),1]);else B.push([LOVE>=UNLOCK?'🌙 Ra ban công':`🔒 Ban công (${LOVE}/${UNLOCK} điểm)`,go(()=>{if(LOVE>=UNLOCK)nav('room.html?r=balcony');else toast(`Cần ${UNLOCK} điểm yêu thương để mở ban công. Điểm có từ thư, ảnh, câu hỏi mỗi ngày, quà…`)}),1]);B.push(['🏠 Về trang Nhà',go(()=>nav('./'))])}
  else if(wi.t==='mirror'){B.push(['👗 Ngắm & thay đồ',go(openAvatar),1])}
  else if(wi.t==='calendar'){const d=daysToMeet();sub=d==null?'Chưa hẹn ngày gặp, đặt ở trang Nhà nhé':d<=0?'Hôm nay gặp nhau!':`Còn ${d} ngày nữa là gặp nhau`;B.push(['📅 Mở Lịch chung',go(()=>nav('calendar.html')),1])}
  else if(wi.t==='frame'){const dt=daysTogether();sub=dt?`Ngày thứ ${dt} bên nhau ♡`:'♡';B.push(['🗂️ Mở Album chung',go(()=>nav('album.html')),1])}
@@ -722,13 +762,14 @@ function charMenu(c,sx,sy){
  menu(sx,sy,ctx.partnerName,'',[['🤗 Ôm',()=>toPartner('hug'),1],['😘 Hôn',()=>toPartner('kiss')],['💥 Ném gối',()=>toPartner('pillow')],['👋 Vẫy tay',()=>{doAct(me,'wave');send('act',{a:'wave'})}]])}
 function petMenu(sx,sy){if(!R.pet)return;const h=petHungry();const mood=pet.sleep?'đang ngủ 💤':h>20?'đói meo 🥺':h>8?'hơi đói':'no bụng, vui vẻ 💗';
  menu(sx,sy,`${PETS[R.pet.k].e} ${R.pet.n}`,mood+` · được yêu ${R.pet.love||0} lần`,[['🍖 Cho ăn',feedPet,1],['🤲 Vuốt ve',petPet],['⚾ Ném bóng',throwBall],['✏️ Đổi tên',renamePet]])}
+function moonName(){const lp=2551443,nm=new Date(1970,0,7,20,35,0);const ph=((Date.now()-nm.getTime())/1000)%lp/lp;return ph<.03||ph>.97?'là trăng non':ph<.22?'lưỡi liềm đầu tháng':ph<.28?'bán nguyệt':ph<.47?'gần tròn':ph<.53?'tròn vành vạnh':ph<.72?'đang khuyết':ph<.78?'bán nguyệt cuối tháng':'lưỡi liềm cuối tháng'}
 function feedPet(){const pb=R.items.find(i=>i.t==='petbed');const after=()=>{R.pet.fed=Date.now();R.pet.love=(R.pet.love||0)+1;saveRoom();burstAt(pet.x,pet.y,'🍖',2);burstAt(pet.x,pet.y,'💗',4);sfx.heart()};if(pb)useItem(pb,after);else after()}
 function petPet(){const tiles=new Set();const tx=Math.floor(pet.x),ty=Math.floor(pet.y);for(const[dx,dy]of[[0,0],[1,0],[-1,0],[0,1],[0,-1]]){const x=tx+dx,y=ty+dy;if(inB(x,y)&&!BM[x][y])tiles.add(x+','+y)}goNear(tiles,null,()=>{faceToward(me,pet.x,pet.y);R.pet.pat=Date.now();R.pet.love=(R.pet.love||0)+1;saveRoom();burstAt(pet.x,pet.y,'💗',5);sfx.heart()})}
 function throwBall(){const ft=freeTiles();const t=ft[Math.floor(Math.random()*ft.length)];const p=[t[0]+.5,t[1]+.5];pet.ball=p;pet.ballT=Date.now()+4000;send('ball',{p});sfx.whoosh();R.pet.love=(R.pet.love||0)+1;saveRoom()}
 function renamePet(){const n=prompt('Tên mới cho bé:',R.pet.n);if(n&&n.trim()){R.pet.n=n.trim().slice(0,16);saveRoom()}}
 function burstAt(x,y,txt,n){const[sx,sy]=iso(x,y);for(let i=0;i<n;i++)spawn(sx+(Math.random()-.5)*16,sy-18,txt,{vy:-18-Math.random()*16})}
 function waterPlant(){if(R.plant.at&&Date.now()-R.plant.at<4*36e5){toast('Cây vừa được tưới rồi, lát nữa nhé 🌱');return}R.plant.w=(R.plant.w||0)+1;R.plant.at=Date.now();R.plant.by=ME;saveRoom();const it=R.items.find(i=>i.t==='plant');if(it){const p=lpt(it,.5,.5);burstAt(p[0],p[1],'💧',5)}sfx.water();if(plantStage()===4&&R.plant.w===14){toast('Cây chung đã ra hoa rồi! 🌸');}}
-function inviteP(){if(DEMO){demoPartner=!demoPartner;if(demoPartner){const[dx,dy]=doorTile();pa.seat=null;pa.pose='stand';pa.x=dx+.5;pa.y=dy+.5;walkTo(pa,5,4)}else placeOfflinePartner();return}C.invite(ctx,'room','Vào phòng chung 🏠')}
+function inviteP(){if(DEMO){demoPartner=!demoPartner;if(demoPartner){const[dx,dy]=doorTile();pa.seat=null;pa.pose='stand';pa.x=dx+.5;pa.y=dy+.5;walkTo(pa,5,4)}else placeOfflinePartner();return}C.invite(ctx,KIND==='balcony'?'room.html?r=balcony':'room',KIND==='balcony'?'Ra ban công ngắm sao 🌙':'Vào phòng chung 🏠')}
 function say(text){me.say={text,t:NOW+6500};UM.msg={text,at:Date.now()};saveS(UK(ME),UM);send('say',{text})}
 
 /* ================= input ================= */
@@ -783,7 +824,7 @@ syncHud();
 /* ================= decorate ================= */
 let editing=false,sel=null,drag=null;
 function fits(it,x,y,r){const c=CAT[it.t],w=(r&1)?c.d:c.w,d=(r&1)?c.w:c.d;if(x<0||y<0||x+w>N||y+d>N)return false;for(const o of R.items){if(o===it)continue;if(!!CAT[o.t].flat!==!!c.flat)continue;const f=fp(o);if(x<f.x+f.w&&x+w>f.x&&y<f.y+f.d&&y+d>f.y)return false}return true}
-function wallFits(wi,w,p){const s=WCAT[wi.t].s;if(p<0||p+s>N)return false;if(w==='B'&&p<1&&false)return false;for(const o of R.walls){if(o===wi||o.w!==w)continue;const s2=WCAT[o.t].s;if(p<o.p+s2&&p+s>o.p)return false}return true}
+function wallFits(wi,w,p){const s=WCAT[wi.t].s;if(p<0||p+s>N)return false;if(R.kind==='balcony'&&w==='A')return false;if(w==='B'&&p<1&&false)return false;for(const o of R.walls){if(o===wi||o.w!==w)continue;const s2=WCAT[o.t].s;if(p<o.p+s2&&p+s>o.p)return false}return true}
 function setEditing(on){editing=on;sel=null;drag=null;closeMenu();$('#wrap').classList.toggle('edit',on);$('#playUI').classList.toggle('hidden',on);$('#decorUI').classList.toggle('hidden',!on);$('#hint').textContent=on?'Chế độ trang trí: chạm đồ để chọn, kéo để dời':'Chạm sàn để đi · chạm đồ vật, thú cưng hay người ấy để tương tác';if(!on){fixMe();saveRoom()}syncDecorUI()}
 $('#hEdit').onclick=()=>setEditing(!editing);$('#bDecor').onclick=()=>setEditing(true);$('#bDone').onclick=()=>setEditing(false);
 function drawEditOverlay(){g.save();g.strokeStyle='rgba(120,90,200,.25)';g.lineWidth=1;for(let k=0;k<=N;k++){let a=iso(0,k),b=iso(N,k);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();a=iso(k,0);b=iso(k,N);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke()}
@@ -836,7 +877,7 @@ $('#petPick').innerHTML=Object.entries(PETS).map(([k,v])=>`<button data-k="${k}"
 $('#petPick').onclick=e=>{const b=e.target.closest('button');if(!b)return;petPick=b.dataset.k;$$('#petPick button').forEach(x=>x.classList.toggle('on',x===b))};
 $('#petOk').onclick=()=>{const n=$('#petName').value.trim()||({turtle:'Tomo',cat:'Mochi',dog:'Bông',bunny:'Mây'})[petPick];R.pet={k:petPick,n:n.slice(0,16),fed:Date.now(),love:0,by:ME,since:Date.now()};saveRoom();$('#mPet').classList.remove('on');const pb=R.items.find(i=>i.t==='petbed');if(pb){const p=lpt(pb,.5,.5);pet.x=p[0];pet.y=p[1]}toast(`Chào mừng ${n} về nhà! 🐾`);sfx.heart()};
 $('#mPet').addEventListener('click',e=>{if(e.target.id==='mPet')e.currentTarget.classList.remove('on')});
-function afterSetup(){if(!R.pet)setTimeout(()=>$('#mPet').classList.add('on'),400)}
+function afterSetup(){if(KIND==='room'&&!R.pet)setTimeout(()=>$('#mPet').classList.add('on'),400)}
 
 /* ================= tic tac toe ================= */
 let T3={b:Array(9).fill(''),turn:null,x:null,on:false};
@@ -850,6 +891,13 @@ $('#tttB').onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=+
 function tttRecv(m){const was=$('#mTtt').classList.contains('on');T3=m.T3;if(!was){toast(`${ctx.partnerName} rủ chơi caro ❌⭕`,'Chơi',()=>tttOpen(false))}else tttDraw();sfx.pop()}
 $('#tttNew').onclick=()=>tttOpen(true);$('#tttClose').onclick=()=>$('#mTtt').classList.remove('on');
 
+/* ================= love points (unlock rooms) ================= */
+let LOVE=0;
+async function calcLove(){if(DEMO){LOVE=42;renderRoomTabs();return}try{const cnt=async(t,f)=>{let q=C.sb.from(t).select('*',{count:'exact',head:true});if(f)q=f(q);const{count}=await q;return count||0};
+ const[a,b,c2,d,e,f,g2]=await Promise.all([cnt('letters'),cnt('daily_answers'),cnt('album'),cnt('vgifts'),cnt('notes'),cnt('voices'),cnt('bucket',q=>q.eq('done',true))]);LOVE=a+Math.floor(b/2)+c2+d+e+f+g2*3+Math.floor(((R.plant&&R.plant.w)||0)/2)}catch(x){}renderRoomTabs()}
+function renderRoomTabs(){const el=$('#roomTabs');if(!el)return;const ok=LOVE>=UNLOCK;el.innerHTML=`<button class="${KIND==='room'?'on':''}" data-r="room">🛏️ Phòng ngủ</button><button class="${KIND==='balcony'?'on':''}" data-r="balcony">${ok?'🌙':'🔒'} Ban công${ok?'':` · ${LOVE}/${UNLOCK}`}</button><span class="note" style="margin-left:auto">💗 ${LOVE} điểm yêu thương</span>`}
+document.addEventListener('click',e=>{const b=e.target.closest('#roomTabs button');if(!b)return;const r=b.dataset.r;if(r===KIND)return;if(r==='balcony'&&LOVE<UNLOCK){toast(`Cần ${UNLOCK} điểm yêu thương để mở ban công. Gửi thư, ảnh, trả lời câu hỏi mỗi ngày… để tích điểm nhé`);return}nav(r==='balcony'?'room.html?r=balcony':'room.html'+(DEMO?'?demo':''))});
+calcLove();
 /* ================= first run ================= */
 if(!UM.av){setTimeout(openAvatar,500)}else afterSetup();
 setInterval(()=>{if(!DEMO&&livePa()===false&&!me.path.length){}},10000);

@@ -42,6 +42,7 @@
     <button class="start" id="btnVideo">📹 Gọi video</button>
     <button class="start" id="btnAudio" style="background:var(--accent);border-color:var(--accent)">📞 Gọi thoại</button>
   </div>
+  <div class="cbar" id="preBar2"><button class="start" id="btnSleep" style="background:#3d3a6b;border-color:#3d3a6b">🌙 Ngủ cùng nhau</button></div>
   <div class="cbar hidden" id="inBar">
     <button id="btnMic" title="Tắt/bật mic">🎤</button>
     <button id="btnCam" title="Tắt/bật camera">📷</button>
@@ -58,6 +59,19 @@
     <div class="list" id="hist"></div>
   </div>
 </div>
+<div id="sleepOv" class="hidden" style="position:fixed;inset:0;z-index:90;background:#07061a;color:#cfc9ff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px">
+  <div style="font-size:64px" id="slMoon">🌙</div>
+  <div id="slClock" style="font-size:54px;font-weight:800;font-variant-numeric:tabular-nums;margin:6px 0"></div>
+  <div id="slWho" style="font-size:16px;opacity:.85"></div>
+  <div id="slCtl" style="margin-top:22px;transition:opacity .6s">
+    <div class="note" style="color:#9a94d9">Tự tắt sau</div>
+    <div class="chips" id="slTimer" style="justify-content:center;margin:8px 0"></div>
+    <div class="chips" id="slNoise" style="justify-content:center;margin:8px 0"></div>
+    <div class="row" style="gap:10px;justify-content:center;margin-top:10px"><button class="btn" id="slMic">🎤 Mic đang bật</button><button class="btn" id="slEnd" style="background:#e53935;color:#fff;border-color:#e53935">Kết thúc</button></div>
+    <p class="note" style="color:#6f69b0;margin-top:14px">Để máy cắm sạc, úp màn hình xuống. Chạm vào màn hình để hiện nút.</p>
+  </div>
+</div>
+<style>#sleepOv .chips button{background:#16143a;color:#cfc9ff;border:1px solid #2c2870;border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer}#sleepOv .chips button.on{background:#6c63ff;color:#fff}</style>
 <div id="toast"></div><div class="fx" id="fx"></div>
 <script type="module">
 import { $, $$, esc, toast, vib, sb, boot, header, joinMain, invite, featureChannel , getIce } from './common.js';
@@ -77,11 +91,12 @@ const ch = featureChannel(ctx, 'call');
 const send = (event, payload = {}) => ch.send({ type: 'broadcast', event, payload });
 
 let iStarted = false, readyLoop = null;
+let sleepMode = false, sleepEnd = 0, sleepTick = null, wakeLock = null, noise = null;
 let state = 'idle', kind = 'video', stream = null, peer = null, call = null, startedAt = null, tick = null, facing = 'user', micOn = true, camOn = true, logged = false;
 function setMsg(m, s = '') { $('#cmsg').textContent = m; $('#csub').textContent = s; $('#cstate').classList.toggle('hidden', !m) }
 function setState(s) {
   state = s;
-  $('#preBar').classList.toggle('hidden', s !== 'idle'); $('#inBar').classList.toggle('hidden', s === 'idle');
+  $('#preBar').classList.toggle('hidden', s !== 'idle'); $('#preBar2').classList.toggle('hidden', s !== 'idle'); $('#inBar').classList.toggle('hidden', s === 'idle');
   $('#hint').classList.toggle('hidden', s !== 'idle'); $('#timer').classList.toggle('hidden', s !== 'live');
   $('#btnCam').classList.toggle('hidden', kind !== 'video'); $('#btnFlip').classList.toggle('hidden', kind !== 'video');
   if (s === 'idle') setMsg(ctx.partnerName, ctx.partnerHere ? `${ctx.partnerName} đang ở trang gọi` : (ctx.partnerOnline ? `${ctx.partnerName} đang online` : `${ctx.partnerName} đang offline`));
@@ -106,7 +121,7 @@ function initPeer() {
 function bindCall(c) {
   c.on('stream', s => {
     $('#vThem').srcObject = s; $('#vThem').play().catch(() => { });
-    if (state !== 'live') { setState('live'); setMsg(kind === 'audio' ? ctx.partnerName : '', kind === 'audio' ? 'Đang gọi thoại…' : ''); startedAt = Date.now(); tick = setInterval(renderTimer, 1000); renderTimer(); vib(60) }
+    if (state !== 'live') { setState('live'); setMsg(kind === 'audio' ? ctx.partnerName : '', kind === 'audio' ? (sleepMode ? 'Đang ngủ cùng nhau 🌙' : 'Đang gọi thoại…') : ''); startedAt = Date.now(); tick = setInterval(renderTimer, 1000); renderTimer(); vib(60); if (sleepMode) showSleep() }
   });
   c.on('close', () => { if (state === 'live') endCall(true) });
 }
@@ -118,21 +133,22 @@ async function startCall(k, viaInvite) {
   try { await getMedia() } catch (e) { toast('Không mở được ' + (k === 'video' ? 'camera/micro' : 'micro') + '. Cho phép quyền trong trình duyệt nhé'); return }
   setState('waiting'); setMsg('Đang chờ ' + ctx.partnerName + '…', viaInvite ? 'Đang kết nối' : 'Đã gửi lời mời gọi');
   try { await initPeer() } catch (e) { toast(e.message); endCall(false); return }
-  if (!viaInvite) { invite(ctx, PAGE, kind === 'video' ? 'gọi video 📹' : 'gọi thoại 📞'); send('ring', { kind }) }
+  if (!viaInvite) { invite(ctx, PAGE, sleepMode ? 'rủ ngủ cùng nhau 🌙' : kind === 'video' ? 'gọi video 📹' : 'gọi thoại 📞'); send('ring', { kind, sleep: sleepMode }) }
   announceReady(); clearInterval(readyLoop); readyLoop = setInterval(() => { if (state === 'waiting') announceReady(); else clearInterval(readyLoop) }, 3000);
   ringTimer = setTimeout(() => { if (state === 'waiting') { toast(ctx.partnerName + ' chưa bắt máy'); } }, 45000);
 }
 let ringTimer = null;
-function announceReady() { send('ready', { kind }) }
+function announceReady() { send('ready', { kind, sleep: sleepMode }) }
 function placeCall() { if (!peer || !stream || call) return; call = peer.call(pid(YOU), stream); if (call) bindCall(call) }
 
 async function endCall(remote) {
   clearInterval(tick); clearTimeout(ringTimer); clearInterval(readyLoop);
   if (state === 'live' && startedAt && !logged) {
     logged = true; const dur = Math.round((Date.now() - startedAt) / 1000);
-    if (iStarted && dur > 2) { await sb.from('calls').insert({ kind, started_at: new Date(startedAt).toISOString(), ended_at: new Date().toISOString(), duration_sec: dur }); }
+    if (iStarted && dur > 2) { await sb.from('calls').insert({ kind: sleepMode ? 'sleep' : kind, started_at: new Date(startedAt).toISOString(), ended_at: new Date().toISOString(), duration_sec: dur }); }
     toast('Đã gọi ' + fmt(dur)); setTimeout(loadHistory, 1200);
   }
+  hideSleep(); sleepMode = false;
   if (!remote) send('hangup');
   try { call && call.close() } catch (e) { } call = null;
   try { peer && peer.destroy() } catch (e) { } peer = null;
@@ -143,21 +159,41 @@ async function endCall(remote) {
 }
 
 ch.on('broadcast', { event: 'ready' }, ({ payload }) => {
-  if (state === 'idle') { kind = payload.kind || 'video'; ringIn(); return }
+  if (state === 'idle') { kind = payload.kind || 'video'; sleepMode = !!payload.sleep; ringIn(); return }
   if (state === 'waiting') { if (CALLER) setTimeout(placeCall, 400); else announceReady() }
 })
-  .on('broadcast', { event: 'ring' }, ({ payload }) => { if (state === 'idle') { kind = payload.kind || 'video'; ringIn() } })
+  .on('broadcast', { event: 'ring' }, ({ payload }) => { if (state === 'idle') { kind = payload.kind || 'video'; sleepMode = !!payload.sleep; ringIn() } })
   .on('broadcast', { event: 'hangup' }, () => { if (state !== 'idle') { toast(ctx.partnerName + ' đã kết thúc cuộc gọi'); endCall(true) } })
   .subscribe();
 
 function ringIn() {
   vib([300, 200, 300, 200, 300]);
-  setMsg(`${ctx.partnerName} đang gọi ${kind === 'video' ? 'video' : 'thoại'}…`, 'Bấm nút xanh để nghe');
+  setMsg(sleepMode ? `${ctx.partnerName} rủ bạn ngủ cùng 🌙` : `${ctx.partnerName} đang gọi ${kind === 'video' ? 'video' : 'thoại'}…`, sleepMode ? 'Bấm 🌙 để vào' : 'Bấm nút xanh để nghe');
+  $('#btnSleep').textContent = sleepMode ? '🌙 Vào ngủ cùng' : '🌙 Ngủ cùng nhau';
   $('#btnVideo').textContent = kind === 'video' ? '📹 Nghe máy' : '📹 Nghe (video)'; $('#btnAudio').textContent = kind === 'audio' ? '📞 Nghe máy' : '📞 Nghe (chỉ tiếng)';
   incoming = true;
 }
 let incoming = false;
-$('#btnVideo').onclick = () => startCall('video', incoming);
+$('#btnVideo').onclick = () => { sleepMode = false; startCall('video', incoming) };
+$('#btnSleep').onclick = () => { sleepMode = true; startCall('audio', incoming) };
+/* ---- sleep mode ---- */
+const TIMERS = [['30m', 30], ['1 tiếng', 60], ['2 tiếng', 120], ['Đến 7h sáng', 'am'], ['Không tắt', 0]];
+const NOISES = [['🔇 Yên lặng', 'off'], ['🌧️ Mưa', 'rain'], ['🌊 Sóng', 'wave'], ['🤍 Ồn trắng', 'white']];
+function setSleepTimer(v) { if (v === 'am') { const d = new Date(); d.setHours(7, 0, 0, 0); if (d < new Date()) d.setDate(d.getDate() + 1); sleepEnd = d.getTime() } else sleepEnd = v ? Date.now() + v * 60e3 : 0; $$('#slTimer button').forEach(b => b.classList.toggle('on', String(b.dataset.v) === String(v))) }
+function setNoise(k) { try { if (noise) { noise.src.stop(); noise.ac.close(); noise = null } if (k !== 'off') { const ac = new (window.AudioContext || window.webkitAudioContext)(); const buf = ac.createBuffer(1, ac.sampleRate * 4, ac.sampleRate); const d = buf.getChannelData(0); let last = 0; for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; last = (last + .02 * w) / 1.02; d[i] = k === 'white' ? w * .5 : last * 3.5 } const src = ac.createBufferSource(); src.buffer = buf; src.loop = true; const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = k === 'rain' ? 1400 : k === 'wave' ? 500 : 6000; const gn = ac.createGain(); gn.gain.value = k === 'white' ? .05 : .25; if (k === 'wave') { const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .1; lg.gain.value = .18; lfo.connect(lg); lg.connect(gn.gain); lfo.start() } src.connect(f); f.connect(gn); gn.connect(ac.destination); src.start(); noise = { ac, src } } } catch (e) { } $$('#slNoise button').forEach(b => b.classList.toggle('on', b.dataset.k === k)) }
+$('#slTimer').innerHTML = TIMERS.map(([l, v]) => `<button data-v="${v}">${l}</button>`).join(''); $('#slTimer').onclick = e => { const b = e.target.closest('button'); if (b) setSleepTimer(b.dataset.v === 'am' ? 'am' : +b.dataset.v) };
+$('#slNoise').innerHTML = NOISES.map(([l, k]) => `<button data-k="${k}">${l}</button>`).join(''); $('#slNoise').onclick = e => { const b = e.target.closest('button'); if (b) setNoise(b.dataset.k) };
+$('#slEnd').onclick = () => $('#btnEnd').click();
+$('#slMic').onclick = () => { $('#btnMic').click(); $('#slMic').textContent = micOn ? '🎤 Mic đang bật' : '🔇 Mic đang tắt' };
+let ctlT = null; const showCtl = () => { $('#slCtl').style.opacity = 1; clearTimeout(ctlT); ctlT = setTimeout(() => $('#slCtl').style.opacity = 0, 8000) };
+$('#sleepOv').addEventListener('click', showCtl);
+async function showSleep() {
+  $('#sleepOv').classList.remove('hidden'); $('#slWho').textContent = `Đang ngủ cùng ${ctx.partnerName} 💤`; setSleepTimer(120); setNoise('off'); showCtl();
+  try { wakeLock = await navigator.wakeLock?.request('screen') } catch (e) { }
+  clearInterval(sleepTick); sleepTick = setInterval(() => { const d = new Date(); $('#slClock').textContent = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }); if (sleepEnd && Date.now() > sleepEnd) { toast('Hết giờ, chúc ngủ ngon 🌙'); $('#btnEnd').click() } }, 1000);
+  $('#slClock').textContent = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+}
+function hideSleep() { $('#sleepOv').classList.add('hidden'); clearInterval(sleepTick); setNoise('off'); try { wakeLock && wakeLock.release() } catch (e) { } wakeLock = null; $('#btnSleep').textContent = '🌙 Ngủ cùng nhau' }
 $('#btnAudio').onclick = () => startCall('audio', incoming);
 $('#btnEnd').onclick = () => { incoming = false; $('#btnVideo').textContent = '📹 Gọi video'; $('#btnAudio').textContent = '📞 Gọi thoại'; endCall(false) };
 $('#btnMic').onclick = () => { micOn = !micOn; stream && stream.getAudioTracks().forEach(t => t.enabled = micOn); $('#btnMic').classList.toggle('off', !micOn) };
@@ -185,7 +221,7 @@ async function loadHistory() {
   $('#sAll').textContent = hm(sum(() => true));
   const longest = rows.reduce((a, r) => r.duration_sec > (a ? a.duration_sec : 0) ? r : a, null);
   $('#sLong').textContent = longest ? `Cuộc gọi dài nhất: ${fmt(longest.duration_sec)} (${new Date(longest.started_at).toLocaleDateString('vi-VN')}) · ${rows.length} cuộc gọi` : 'Chưa có cuộc gọi nào.';
-  $('#hist').innerHTML = rows.slice(0, 30).map(r => `<div class="vrow"><span class="k">${r.kind === 'video' ? '📹' : '📞'}</span><div class="t"><b>${fmt(r.duration_sec)}</b><span class="note" style="margin:0">${new Date(r.started_at).toLocaleString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · ${r.started_by === ME ? 'bạn gọi' : esc(ctx.partnerName) + ' gọi'}</span></div></div>`).join('');
+  $('#hist').innerHTML = rows.slice(0, 30).map(r => `<div class="vrow"><span class="k">${r.kind === 'video' ? '📹' : r.kind === 'sleep' ? '🌙' : '📞'}</span><div class="t"><b>${fmt(r.duration_sec)}</b><span class="note" style="margin:0">${new Date(r.started_at).toLocaleString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · ${r.started_by === ME ? 'bạn gọi' : esc(ctx.partnerName) + ' gọi'}</span></div></div>`).join('');
 }
 sb.channel('calls-db').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls' }, () => loadHistory()).subscribe();
 setState('idle'); loadHistory();

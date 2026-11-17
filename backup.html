@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sao lưu – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.bar{height:14px;background:var(--soft);border-radius:999px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.bar.warn i{background:#f39c12}.bar.bad i{background:#e74c3c}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:14px}.kv b{text-align:right}
+#log{font-size:13px;color:var(--muted);white-space:pre-line;max-height:160px;overflow:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <h3>📦 Dung lượng đang dùng</h3>
+    <p class="note">Supabase gói miễn phí có giới hạn khoảng 1 GB cho ảnh/âm thanh. Khi gần đầy, nên tải về máy rồi xoá bớt ảnh cũ trong Album.</p>
+    <div id="use">Đang tính…</div>
+  </div>
+  <div class="card">
+    <h3>💾 Tải kỷ niệm về máy</h3>
+    <p class="note">Nên sao lưu mỗi tháng một lần. File chỉ nằm trên máy bạn.</p>
+    <button class="btn primary block" id="bJson">📝 Tải chữ (thư, note, câu trả lời, lịch…) – file .json</button>
+    <button class="btn block" id="bHtml" style="margin-top:8px">📖 Tải bản đọc được (mở bằng trình duyệt) – file .html</button>
+    <button class="btn block" id="bZip" style="margin-top:8px">🖼️ Tải tất cả ảnh & ghi âm – file .zip</button>
+    <div class="bar hidden" id="pbar"><i id="pfill" style="width:0"></i></div>
+    <div id="log"></div>
+  </div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script type="module">
+import { sb, $, esc, toast, boot, header, joinMain, mediaUrl, todayStr } from './common.js';
+header('Sao lưu');
+const ctx = await boot();
+joinMain(ctx, 'backup');
+const TABLES = ['letters', 'notes', 'voices', 'vgifts', 'calls', 'moods', 'daily_answers', 'album', 'events', 'bucket', 'savings', 'places', 'profiles'];
+const log = m => { $('#log').textContent = m + '\n' + $('#log').textContent };
+const mb = b => (b / 1048576).toFixed(1) + ' MB';
+async function listAll(prefix) { // returns files [{name,size}]
+  const out = []; const { data } = await sb.storage.from('media').list(prefix, { limit: 1000 });
+  for (const it of data || []) { if (it.id === null) out.push(...await listAll(prefix + '/' + it.name)); else out.push({ path: prefix + '/' + it.name, size: it.metadata?.size || 0 }) }
+  return out;
+}
+let FILES = [];
+async function usage() {
+  try {
+    const parts = await Promise.all([ctx.me.id, ctx.partnerId].map(u => listAll(u))); FILES = parts.flat();
+    const tot = FILES.reduce((s, f) => s + f.size, 0), mine = parts[0].reduce((s, f) => s + f.size, 0); const p = tot / (1024 * 1048576) * 100;
+    const byF = {}; FILES.forEach(f => { const k = f.path.split('/')[1] || 'khác'; byF[k] = (byF[k] || 0) + f.size });
+    const name = { album: '🗂️ Album', booth: '📸 Booth', letters: '💌 Thư', voices: '🎙️ Ghi âm', bucket: '🌟 Bucket', 'khác': 'Khác' };
+    $('#use').innerHTML = `<div class="bar ${p > 85 ? 'bad' : p > 60 ? 'warn' : ''}"><i style="width:${Math.max(1, p)}%"></i></div><p><b>${mb(tot)}</b> / 1024 MB (${p.toFixed(1)}%) · ${FILES.length} file</p><div class="kv">${Object.entries(byF).map(([k, v]) => `<span>${name[k] || k}</span><b>${mb(v)}</b>`).join('')}<span>Của bạn</span><b>${mb(mine)}</b><span>Của ${esc(ctx.partnerName)}</span><b>${mb(tot - mine)}</b></div>`;
+  } catch (e) { $('#use').textContent = 'Không tính được dung lượng.' }
+}
+async function dump() {
+  const out = { app: 'Tomortle × Molly', exported_at: new Date().toISOString(), by: ctx.myName, couple: ctx.couple, tables: {} };
+  for (const t of TABLES) { const { data } = await sb.from(t).select('*').limit(10000); out.tables[t] = data || []; log(`✓ ${t}: ${(data || []).length}`) }
+  const { data: st } = await sb.from('shared_state').select('key,data,updated_at'); out.tables.shared_state = (st || []).filter(r => r.key !== 'turn');
+  return out;
+}
+const save = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000) };
+$('#bJson').onclick = async () => { log('Đang gom dữ liệu…'); const d = await dump(); save(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }), `tomortle-${todayStr()}.json`); toast('Đã tải file sao lưu ♡') };
+$('#bHtml').onclick = async () => {
+  log('Đang tạo bản đọc…'); const d = await dump(); const T = d.tables; const who = id => id === ctx.me.id ? ctx.myName : ctx.partnerName; const dt = s => s ? new Date(s).toLocaleString('vi-VN') : '';
+  const sec = (title, rows) => rows.length ? `<h2>${title}</h2>${rows.join('')}` : '';
+  const html = `<!doctype html><meta charset="utf-8"><title>Kỷ niệm Tomortle × Molly</title><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:auto;padding:20px;color:#4a2c3a;background:#fff7fa}h1{color:#ff7aa2}h2{border-bottom:2px solid #ffd6e5;padding-bottom:4px;margin-top:32px}.c{background:#fff;border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 2px 8px rgba(0,0,0,.05)}small{color:#999}</style>
+<h1>💗 Kỷ niệm của ${esc(ctx.myName)} & ${esc(ctx.partnerName)}</h1><p>Sao lưu ngày ${new Date().toLocaleDateString('vi-VN')}${ctx.couple.started_on ? ' · bên nhau từ ' + new Date(ctx.couple.started_on).toLocaleDateString('vi-VN') : ''}</p>
+${sec('💌 Thư', T.letters.map(l => `<div class="c"><b>${esc(l.title || 'Thư')}</b> <small>${esc(who(l.from_id))} → ${esc(who(l.to_id))} · ${dt(l.created_at)}</small><p style="white-space:pre-wrap">${esc(l.body || '')}</p></div>`))}
+${sec('❓ Câu hỏi mỗi ngày', Object.entries(T.daily_answers.reduce((m, a) => ((m[a.day] = m[a.day] || []).push(a), m), {})).sort().reverse().map(([d, a]) => `<div class="c"><small>${d}</small>${a.map(x => `<p><b>${esc(who(x.user_id))}:</b> ${esc(x.answer)}</p>`).join('')}</div>`))}
+${sec('📝 Note tủ lạnh', T.notes.map(n => `<div class="c">${esc(n.emoji || '')} ${esc(n.text)} <small>${esc(who(n.from_id))} · ${dt(n.created_at)}</small></div>`))}
+${sec('🎁 Quà', T.vgifts.map(g => `<div class="c">${esc(g.gift)} ×${g.qty || 1} ${g.message ? '· “' + esc(g.message) + '”' : ''} <small>${esc(who(g.from_id))} · ${dt(g.created_at)}</small></div>`))}
+${sec('🌟 Bucket list', T.bucket.map(b => `<div class="c">${b.done ? '✅' : '⬜'} ${esc(b.title)} <small>${b.done_at ? 'xong ' + dt(b.done_at) : ''}</small></div>`))}
+${sec('📅 Lịch', T.events.map(e => `<div class="c">${esc(e.emoji)} ${esc(e.title)} <small>${e.day} ${esc(e.time || '')}</small></div>`))}
+${sec('🗺️ Địa điểm', T.places.map(p => `<div class="c">${p.kind === 'been' ? '❤️' : '⭐'} ${esc(p.name)} <small>${p.lat.toFixed(3)}, ${p.lon.toFixed(3)}</small></div>`))}
+${sec('📹 Cuộc gọi', [`<div class="c">${T.calls.length} cuộc · tổng ${Math.round(T.calls.reduce((s, c) => s + (c.duration_sec || 0), 0) / 60)} phút</div>`])}`;
+  save(new Blob([html], { type: 'text/html' }), `ky-niem-${todayStr()}.html`); toast('Đã tải bản đọc ♡');
+};
+$('#bZip').onclick = async () => {
+  if (!window.JSZip) { toast('Không tải được công cụ nén, thử lại nhé'); return }
+  if (!FILES.length) await usage(); if (!FILES.length) { toast('Chưa có file nào'); return }
+  const zip = new JSZip(); const bar = $('#pbar'); bar.classList.remove('hidden'); let i = 0, fail = 0;
+  const who = p => p.startsWith(ctx.me.id) ? ctx.myName : ctx.partnerName;
+  for (const f of FILES) {
+    try { const u = await mediaUrl(f.path); const b = await (await fetch(u)).blob(); const parts = f.path.split('/'); zip.file(`${parts[1] || 'khac'}/${who(f.path)}-${parts.slice(2).join('-')}`, b) } catch (e) { fail++ }
+    i++; $('#pfill').style.width = (i / FILES.length * 100) + '%'; if (i % 5 === 0) log(`Đã tải ${i}/${FILES.length} file…`);
+  }
+  log('Đang nén…'); const blob = await zip.generateAsync({ type: 'blob' }); save(blob, `tomortle-anh-${todayStr()}.zip`); bar.classList.add('hidden'); toast(`Xong! ${i - fail} file${fail ? ', lỗi ' + fail : ''}`);
+};
+usage();
+</script>
+</body>
+</html>

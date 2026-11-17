@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nhịp tim – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.hz{display:flex;gap:10px}.hz>div{flex:1;text-align:center;background:var(--soft);border-radius:18px;padding:14px 6px}
+.bh{font-size:70px;display:inline-block;line-height:1.1;transition:transform .08s}
+.bh.beat{transform:scale(1.25)}
+.bpm{font-size:30px;font-weight:800;color:var(--accent)}.bpm small{font-size:13px;color:var(--muted);font-weight:600}
+.who{font-weight:800}.ago{font-size:12px;color:var(--muted)}
+#wave{width:100%;height:80px;background:var(--soft);border-radius:14px;display:block}
+.tapz{height:150px;border-radius:20px;border:2px dashed var(--accent);display:grid;place-items:center;font-size:18px;font-weight:800;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;background:var(--card)}
+.tapz:active{background:var(--soft)}
+video{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="hz">
+      <div><div class="who" id="nMe"></div><span class="bh" id="hMe">💗</span><div class="bpm" id="bMe">--<small> nhịp/phút</small></div><div class="ago" id="aMe"></div></div>
+      <div><div class="who" id="nPa"></div><span class="bh" id="hPa">💜</span><div class="bpm" id="bPa">--<small> nhịp/phút</small></div><div class="ago" id="aPa"></div></div>
+    </div>
+    <div class="row" style="gap:8px;margin-top:12px;justify-content:center">
+      <button class="btn" id="feel">🤲 Cảm nhận nhịp tim người ấy</button>
+    </div>
+    <p class="note" style="text-align:center">Bấm "Cảm nhận" để nghe tiếng tim đập (và rung, nếu máy hỗ trợ) theo đúng nhịp của người ấy.</p>
+  </div>
+  <div class="card">
+    <h3>📷 Đo bằng camera</h3>
+    <p class="note">Đặt nhẹ đầu ngón trỏ che kín camera sau (và đèn flash nếu có), giữ yên 15 giây. Android bật được đèn flash nên chính xác hơn; iPhone nên đo ở chỗ sáng.</p>
+    <canvas id="wave" width="600" height="160"></canvas>
+    <button class="btn primary block" id="measure" style="margin-top:8px">Bắt đầu đo</button>
+    <p class="note" id="mStat"></p>
+    <video id="vid" playsinline muted></video>
+  </div>
+  <div class="card">
+    <h3>👆 Hoặc chạm theo nhịp tim</h3>
+    <p class="note">Đặt tay lên ngực hoặc cổ tay, mỗi lần tim đập thì chạm một cái (khoảng 10 lần).</p>
+    <div class="tapz" id="tap">Chạm theo nhịp 💓</div>
+  </div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { $, esc, toast, boot, header, joinMain, featureChannel, loadState, saveState, notifyPush, ago, vib } from './common.js';
+header('Nhịp tim');
+const ctx = await boot();
+joinMain(ctx, 'heart');
+$('#nMe').textContent = ctx.myName; $('#nPa').textContent = ctx.partnerName;
+const ch = featureChannel(ctx, 'heart');
+let mine = await loadState('heart-' + ctx.me.id, null), theirs = await loadState('heart-' + ctx.partnerId, null);
+ch.on('broadcast', { event: 'bpm' }, ({ payload }) => { theirs = payload; render(); if (!payload.live) toast(`${ctx.partnerName} vừa gửi nhịp tim ${payload.bpm} 💓`) }).subscribe();
+function render() {
+  $('#bMe').innerHTML = (mine?.bpm || '--') + '<small> nhịp/phút</small>'; $('#aMe').textContent = mine?.at ? ago(mine.at) : 'chưa đo';
+  $('#bPa').innerHTML = (theirs?.bpm || '--') + '<small> nhịp/phút</small>'; $('#aPa').textContent = theirs?.at ? ago(theirs.at) : 'chưa đo';
+}
+render();
+// beating animation
+const beatLoop = (el, get) => { let next = 0; const f = t => { const b = get(); if (b) { if (t >= next) { el.classList.add('beat'); setTimeout(() => el.classList.remove('beat'), 120); next = t + 60000 / b } } requestAnimationFrame(f) }; requestAnimationFrame(f) };
+beatLoop($('#hMe'), () => mine?.bpm); beatLoop($('#hPa'), () => theirs?.bpm);
+// feel partner heartbeat: sound + vibration
+let feelT = null, AC = null;
+function thump() { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const t = AC.currentTime; [0, .16].forEach((d, i) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(i ? 55 : 65, t + d); o.frequency.exponentialRampToValueAtTime(35, t + d + .12); g.gain.setValueAtTime(i ? .5 : .8, t + d); g.gain.exponentialRampToValueAtTime(.001, t + d + .16); o.connect(g); g.connect(AC.destination); o.start(t + d); o.stop(t + d + .2) }) } catch (e) { } vib([40, 100, 30]) }
+$('#feel').onclick = () => {
+  if (feelT) { clearInterval(feelT); feelT = null; $('#feel').textContent = '🤲 Cảm nhận nhịp tim người ấy'; return }
+  if (!theirs?.bpm) { toast(`${ctx.partnerName} chưa đo nhịp tim`); return }
+  thump(); feelT = setInterval(thump, 60000 / theirs.bpm); $('#feel').textContent = '⏹ Dừng'; setTimeout(() => { if (feelT) $('#feel').click() }, 60000);
+};
+function publish(bpm, how) {
+  mine = { bpm, at: new Date().toISOString(), how }; render(); saveState('heart-' + ctx.me.id, mine);
+  ch.send({ type: 'broadcast', event: 'bpm', payload: mine }); notifyPush(ctx, `gửi bạn nhịp tim ${bpm} nhịp/phút 💓`, 'heart.html', 'heart'); toast(`Đã gửi nhịp tim ${bpm} 💓`);
+}
+// tap mode
+let taps = [];
+$('#tap').addEventListener('pointerdown', () => {
+  const t = performance.now(); if (taps.length && t - taps[taps.length - 1] > 2500) taps = []; taps.push(t); vib(15);
+  $('#hMe').classList.add('beat'); setTimeout(() => $('#hMe').classList.remove('beat'), 120);
+  if (taps.length >= 4) { const iv = []; for (let i = 1; i < taps.length; i++) iv.push(taps[i] - taps[i - 1]); iv.sort((a, b) => a - b); const med = iv[Math.floor(iv.length / 2)]; const bpm = Math.round(60000 / med); $('#tap').textContent = `${bpm} nhịp/phút · chạm ${taps.length}/10`; if (taps.length >= 10) { if (bpm > 40 && bpm < 180) publish(bpm, 'tap'); else toast('Nhịp chưa đều, thử lại nhé'); taps = []; setTimeout(() => $('#tap').textContent = 'Chạm theo nhịp 💓', 2500) } }
+  else $('#tap').textContent = `Chạm tiếp… ${taps.length}/10`;
+});
+// camera PPG
+let running = false;
+$('#measure').onclick = async () => {
+  if (running) { running = false; return }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 30 } } }) } catch (e) { toast('Không mở được camera'); return }
+  const track = stream.getVideoTracks()[0]; try { await track.applyConstraints({ advanced: [{ torch: true }] }) } catch (e) { }
+  const v = $('#vid'); v.srcObject = stream; await v.play();
+  const cv = document.createElement('canvas'); cv.width = 40; cv.height = 30; const g = cv.getContext('2d', { willReadFrequently: true });
+  const W = $('#wave'), wg = W.getContext('2d'); const samples = []; const t0 = performance.now(); running = true; $('#measure').textContent = 'Dừng'; $('#mStat').textContent = 'Đang đo… giữ yên ngón tay';
+  await new Promise(res => { const step = () => {
+    if (!running || performance.now() - t0 > 16000) { res(); return }
+    g.drawImage(v, 0, 0, 40, 30); const d = g.getImageData(0, 0, 40, 30).data; let r = 0, gg = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1] } r /= d.length / 4; gg /= d.length / 4;
+    samples.push([performance.now(), r, gg]);
+    const left = Math.max(0, 15 - (performance.now() - t0) / 1000); $('#mStat').textContent = r < 120 || gg > r * .7 ? '⚠️ Chưa che kín camera, đặt ngón tay sát hơn' : `Đang đo… còn ${Math.ceil(left)} giây`;
+    // draw wave
+    const last = samples.slice(-150).map(s => s[1]); const mn = Math.min(...last), mx = Math.max(...last) || 1; wg.clearRect(0, 0, 600, 160); wg.strokeStyle = '#ff7aa2'; wg.lineWidth = 3; wg.beginPath(); last.forEach((y, i) => { const X = i * 4, Y = 150 - (y - mn) / (mx - mn + .01) * 140; i ? wg.lineTo(X, Y) : wg.moveTo(X, Y) }); wg.stroke();
+    requestAnimationFrame(step) }; requestAnimationFrame(step) });
+  try { await track.applyConstraints({ advanced: [{ torch: false }] }) } catch (e) { } stream.getTracks().forEach(t => t.stop()); running = false; $('#measure').textContent = 'Đo lại';
+  const s = samples.filter(x => x[0] - t0 > 2500); if (s.length < 120) { $('#mStat').textContent = 'Đo chưa đủ lâu, thử lại nhé'; return }
+  // detrend (moving average) then count peaks
+  const ys = s.map(x => x[1]), n = ys.length, win = 15; const sm = ys.map((_, i) => { let a = 0, c = 0; for (let k = Math.max(0, i - 2); k <= Math.min(n - 1, i + 2); k++) { a += ys[k]; c++ } return a / c });
+  const dt = sm.map((y, i) => { let a = 0, c = 0; for (let k = Math.max(0, i - win); k <= Math.min(n - 1, i + win); k++) { a += sm[k]; c++ } return y - a / c });
+  const peaks = []; for (let i = 2; i < n - 2; i++) if (dt[i] > 0 && dt[i] >= dt[i - 1] && dt[i] >= dt[i + 1] && dt[i] >= dt[i - 2] && dt[i] >= dt[i + 2]) { if (!peaks.length || s[i][0] - s[peaks[peaks.length - 1]][0] > 330) peaks.push(i) }
+  const iv = []; for (let i = 1; i < peaks.length; i++) iv.push(s[peaks[i]][0] - s[peaks[i - 1]][0]); iv.sort((a, b) => a - b);
+  if (iv.length < 5) { $('#mStat').textContent = 'Không bắt được nhịp, thử ở chỗ sáng hơn hoặc dùng cách chạm'; return }
+  const med = iv[Math.floor(iv.length / 2)], bpm = Math.round(60000 / med);
+  if (bpm < 45 || bpm > 170) { $('#mStat').textContent = `Kết quả ${bpm} có vẻ chưa đúng, thử lại nhé`; return }
+  $('#mStat').textContent = `Nhịp tim của bạn: ${bpm} nhịp/phút 💓 (chỉ để vui, không thay thiết bị y tế)`; publish(bpm, 'cam');
+};
+</script>
+</body>
+</html>
