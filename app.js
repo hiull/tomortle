@@ -1,4 +1,4 @@
-import { sb, giftPopup, markGiftsSeen, mediaUrl } from './common.js';
+import { sb, giftPopup, markGiftsSeen, mediaUrl, initBell, refreshBell } from './common.js';
 
 const VERSION = 'Đợt 3 · 2026-11-17';
 
@@ -171,7 +171,7 @@ async function enterHome() {
   if (!homeBuilt) buildHome();
   renderProfiles(); renderDays(); renderCountdown(); renderLamp(couple.lamp_color, null);
   loadMoods(); loadWeather(); loadInbox(true);
-  show('scrHome'); maybeInstallBox(); connectRealtime();
+  show('scrHome'); maybeInstallBox(); connectRealtime(); initBell({ me, partnerId, partnerName: partnerProfile.display_name || 'Người ấy' });
   $('#sVersion').textContent = VERSION;
 }
 
@@ -292,6 +292,8 @@ function connectRealtime() {
       const st = channel.presenceState(); const was = partnerOnline; partnerOnline = !!st[partnerId];
       renderProfiles(); if (partnerOnline && !was) toast((partnerProfile.display_name || 'Người ấy') + ' vừa online ♡');
     })
+    .on('broadcast', { event: 'hey' }, ({ payload }) => { vib && vib([60, 40, 60]); toast((partnerProfile.display_name || 'Người ấy') + ' ' + payload.text, 'Xem', () => location.href = payload.url); refreshBell() })
+    .on('broadcast', { event: 'letter' }, () => refreshBell()).on('broadcast', { event: 'vgift' }, () => refreshBell()).on('broadcast', { event: 'note' }, () => refreshBell()).on('broadcast', { event: 'voice' }, () => refreshBell())
     .on('broadcast', { event: 'touch' }, ({ payload }) => onTouch(payload))
     .on('broadcast', { event: 'hug' }, ({ payload }) => onHug(payload))
     .on('broadcast', { event: 'miss' }, () => onMiss())

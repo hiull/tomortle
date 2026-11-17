@@ -86,7 +86,8 @@ export function joinMain(ctx, page, onPresence) {
     .on('broadcast', { event: 'voice' }, () => { if (page !== 'voice') { vib([80, 60, 80]); toast(`${ctx.partnerName} vừa gửi lời chào 🎙️`, 'Nghe', () => location.href = 'voice.html') } });
   ch.on('broadcast', { event: 'hey' }, ({ payload }) => { if (payload.page === page) return; vib([60, 40, 60]); toast(`${ctx.partnerName} ${payload.text}`, 'Xem', () => location.href = payload.url) });
   setTimeout(() => ch.subscribe(s => { if (s === 'SUBSCRIBED') ch.track({ page, at: Date.now() }) }), 0);
-  ctx.main = ch; renderChip(ctx);
+  ctx.main = ch; renderChip(ctx); initBell(ctx);
+  ['hey','letter','note','voice','vgift'].forEach(ev => ch.on('broadcast', { event: ev }, () => refreshBell()));
   return ch;
 }
 export function invite(ctx, page, title) {
@@ -192,3 +193,86 @@ export function markGiftsSeen() { return sb.rpc('vgifts_seen_all').then(() => { 
 
 export function hey(ctx, page, text, url) { ctx.main && ctx.main.send({ type: 'broadcast', event: 'hey', payload: { page, text, url: url || (page + '.html') } }) }
 export const todayStr = (d = new Date()) => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10) };
+
+/* ---------- 🔔 notification bell (all pages) ---------- */
+const BELL = { ctx: null, items: [], t: null };
+function bellCss() {
+  if (document.getElementById('bellCss')) return;
+  const s = document.createElement('style'); s.id = 'bellCss';
+  s.textContent = `.bellbtn{position:relative;border:1px solid var(--line);background:var(--card);border-radius:50%;width:40px;height:40px;font-size:19px;cursor:pointer;display:grid;place-items:center;padding:0;flex:0 0 auto;margin-left:6px}
+.bellbtn b{position:absolute;top:-4px;right:-4px;background:#ff3b6b;color:#fff;border-radius:999px;font-size:11px;min-width:18px;height:18px;line-height:18px;padding:0 4px;font-weight:800;border:2px solid var(--card)}
+.bellbtn{}header .pchip{max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bellbtn.ring{animation:bellring 1.2s ease-in-out 3}
+@keyframes bellring{0%,100%{transform:rotate(0)}15%{transform:rotate(16deg)}30%{transform:rotate(-14deg)}45%{transform:rotate(10deg)}60%{transform:rotate(-6deg)}75%{transform:rotate(3deg)}}
+.bellist a{display:flex;gap:10px;align-items:center;padding:10px;border-radius:14px;text-decoration:none;color:var(--ink);margin:4px 0;background:var(--soft)}
+.bellist a.old{background:transparent;opacity:.7}
+.bellist a i{font-style:normal;font-size:24px}.bellist a span{flex:1;font-size:14px}.bellist a small{display:block;color:var(--muted);font-size:12px}
+.bellist a em{font-style:normal;font-size:10px;font-weight:800;background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:1px 6px}`;
+  document.head.appendChild(s);
+}
+export function initBell(ctx) {
+  if (BELL.ctx) return; BELL.ctx = ctx; bellCss();
+  const h = document.querySelector('header'); if (!h) return;
+  const b = document.createElement('button'); b.className = 'bellbtn'; b.id = 'bellBtn'; b.title = 'Thông báo'; b.innerHTML = '🔔<b class="hidden" id="bellN"></b>'; h.appendChild(b);
+  const m = document.createElement('div'); m.className = 'modal'; m.id = 'bellModal';
+  m.innerHTML = `<div class="sheet"><h3>🔔 Thông báo<small style="margin-left:auto"><button class="btn small" id="bellRead">Đã xem hết</button></small></h3><div class="bellist" id="bellList"></div><p class="note" id="bellEmpty">Chưa có gì mới. Khi ${esc(ctx.partnerName)} để lại quà, thư, lời nhắn… sẽ hiện ở đây.</p><button class="btn block" style="margin-top:8px" onclick="this.closest('.modal').classList.remove('on')">Đóng</button></div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('on') });
+  b.onclick = () => { renderBell(); m.classList.add('on'); setSeen(Date.now()); setTimeout(refreshBell, 400) };
+  m.querySelector('#bellRead').onclick = () => { setSeen(Date.now()); refreshBell() };
+  refreshBell(); setInterval(refreshBell, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshBell() });
+}
+const seenKey = () => 'bellSeen-' + BELL.ctx.me.id;
+function getSeen() { return Math.max(store.get(seenKey(), 0), BELL.remoteSeen || 0) || (Date.now() - 3 * 864e5) }
+function setSeen(t) { store.set(seenKey(), t); BELL.remoteSeen = t; saveState('seen-' + BELL.ctx.me.id, { at: t }) }
+export async function refreshBell() {
+  const ctx = BELL.ctx; if (!ctx) return; clearTimeout(BELL.t);
+  BELL.t = setTimeout(async () => {
+    try {
+      const me = ctx.me.id, pa = ctx.partnerId, since = new Date(Date.now() - 14 * 864e5).toISOString();
+      const td = todayStr();
+      const [rs, L, G, V, N, D, A, E, B, S, P] = await Promise.all([
+        BELL.remoteSeen == null ? loadState('seen-' + me, {}) : Promise.resolve({ at: BELL.remoteSeen }),
+        sb.from('letters').select('id,title,kind,unlock_at,created_at').eq('to_id', me).is('opened_at', null).order('created_at', { ascending: false }).limit(20),
+        sb.from('vgifts').select('id,gift,qty,message,created_at').eq('to_id', me).is('seen_at', null).order('created_at', { ascending: false }).limit(30),
+        sb.from('voices').select('id,kind,note,created_at').eq('to_id', me).is('listened_at', null).order('created_at', { ascending: false }).limit(10),
+        sb.from('notes').select('id,text,emoji,created_at').eq('from_id', pa).is('seen_at', null).order('created_at', { ascending: false }).limit(20),
+        sb.rpc('daily_status', { d: td }),
+        sb.from('album').select('id,source,caption,created_at').eq('by', pa).gte('created_at', since).order('created_at', { ascending: false }).limit(20),
+        sb.from('events').select('id,title,emoji,day,created_at').eq('by', pa).gte('created_at', since).limit(20),
+        sb.from('bucket').select('id,title,done,done_at,created_at').eq('by', pa).gte('created_at', since).limit(20),
+        sb.from('savings').select('id,amount,note,created_at').eq('by', pa).gte('created_at', since).limit(20),
+        sb.from('places').select('id,name,kind,created_at').eq('by', pa).gte('created_at', since).limit(20)
+      ]);
+      if (BELL.remoteSeen == null) BELL.remoteSeen = (rs && rs.at) || 0;
+      const seen = getSeen(), now = Date.now(), it = [], P_ = ctx.partnerName;
+      const push = (o, sticky) => { o.ts = new Date(o.at).getTime(); o.isNew = sticky || o.ts > seen; it.push(o) };
+      (L.data || []).forEach(l => { const locked = l.unlock_at && new Date(l.unlock_at).getTime() > now; push({ i: locked ? '🔒' : '💌', t: locked ? `${P_} gửi một bức thư hẹn giờ` : `${P_} gửi bạn một bức thư${l.title ? ': “' + l.title + '”' : ''}`, s: locked ? 'Mở được vào ' + new Date(l.unlock_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Chưa mở', at: l.created_at, u: 'letters.html' }, !locked) });
+      if ((G.data || []).length) { const n = G.data.reduce((s, g) => s + (g.qty || 1), 0); push({ i: '🎁', t: `${P_} tặng bạn ${n} món quà`, s: G.data.slice(0, 6).map(g => g.gift).join(' ') + (G.data.find(g => g.message) ? ' · “' + G.data.find(g => g.message).message + '”' : ''), at: G.data[0].created_at, u: 'gifts.html' }, true) }
+      (V.data || []).forEach(v => push({ i: '🎙️', t: `${P_} gửi ${v.kind === 'morning' ? 'lời chào buổi sáng' : v.kind === 'night' ? 'lời chúc ngủ ngon' : 'một lời nhắn thoại'}`, s: v.note || 'Chưa nghe', at: v.created_at, u: 'voice.html' }, true));
+      (N.data || []).forEach(n => push({ i: n.emoji || '📝', t: `${P_} dán note lên tủ lạnh`, s: n.text, at: n.created_at, u: 'fridge.html' }, true));
+      if (D.data && D.data.partner && !D.data.me) push({ i: '❓', t: `${P_} đã trả lời câu hỏi hôm nay`, s: 'Trả lời để xem người ấy viết gì', at: new Date().toISOString(), u: 'daily.html' }, true);
+      (A.data || []).forEach(a => push({ i: a.source === 'booth' ? '📸' : '🗂️', t: `${P_} thêm ảnh vào Album`, s: a.caption || '', at: a.created_at, u: 'album.html' }));
+      (E.data || []).forEach(e => push({ i: e.emoji || '📅', t: `${P_} thêm lịch: ${e.title}`, s: new Date(e.day + 'T00:00:00').toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' }), at: e.created_at, u: 'calendar.html' }));
+      (B.data || []).forEach(b => push({ i: b.done ? '🎉' : '🌟', t: `${P_} ${b.done ? 'đã làm xong' : 'thêm vào bucket list'}: ${b.title}`, s: '', at: b.done_at || b.created_at, u: 'bucket.html' }));
+      (S.data || []).filter(s => s.amount > 0).forEach(s => push({ i: '🐷', t: `${P_} bỏ heo ${Number(s.amount).toLocaleString('vi-VN')}đ`, s: s.note || '', at: s.created_at, u: 'fund.html' }));
+      (P.data || []).forEach(p => push({ i: p.kind === 'been' ? '❤️' : '⭐', t: `${P_} ghim ${p.name} lên bản đồ`, s: '', at: p.created_at, u: 'map.html' }));
+      it.sort((a, b) => (b.isNew - a.isNew) || (b.ts - a.ts));
+      const prevN = BELL.items.filter(x => x.isNew).length;
+      BELL.items = it; const n = it.filter(x => x.isNew).length;
+      const badge = document.getElementById('bellN'); if (badge) { badge.textContent = n > 99 ? '99+' : n; badge.classList.toggle('hidden', !n) }
+      if (n > prevN && BELL.loaded) { const btn = document.getElementById('bellBtn'); btn && (btn.classList.remove('ring'), void btn.offsetWidth, btn.classList.add('ring')) }
+      BELL.loaded = true;
+      try { n ? navigator.setAppBadge && navigator.setAppBadge(n) : navigator.clearAppBadge && navigator.clearAppBadge() } catch (e) { }
+      document.title = document.title.replace(/^\(\d+\+?\) /, '');
+      if (n) document.title = `(${n}) ` + document.title;
+    } catch (e) { console.warn('bell', e) }
+  }, 300);
+}
+function renderBell() {
+  const L = document.getElementById('bellList'); if (!L) return;
+  const it = BELL.items.slice(0, 40);
+  document.getElementById('bellEmpty').classList.toggle('hidden', it.length > 0);
+  L.innerHTML = it.map(x => `<a href="${x.u}" class="${x.isNew ? '' : 'old'}"><i>${x.i}</i><span>${esc(x.t)}${x.s ? `<small>${esc(String(x.s).slice(0, 90))}</small>` : ''}<small>${ago(x.at)}</small></span>${x.isNew ? '<em>MỚI</em>' : ''}</a>`).join('');
+}
