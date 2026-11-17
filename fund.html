@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quỹ gặp nhau – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.jar{position:relative;width:150px;height:180px;margin:4px auto 10px;border:4px solid var(--accent);border-top-width:10px;border-radius:24px 24px 34px 34px;overflow:hidden;background:var(--card)}
+.jar i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,#ffb3c9,#ff7aa2);transition:height .6s}
+.jar b{position:absolute;inset:0;display:grid;place-items:center;font-size:30px;font-weight:800;color:var(--ink);text-shadow:0 1px 0 #fff}
+.big{text-align:center;font-size:24px;font-weight:800}.sub{text-align:center;color:var(--muted);font-size:14px}
+.who{display:flex;gap:8px;margin-top:10px}.who div{flex:1;background:var(--soft);border-radius:14px;padding:8px;text-align:center}.who b{display:block;color:var(--accent)}
+.tx{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}.tx:last-child{border:0}.tx .a{font-weight:800}.tx .a.neg{color:#c0392b}.tx .t{flex:1}.tx small{display:block;color:var(--muted);font-size:12px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.quick button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 10px;font-weight:700;cursor:pointer;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <h3 id="title">🐷 Quỹ gặp nhau</h3>
+    <div class="jar"><i id="fill" style="height:0"></i><b id="pct">0%</b></div>
+    <div class="big" id="total">0đ</div>
+    <div class="sub" id="goalTxt"></div>
+    <div class="who"><div><b id="wMe">0đ</b><span id="nMe"></span></div><div><b id="wPa">0đ</b><span id="nPa"></span></div></div>
+    <button class="btn small" id="setGoal" style="margin-top:10px">🎯 Đặt mục tiêu</button>
+  </div>
+  <div class="card">
+    <h3>💰 Bỏ heo</h3>
+    <div class="quick" id="quick"></div>
+    <div class="row"><input class="input" id="amt" inputmode="numeric" placeholder="Số tiền (đ)" style="margin:0"><button class="btn primary" id="add">Bỏ vào</button></div>
+    <input class="input" id="note" placeholder="Ghi chú (VD: nhịn trà sữa tuần này 😤)" maxlength="80" style="margin-top:8px">
+    <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="neg"> Đây là khoản rút ra (mua vé, đặt phòng…)</label>
+  </div>
+  <div class="card"><h3>📒 Lịch sử</h3><div id="list"></div><p class="note" id="empty">Chưa có khoản nào. Bỏ heo đồng đầu tiên nào!</p></div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { sb, $, esc, toast, boot, header, joinMain, hey, hearts, loadState, saveState } from './common.js';
+header('Quỹ gặp nhau');
+const ctx = await boot();
+joinMain(ctx, 'fund');
+const fmt = n => (Math.round(n) || 0).toLocaleString('vi-VN') + 'đ';
+let G = await loadState('fund', { goal: 3000000, title: 'Vé gặp nhau' }), rows = [];
+$('#nMe').textContent = ctx.myName; $('#nPa').textContent = ctx.partnerName;
+$('#quick').innerHTML = [20000, 50000, 100000, 200000, 500000].map(v => `<button data-v="${v}">+${(v / 1000)}k</button>`).join('');
+$('#quick').onclick = e => { const b = e.target.closest('button'); if (b) $('#amt').value = (+b.dataset.v).toLocaleString('vi-VN') };
+$('#amt').oninput = () => { const n = +$('#amt').value.replace(/\D/g, ''); $('#amt').value = n ? n.toLocaleString('vi-VN') : '' };
+async function load() { const { data } = await sb.from('savings').select('*').order('created_at', { ascending: false }); rows = data || []; render() }
+function render() {
+  const tot = rows.reduce((s, r) => s + Number(r.amount), 0), me = rows.filter(r => r.by === ctx.me.id && r.amount > 0).reduce((s, r) => s + Number(r.amount), 0), pa = rows.filter(r => r.by !== ctx.me.id && r.amount > 0).reduce((s, r) => s + Number(r.amount), 0);
+  const p = G.goal ? Math.max(0, Math.min(100, tot / G.goal * 100)) : 0;
+  $('#title').textContent = '🐷 Quỹ: ' + (G.title || 'gặp nhau'); $('#fill').style.height = p + '%'; $('#pct').textContent = Math.floor(p) + '%';
+  $('#total').textContent = fmt(tot); $('#goalTxt').textContent = G.goal ? (tot >= G.goal ? `Đủ mục tiêu ${fmt(G.goal)} rồi! Đi gặp nhau thôi ✈️` : `Mục tiêu ${fmt(G.goal)} · còn thiếu ${fmt(G.goal - tot)}`) : 'Chưa đặt mục tiêu';
+  $('#wMe').textContent = fmt(me); $('#wPa').textContent = fmt(pa);
+  $('#empty').classList.toggle('hidden', rows.length > 0);
+  $('#list').innerHTML = rows.map(r => `<div class="tx"><span style="font-size:20px">${r.amount < 0 ? '🎫' : '🪙'}</span><div class="t">${esc(r.note || (r.amount < 0 ? 'Rút ra' : 'Bỏ heo'))}<small>${esc(r.by === ctx.me.id ? ctx.myName : ctx.partnerName)} · ${new Date(r.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</small></div><span class="a ${r.amount < 0 ? 'neg' : ''}">${r.amount < 0 ? '' : '+'}${fmt(r.amount)}</span>${r.by === ctx.me.id ? `<button class="btn small" data-del="${r.id}">✕</button>` : ''}</div>`).join('');
+}
+$('#list').onclick = async e => { const b = e.target.closest('[data-del]'); if (!b || !confirm('Xoá khoản này?')) return; await sb.from('savings').delete().eq('id', b.dataset.del); load() };
+$('#add').onclick = async () => {
+  let n = +$('#amt').value.replace(/\D/g, ''); if (!n) { toast('Nhập số tiền đã nhé'); return } if ($('#neg').checked) n = -n;
+  const { error } = await sb.from('savings').insert({ amount: n, note: $('#note').value.trim() || null }); if (error) { toast('Lưu không được'); return }
+  $('#amt').value = ''; $('#note').value = ''; $('#neg').checked = false; if (n > 0) { hearts(6); hey(ctx, 'fund', `vừa bỏ heo ${fmt(n)} vào quỹ gặp nhau 🐷`, 'fund.html') } load();
+};
+$('#setGoal').onclick = () => { const t = prompt('Tên mục tiêu:', G.title || 'Vé gặp nhau'); if (t == null) return; const g = prompt('Số tiền mục tiêu (đ):', G.goal || 3000000); const n = +String(g || '').replace(/\D/g, ''); G = { title: t.trim() || 'gặp nhau', goal: n || 0 }; saveState('fund', G); render() };
+load();
+</script>
+</body>
+</html>

@@ -84,6 +84,7 @@ export function joinMain(ctx, page, onPresence) {
     .on('broadcast', { event: 'letter' }, () => { if (page !== 'letters') { vib([80, 60, 80]); toast(`${ctx.partnerName} vừa gửi thư cho bạn 💌`, 'Xem', () => location.href = 'letters.html') } })
     .on('broadcast', { event: 'note' }, () => { if (page !== 'fridge') toast(`${ctx.partnerName} vừa dán note lên tủ lạnh 📝`, 'Xem', () => location.href = 'fridge.html') })
     .on('broadcast', { event: 'voice' }, () => { if (page !== 'voice') { vib([80, 60, 80]); toast(`${ctx.partnerName} vừa gửi lời chào 🎙️`, 'Nghe', () => location.href = 'voice.html') } });
+  ch.on('broadcast', { event: 'hey' }, ({ payload }) => { if (payload.page === page) return; vib([60, 40, 60]); toast(`${ctx.partnerName} ${payload.text}`, 'Xem', () => location.href = payload.url) });
   setTimeout(() => ch.subscribe(s => { if (s === 'SUBSCRIBED') ch.track({ page, at: Date.now() }) }), 0);
   ctx.main = ch; renderChip(ctx);
   return ch;
@@ -188,3 +189,6 @@ export function giftPopup(fromName, gifts, message, onClose) {
   el.onclick = () => { el.remove(); onClose && onClose() }; document.body.appendChild(el); hearts(14); vib([100, 60, 100, 60, 200]);
 }
 export function markGiftsSeen() { return sb.rpc('vgifts_seen_all').then(() => { }, () => { }) }
+
+export function hey(ctx, page, text, url) { ctx.main && ctx.main.send({ type: 'broadcast', event: 'hey', payload: { page, text, url: url || (page + '.html') } }) }
+export const todayStr = (d = new Date()) => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10) };

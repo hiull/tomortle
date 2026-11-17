@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lịch chung – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .dh{text-align:center;font-size:12px;font-weight:800;color:var(--muted)}
+.cal button{aspect-ratio:1;border:1px solid var(--line);background:var(--card);border-radius:12px;cursor:pointer;font-weight:700;color:var(--ink);position:relative;padding:2px;font-size:14px;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+.cal button.out{opacity:.35}
+.cal button.today{border:2px solid var(--accent)}
+.cal button.sel{background:var(--accent);color:var(--accent-ink)}
+.cal button i{font-style:normal;font-size:11px;line-height:1;margin-top:2px;max-width:100%;overflow:hidden;white-space:nowrap}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mhead b{font-family:var(--head),serif;font-size:21px}
+.ev{display:flex;gap:10px;align-items:center;background:var(--soft);border-radius:14px;padding:10px;margin:6px 0}
+.ev .e{font-size:24px}.ev .t{flex:1}.ev .t small{display:block;color:var(--muted);font-size:12px}
+.emo{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.emo button{border:1px solid var(--line);background:var(--card);border-radius:10px;font-size:20px;padding:4px 7px;cursor:pointer}.emo button.on{background:var(--accent)}
+.upc .ev{background:var(--card);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="mhead"><button class="btn small" id="pm">‹</button><b id="mt"></b><button class="btn small" id="nm">›</button></div>
+    <div class="cal" id="cal"></div>
+  </div>
+  <div class="card">
+    <h3 id="dt"></h3>
+    <div id="dayList"></div>
+    <details id="addBox"><summary class="btn small" style="margin-top:6px">＋ Thêm lịch vào ngày này</summary>
+      <input class="input" id="eTitle" placeholder="Việc gì? (VD: Gọi video xem phim)" maxlength="80" style="margin-top:8px">
+      <div class="emo" id="eEmo"></div>
+      <div class="row"><input class="input" id="eTime" type="time" style="margin:0;flex:1"><button class="btn primary" id="eAdd" style="flex:1">Lưu</button></div>
+      <input class="input" id="eNote" placeholder="Ghi chú (không bắt buộc)" maxlength="200" style="margin-top:8px">
+    </details>
+  </div>
+  <div class="card upc">
+    <h3>⏳ Sắp tới</h3>
+    <div id="upc"></div>
+  </div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { sb, $, $$, esc, toast, boot, header, joinMain, hey, todayStr } from './common.js';
+header('Lịch chung');
+const ctx = await boot();
+joinMain(ctx, 'calendar');
+const EMOS = ['📌', '📹', '🎬', '💌', '✈️', '🎂', '💗', '📚', '🍜', '🎮', '🏥', '🎉'];
+let EV = [], ym = new Date(), sel = todayStr(), emo = '📌';
+ym.setDate(1);
+$('#eEmo').innerHTML = EMOS.map(e => `<button data-e="${e}" class="${e === emo ? 'on' : ''}">${e}</button>`).join('');
+$('#eEmo').onclick = e => { const b = e.target.closest('button'); if (!b) return; emo = b.dataset.e; $$('#eEmo button').forEach(x => x.classList.toggle('on', x === b)) };
+function autoEvents(y, m) { // auto: meet day, monthly anniversaries
+  const out = []; const c = ctx.couple;
+  if (c.next_meet) { const d = String(c.next_meet).slice(0, 10); out.push({ day: d, emoji: '✈️', title: 'Ngày gặp nhau!', auto: 1, note: c.next_meet_note || '' }) }
+  if (c.started_on) { const s = new Date(c.started_on + 'T00:00:00'); for (let k = -1; k <= 1; k++) { const d = new Date(y, m + k, s.getDate()); const months = (d.getFullYear() - s.getFullYear()) * 12 + d.getMonth() - s.getMonth(); if (months > 0 && d.getDate() === s.getDate()) out.push({ day: todayStr(d), emoji: '💞', title: months % 12 === 0 ? `Kỷ niệm ${months / 12} năm` : `Tròn ${months} tháng yêu nhau`, auto: 1 }) }
+    const d100 = n => { const d = new Date(s); d.setDate(d.getDate() + n - 1); return todayStr(d) }; for (let n = 100; n <= 3650; n += 100) out.push({ day: d100(n), emoji: '💯', title: `${n} ngày bên nhau`, auto: 1 }) }
+  return out;
+}
+const allFor = () => [...EV, ...autoEvents(ym.getFullYear(), ym.getMonth())];
+async function load() { const { data } = await sb.from('events').select('*').order('day'); EV = data || []; render() }
+function render() {
+  const y = ym.getFullYear(), m = ym.getMonth(); $('#mt').textContent = `Tháng ${m + 1}, ${y}`;
+  const first = new Date(y, m, 1), off = (first.getDay() + 6) % 7; const start = new Date(y, m, 1 - off); const all = allFor(); const t = todayStr();
+  let h = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(x => `<div class="dh">${x}</div>`).join('');
+  for (let i = 0; i < 42; i++) { const d = new Date(start); d.setDate(start.getDate() + i); const k = todayStr(d); const es = all.filter(e => e.day === k);
+    h += `<button data-d="${k}" class="${d.getMonth() !== m ? 'out' : ''} ${k === t ? 'today' : ''} ${k === sel ? 'sel' : ''}">${d.getDate()}<i>${es.slice(0, 3).map(e => e.emoji).join('')}</i></button>` }
+  $('#cal').innerHTML = h;
+  const sd = new Date(sel + 'T00:00:00'); $('#dt').textContent = sd.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const es = all.filter(e => e.day === sel).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  $('#dayList').innerHTML = es.length ? es.map(evHtml).join('') : '<p class="note">Ngày này chưa có gì.</p>';
+  const up = [...EV, ...autoEvents(new Date().getFullYear(), new Date().getMonth())].filter(e => e.day >= t).sort((a, b) => a.day.localeCompare(b.day) || (a.time || '').localeCompare(b.time || '')).filter((e, i, a) => a.findIndex(x => x.day === e.day && x.title === e.title) === i).filter((e, i, a) => e.emoji !== '💯' || a.findIndex(x => x.emoji === '💯') === i).slice(0, 6);
+  $('#upc').innerHTML = up.length ? up.map(e => { const n = Math.round((new Date(e.day + 'T00:00:00') - new Date(t + 'T00:00:00')) / 864e5); return evHtml(e, n === 0 ? 'Hôm nay' : n === 1 ? 'Ngày mai' : `Còn ${n} ngày`) }).join('') : '<p class="note">Chưa có lịch nào sắp tới.</p>';
+}
+function evHtml(e, lead) {
+  const who = e.auto ? 'Tự động' : (e.by === ctx.me.id ? ctx.myName : ctx.partnerName);
+  return `<div class="ev"><span class="e">${e.emoji || '📌'}</span><div class="t"><b>${esc(e.title)}</b><small>${lead ? lead + ' · ' : ''}${new Date(e.day + 'T00:00:00').toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}${e.time ? ' · ' + esc(e.time) : ''} · ${esc(who)}${e.note ? ' · ' + esc(e.note) : ''}</small></div>${e.auto ? '' : `<button class="btn small" data-del="${e.id}">✕</button>`}</div>`;
+}
+document.addEventListener('click', async e => { const b = e.target.closest('[data-del]'); if (!b) return; if (!confirm('Xoá lịch này?')) return; await sb.from('events').delete().eq('id', b.dataset.del); load() });
+$('#cal').onclick = e => { const b = e.target.closest('button[data-d]'); if (!b) return; sel = b.dataset.d; const d = new Date(sel + 'T00:00:00'); if (d.getMonth() !== ym.getMonth()) { ym = new Date(d.getFullYear(), d.getMonth(), 1) } render() };
+$('#pm').onclick = () => { ym.setMonth(ym.getMonth() - 1); render() }; $('#nm').onclick = () => { ym.setMonth(ym.getMonth() + 1); render() };
+$('#eAdd').onclick = async () => {
+  const title = $('#eTitle').value.trim(); if (!title) { toast('Nhập tên lịch đã nhé'); return }
+  const { error } = await sb.from('events').insert({ title, emoji: emo, day: sel, time: $('#eTime').value || null, note: $('#eNote').value.trim() || null });
+  if (error) { toast('Lưu không được'); return }
+  $('#eTitle').value = ''; $('#eNote').value = ''; $('#eTime').value = ''; $('#addBox').open = false; toast('Đã thêm vào lịch chung ♡');
+  hey(ctx, 'calendar', `vừa thêm lịch: ${emo} ${title} (${new Date(sel + 'T00:00:00').toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})`, 'calendar.html'); load();
+};
+load();
+</script>
+</body>
+</html>

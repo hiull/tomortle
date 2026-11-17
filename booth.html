@@ -1298,7 +1298,7 @@ $('#btnShare').onclick=async()=>{const b=await exportBlob();addAlbum(b,'me');sha
 $('#btnSend').onclick=async()=>{if(!connected()){toast('Người ấy chưa kết nối');return}const b=await exportBlob();if(await sendBlob(b))addAlbum(b,'me')};
 /* album */
 const album=[];
-function addAlbum(blob,from){const it={blob,url:URL.createObjectURL(blob),from,t:new Date(),partner:partnerName};album.unshift(it);$('#albumCount').textContent=album.length;renderAlbum();
+let lastCloud=0;function addAlbum(blob,from){if(from==='me'&&window.TMX&&window.TMX.toAlbum&&Date.now()-lastCloud>8000){lastCloud=Date.now();window.TMX.toAlbum(blob).then(ok=>ok&&toast('Đã lưu vào Album chung ♡','Xem',()=>location.href='album.html'))}const it={blob,url:URL.createObjectURL(blob),from,t:new Date(),partner:partnerName};album.unshift(it);$('#albumCount').textContent=album.length;renderAlbum();
   idb('album','readwrite',s=>s.add({blob,from,t:+it.t,partner:partnerName})).then(id=>{if(id!=null)it.id=id});return it}
 (async()=>{const rows=await idb('album','readonly',s=>s.getAll());if(!rows||!rows.length)return;rows.sort((a,b)=>b.t-a.t).forEach(r=>album.push({id:r.id,blob:r.blob,url:URL.createObjectURL(r.blob),from:r.from,t:new Date(r.t),partner:r.partner||''}));$('#albumCount').textContent=album.length;renderAlbum()})();
 function renderAlbum(){const g=$('#albumGrid');g.innerHTML='';$('#albumEmpty').classList.toggle('hidden',album.length>0);
@@ -1337,7 +1337,7 @@ syncInputs();syncSeg();
 </script>
 <script type="module">
 /* Couple mode: when signed in to Tomortle × Molly, use the shared private room (no room codes) */
-import { sb, joinMain, uploadMedia, featureChannel } from './common.js';
+import { sb, joinMain, uploadMedia, featureChannel, compressImage } from './common.js';
 try {
   const { data: { session } } = await sb.auth.getSession(); if (!session) throw 0;
   const me = session.user; const { data: couple } = await sb.from('couple').select('*').maybeSingle(); if (!couple || !couple.user_b) throw 0;
@@ -1353,6 +1353,7 @@ try {
       send: o => ch.send({ type: 'broadcast', event: 'm', payload: o }),
       upload: async (blob, folder) => (await uploadMedia(ctx, blob, folder)).path,
       download: async path => { const { data, error } = await sb.storage.from('media').download(path); if (error) throw error; return data },
+      toAlbum: async blob => { try { const b2 = await compressImage(blob, 2400, .92); const { path } = await uploadMedia(ctx, b2, 'album'); const { error } = await sb.from('album').insert({ path, source: 'booth' }); if (error) throw error; ctx.main && ctx.main.send({ type: 'broadcast', event: 'hey', payload: { page: 'booth', text: 'vừa thêm ảnh photobooth vào Album chung 📸', url: 'album.html' } }); return true } catch (e) { console.warn(e); return false } },
       invite: () => { const url = location.origin + location.pathname + '?go=1'; ctx.main && ctx.main.send({ type: 'broadcast', event: 'booth', payload: { url } }); }
     };
   } };

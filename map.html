@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bản đồ hai đứa – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+#map{height:58vh;min-height:320px;border-radius:var(--r);border:1px solid var(--line);z-index:1}
+.dist{display:flex;gap:8px;text-align:center;margin-bottom:10px}.dist div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px}.dist b{display:block;font-size:19px;color:var(--accent)}.dist span{font-size:12px;color:var(--muted)}
+.pin{font-size:26px;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,.25)}
+.pin.av{background:#fff;border-radius:50%;width:38px!important;height:38px!important;display:grid!important;place-items:center;border:3px solid var(--accent);font-size:20px}
+.pl{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}.pl:last-child{border:0}.pl .t{flex:1}.pl small{display:block;color:var(--muted);font-size:12px}
+.srch button{display:block;width:100%;text-align:left;border:0;background:var(--soft);border-radius:10px;padding:8px;margin:4px 0;cursor:pointer;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="dist"><div><b id="dKm">—</b><span>khoảng cách</span></div><div><b id="dBeen">0</b><span>nơi đã đi cùng</span></div><div><b id="dWant">0</b><span>nơi muốn đến</span></div></div>
+  <div id="map"></div>
+  <p class="note">Chạm vào bản đồ để ghim một địa điểm. Vị trí hai đứa lấy từ thành phố trong Cài đặt ở trang Nhà.</p>
+  <div class="card">
+    <h3>🔎 Tìm địa điểm</h3>
+    <div class="row"><input class="input" id="q" placeholder="VD: Đà Lạt, Hội An, Seoul…" style="margin:0"><button class="btn primary" id="go">Tìm</button></div>
+    <div class="srch" id="res"></div>
+  </div>
+  <div class="card">
+    <div class="seg2" id="tab" style="margin-bottom:8px"><button data-k="want" class="on">⭐ Muốn đến</button><button data-k="been">❤️ Đã đi cùng</button></div>
+    <div id="list"></div><p class="note" id="empty"></p>
+  </div>
+</div>
+<div class="modal" id="mAdd"><div class="sheet">
+  <h3>📍 Ghim địa điểm</h3>
+  <input class="input" id="pName" placeholder="Tên địa điểm" maxlength="60">
+  <div class="seg2" id="pKind" style="margin:10px 0"><button data-k="want" class="on">⭐ Muốn đến</button><button data-k="been">❤️ Đã đi cùng</button></div>
+  <input class="input" id="pNote" placeholder="Ghi chú (không bắt buộc)" maxlength="140">
+  <div class="row" style="margin-top:12px;gap:8px"><button class="btn" onclick="this.closest('.modal').classList.remove('on')">Huỷ</button><button class="btn primary" id="pSave" style="flex:1">Ghim</button></div>
+</div></div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+import { sb, $, $$, esc, toast, boot, header, joinMain, hey } from './common.js';
+header('Bản đồ hai đứa');
+const ctx = await boot();
+joinMain(ctx, 'map');
+const L = window.L;
+const map = L.map('map', { zoomControl: true }).setView([16, 106], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
+const icon = (e, cls = '') => L.divIcon({ className: '', html: `<div class="pin ${cls}">${e}</div>`, iconSize: cls ? [38, 38] : [28, 28], iconAnchor: cls ? [19, 19] : [14, 26] });
+const hav = (a, b) => { const R = 6371, t = x => x * Math.PI / 180; const d1 = t(b[0] - a[0]), d2 = t(b[1] - a[1]); const h = Math.sin(d1 / 2) ** 2 + Math.cos(t(a[0])) * Math.cos(t(b[0])) * Math.sin(d2 / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)) };
+const P = [ctx.myProfile, ctx.partnerProfile]; const pts = [];
+P.forEach((p, i) => { if (p.lat == null) return; const ll = [p.lat, p.lon]; pts.push(ll); L.marker(ll, { icon: icon(p.emoji || (i ? '💗' : '🙂'), 'av') }).addTo(map).bindPopup(`<b>${esc(p.display_name || '')}</b><br>${esc(p.city || '')}`) });
+if (pts.length === 2) {
+  const km = hav(pts[0], pts[1]); $('#dKm').textContent = km < 10 ? km.toFixed(1) + ' km' : Math.round(km).toLocaleString('vi-VN') + ' km';
+  L.polyline(pts, { color: '#ff7aa2', weight: 3, dashArray: '6 8' }).addTo(map);
+  const mid = [(pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2]; L.marker(mid, { icon: icon('💞') }).addTo(map).bindPopup(`Điểm giữa hai đứa<br>${Math.round(km / 2).toLocaleString('vi-VN')} km mỗi người`);
+} else $('#dKm').textContent = '?';
+let rows = [], layer = L.layerGroup().addTo(map), tab = 'want', pending = null, pkind = 'want';
+async function load() { const { data } = await sb.from('places').select('*').order('created_at'); rows = data || []; render() }
+function render() {
+  layer.clearLayers(); rows.forEach(r => L.marker([r.lat, r.lon], { icon: icon(r.kind === 'been' ? '❤️' : '⭐') }).addTo(layer).bindPopup(`<b>${esc(r.name)}</b>${r.note ? '<br>' + esc(r.note) : ''}<br><small>${r.kind === 'been' ? 'Đã đi cùng' : 'Muốn đến'}</small>`));
+  $('#dBeen').textContent = rows.filter(r => r.kind === 'been').length; $('#dWant').textContent = rows.filter(r => r.kind === 'want').length;
+  const v = rows.filter(r => r.kind === tab); $('#empty').textContent = v.length ? '' : (tab === 'want' ? 'Chưa ghim nơi nào muốn đến.' : 'Chưa có nơi nào đã đi cùng.');
+  $('#list').innerHTML = v.map(r => `<div class="pl" data-id="${r.id}"><span style="font-size:22px">${r.kind === 'been' ? '❤️' : '⭐'}</span><div class="t"><b>${esc(r.name)}</b><small>${esc(r.note || '')}${pts.length ? ' · cách bạn ' + Math.round(hav(pts[0], [r.lat, r.lon])).toLocaleString('vi-VN') + ' km' : ''}</small></div>${r.kind === 'want' ? '<button class="btn small" data-a="been">Đã đi ✓</button>' : ''}<button class="btn small" data-a="del">✕</button></div>`).join('');
+  if (!fitted) { const all = [...pts, ...rows.map(r => [r.lat, r.lon])]; if (all.length > 1) map.fitBounds(all, { padding: [30, 30] }); else if (all.length) map.setView(all[0], 8); fitted = true }
+}
+let fitted = false;
+$('#tab').onclick = e => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.k; $$('#tab button').forEach(x => x.classList.toggle('on', x === b)); render() };
+$('#list').onclick = async e => { const it = e.target.closest('.pl'); if (!it) return; const r = rows.find(x => x.id === it.dataset.id); const a = e.target.closest('[data-a]')?.dataset.a;
+  if (a === 'del') { if (confirm('Xoá ' + r.name + '?')) { await sb.from('places').delete().eq('id', r.id); load() } return }
+  if (a === 'been') { await sb.from('places').update({ kind: 'been' }).eq('id', r.id); hey(ctx, 'map', `đánh dấu đã đi cùng: ${r.name} ❤️`, 'map.html'); load(); return }
+  map.setView([r.lat, r.lon], 11); window.scrollTo({ top: 0, behavior: 'smooth' }) };
+function ask(lat, lon, name = '') { pending = [lat, lon]; $('#pName').value = name; $('#pNote').value = ''; $('#mAdd').classList.add('on'); setTimeout(() => $('#pName').focus(), 100) }
+map.on('click', e => ask(e.latlng.lat, e.latlng.lng));
+$('#pKind').onclick = e => { const b = e.target.closest('button'); if (!b) return; pkind = b.dataset.k; $$('#pKind button').forEach(x => x.classList.toggle('on', x === b)) };
+$('#pSave').onclick = async () => { const name = $('#pName').value.trim(); if (!name || !pending) { toast('Đặt tên cho địa điểm đã nhé'); return }
+  const { error } = await sb.from('places').insert({ name, lat: pending[0], lon: pending[1], kind: pkind, note: $('#pNote').value.trim() || null }); if (error) { toast('Ghim không được'); return }
+  $('#mAdd').classList.remove('on'); hey(ctx, 'map', `vừa ghim ${pkind === 'been' ? '❤️' : '⭐'} ${name} lên bản đồ`, 'map.html'); load() };
+$('#go').onclick = async () => { const q = $('#q').value.trim(); if (!q) return; $('#res').innerHTML = '<p class="note">Đang tìm…</p>';
+  try { const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=vi`); const j = await r.json(); const res = j.results || [];
+    if (!res.length) { $('#res').innerHTML = '<p class="note">Không thấy, thử tên khác hoặc chạm thẳng lên bản đồ.</p>'; return }
+    $('#res').innerHTML = res.map((c, i) => `<button data-i="${i}">📍 ${esc(c.name)}${c.admin1 ? ', ' + esc(c.admin1) : ''} · ${esc(c.country || '')}</button>`).join('');
+    $('#res').onclick = e => { const b = e.target.closest('button'); if (!b) return; const c = res[+b.dataset.i]; map.setView([c.latitude, c.longitude], 10); $('#res').innerHTML = ''; ask(c.latitude, c.longitude, c.name) };
+  } catch (e) { $('#res').innerHTML = '<p class="note">Lỗi mạng, thử lại nhé.</p>' } };
+$('#q').onkeydown = e => { if (e.key === 'Enter') $('#go').click() };
+load();
+</script>
+</body>
+</html>

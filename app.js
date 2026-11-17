@@ -321,7 +321,7 @@ const send = (event, payload = {}) => channel && channel.send({ type: 'broadcast
 /* ---------- INBOX (đợt 3) ---------- */
 function setBadge(id, n) { const el = document.getElementById(id); if (!el) return; el.textContent = n > 99 ? '99+' : n; el.classList.toggle('hidden', !n) }
 let greetShownId = null;
-async function loadInbox(first) {
+async function loadInbox(first) {try{const t=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);sb.rpc('daily_status',{d:t}).then(({data})=>{const b=document.getElementById('bDaily');if(!b||!data)return;if(!data.me){b.textContent=data.partner?'💬':'!';b.classList.remove('hidden')}else b.classList.add('hidden')})}catch(e){}
   if (!me || !partnerId) return;
   const [L, N, V, G] = await Promise.all([
     sb.from('letters').select('id', { count: 'exact', head: true }).eq('to_id', me.id).is('opened_at', null),

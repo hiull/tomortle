@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Câu hỏi mỗi ngày – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.qbig{font-family:var(--head),serif;font-size:23px;line-height:1.3;margin:6px 0 12px;text-align:center}
+.qday{text-align:center;color:var(--muted);font-size:13px;font-weight:700}
+.ans{background:var(--soft);border-radius:16px;padding:12px;margin:8px 0}
+.ans b{display:block;font-size:13px;color:var(--accent);margin-bottom:3px}
+.ans.locked{filter:blur(0);color:var(--muted);text-align:center}
+textarea.input{min-height:90px;resize:vertical;font-family:inherit}
+.hist .h{border-bottom:1px solid var(--line);padding:10px 0}
+.hist .h:last-child{border:0}
+.hist .q{font-weight:800;margin-bottom:4px}
+.hist .a{font-size:14px;margin:2px 0}
+.streak{display:flex;gap:8px;text-align:center;margin-top:10px}.streak div{flex:1;background:var(--soft);border-radius:14px;padding:8px}.streak b{display:block;font-size:20px;color:var(--accent)}.streak span{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <p class="qday" id="qday"></p>
+    <div class="qbig" id="qtext"></div>
+    <div id="mine"></div>
+    <div id="theirs"></div>
+    <div class="streak"><div><b id="stStreak">0</b><span>ngày liên tiếp cùng trả lời</span></div><div><b id="stTotal">0</b><span>câu đã cùng trả lời</span></div></div>
+  </div>
+  <div class="card">
+    <h3>📜 Những ngày trước</h3>
+    <div class="hist" id="hist"></div>
+    <p class="note" id="histEmpty">Chưa có gì. Câu trả lời của hai bạn sẽ được lưu ở đây.</p>
+  </div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { sb, $, esc, toast, boot, header, joinMain, hey, hearts, todayStr } from './common.js';
+const Q = [
+'Khoảnh khắc nào khiến bạn biết mình thích người kia?','Món ăn nào bạn muốn hai đứa ăn cùng nhau nhất khi gặp?','Nếu được dịch chuyển tức thời đến chỗ người kia ngay bây giờ, bạn sẽ làm gì đầu tiên?','Bài hát nào làm bạn nhớ tới người kia?','Điều nhỏ nhặt nào người kia làm khiến bạn thấy được yêu?',
+'Kỷ niệm buồn cười nhất của hai đứa là gì?','Bạn muốn hai đứa đi du lịch ở đâu đầu tiên?','Một thói quen của người kia mà bạn thấy đáng yêu?','Hôm nay điều gì làm bạn vui nhất?','Hôm nay điều gì làm bạn mệt nhất?',
+'Bạn thích được an ủi kiểu gì khi buồn?','Nếu hai đứa nuôi một con vật, bạn muốn nuôi con gì và đặt tên gì?','Ngày hẹn hò hoàn hảo của bạn trông như thế nào?','Bạn sợ điều gì nhất khi yêu xa?','Điều gì giúp bạn vượt qua những ngày nhớ nhau?',
+'Bạn muốn 5 năm nữa hai đứa đang ở đâu, làm gì?','Lần đầu nói chuyện, bạn nghĩ gì về người kia?','Món quà nào người kia tặng mà bạn nhớ nhất?','Bạn muốn người kia gọi mình bằng biệt danh gì?','Có điều gì bạn muốn nói mà chưa dám nói?',
+'Bạn thích hai đứa nhắn tin hay gọi điện hơn? Vì sao?','Nếu hai đứa đóng phim, đó sẽ là phim thể loại gì?','Người kia giống con vật nào nhất?','Bạn muốn học cùng nhau một kỹ năng gì?','Một nơi bình thường nhưng bạn muốn đến cùng người kia?',
+'Bạn tự hào về điều gì ở bản thân trong tuần này?','Màu sắc nào làm bạn nhớ tới người kia?','Bạn hay nghĩ về người kia vào lúc nào trong ngày nhất?','Nếu có một ngày không phải làm gì, bạn muốn hai đứa làm gì?','Câu nói nào của người kia mà bạn nhớ mãi?',
+'Bạn muốn ăn sáng cùng nhau món gì?','Điều bạn thích nhất ở ngoại hình người kia?','Điều bạn thích nhất ở tính cách người kia?','Bạn muốn hai đứa có truyền thống gì riêng?','Bạn hay cãi nhau vì điều gì nhất? Lần sau nên làm thế nào?',
+'Nếu được tặng người kia một siêu năng lực, bạn chọn gì?','Bạn thích ngủ nướng hay dậy sớm? Cuối tuần lý tưởng?','Một bộ phim bạn muốn xem cùng người kia?','Điều gì bạn muốn cảm ơn người kia hôm nay?','Bạn muốn ngôi nhà tương lai của hai đứa có gì đặc biệt?',
+'Món ăn người kia nấu (hoặc sẽ nấu) bạn muốn thử nhất?','Bạn muốn chụp ảnh cùng nhau ở đâu?','Khi gặp lại, bạn muốn ôm bao lâu?','Một điều bạn chưa biết về người kia và muốn biết?','Mùa nào trong năm bạn muốn ở cạnh người kia nhất?',
+'Bạn thấy hai đứa giống nhau ở điểm nào?','Hai đứa khác nhau ở điểm nào mà bạn lại thích?','Nếu viết một bức thư cho người kia 10 năm sau, câu đầu tiên là gì?','Trò chơi nào bạn muốn chơi cùng nhau?','Bạn muốn được người kia khen về điều gì?',
+'Đồ uống yêu thích của bạn dạo này?','Nếu hai đứa mở một quán nhỏ, đó là quán gì?','Bạn thích hẹn hò ở nhà hay ra ngoài?','Một điều lãng mạn bạn muốn làm cho người kia?','Bạn mong người kia hiểu mình hơn ở điểm nào?',
+'Điều gì khiến bạn cười nhiều nhất tuần này?','Bạn đang lo lắng điều gì? Người kia có thể giúp gì?','Một ước mơ nghề nghiệp của bạn?','Nếu hai đứa có một ngày đổi thân, bạn sẽ làm gì?','Thời tiết chỗ bạn hôm nay thế nào, nó làm bạn nghĩ đến gì?',
+'Món ăn vặt bạn muốn gửi cho người kia nhất?','Bạn thích được nhận quà bất ngờ hay được hỏi trước?','Bạn nhớ nhất buổi gọi điện nào của hai đứa?','Bạn muốn hai đứa thử thách nhau điều gì trong tháng này?','Nếu được đặt tên cho ngôi sao, bạn đặt tên gì?',
+'Bạn thích người kia mặc gì nhất?','Một mùi hương làm bạn nhớ người kia?','Bạn muốn hai đứa cùng đọc cuốn sách nào?','Nếu ngày mai gặp nhau, kế hoạch của bạn là gì?','Điều bạn học được từ người kia?',
+'Kỷ niệm đầu tiên hai đứa đi chơi cùng nhau?','Bạn muốn hai đứa già đi như thế nào?','Một câu chúc bạn muốn gửi người kia trước khi ngủ?','Bạn thích ôm từ phía sau hay ôm trực diện?','Bạn có bí mật nhỏ dễ thương nào muốn kể?',
+'Bạn hay làm gì khi nhớ người kia?','Điều gì khiến bạn tin vào hai đứa?','Một nơi ở Việt Nam bạn muốn dẫn người kia đến?','Một nước ngoài bạn muốn cùng đến?','Bạn muốn hai đứa có bao nhiêu con mèo (hoặc con)? 😝',
+'Nếu được sống lại một ngày bên nhau, bạn chọn ngày nào?','Bạn giỏi nhất việc gì trong nhà?','Một món đồ của người kia bạn muốn giữ?','Bạn muốn cùng nhau đón Tết thế nào?','Ngày kỷ niệm tiếp theo, bạn muốn làm gì?',
+'Điều gì khiến bạn ghen một chút?','Bạn muốn người kia làm gì khi bạn giận?','Cảm giác của bạn khi thấy tin nhắn của người kia?','Một từ để tả người kia hôm nay?','Một từ để tả tình yêu của hai đứa?',
+'Bạn thích nghe người kia hát bài gì?','Bạn muốn cùng nhau xem bình minh hay hoàng hôn?','Điều đầu tiên bạn làm mỗi sáng?','Điều cuối cùng bạn làm mỗi tối?','Bạn muốn hai đứa có một bài hát chung là bài nào?',
+'Nếu hai đứa là một món ăn, đó là món gì?','Người kia có điểm yếu dễ thương nào?','Bạn cảm thấy an toàn nhất khi nào?','Một điều bạn muốn hai đứa cùng thay đổi tốt lên?','Bạn mong chờ điều gì nhất trong tháng tới?',
+'Kể một giấc mơ có người kia mà bạn nhớ?','Bạn thích người kia nhắn "nhớ" hay gọi bất ngờ?','Bạn muốn khắc tên hai đứa ở đâu?','Bạn muốn hai đứa cùng mặc đồ đôi kiểu gì?','Nếu hôm nay được ôm người kia, bạn sẽ thì thầm gì?'
+];
+const START = new Date('2026-01-01T00:00:00');
+const today = todayStr();
+const qIndex = d => { const n = Math.round((new Date(d + 'T00:00:00') - START) / 864e5); return ((n % Q.length) + Q.length) % Q.length };
+header('Câu hỏi mỗi ngày');
+const ctx = await boot();
+joinMain(ctx, 'daily');
+$('#qday').textContent = new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' }) + ' · câu số ' + (qIndex(today) + 1);
+$('#qtext').textContent = Q[qIndex(today)];
+async function load() {
+  const [{ data: st }, { data: rows }] = await Promise.all([sb.rpc('daily_status', { d: today }), sb.from('daily_answers').select('*').order('day', { ascending: false }).limit(400)]);
+  const all = rows || []; const mineT = all.find(r => r.day === today && r.user_id === ctx.me.id); const theirT = all.find(r => r.day === today && r.user_id === ctx.partnerId);
+  if (mineT) { $('#mine').innerHTML = `<div class="ans"><b>Bạn trả lời</b>${esc(mineT.answer)}<div class="row" style="justify-content:flex-end"><button class="btn small" id="edit">Sửa</button></div></div>`; $('#edit').onclick = () => form(mineT.answer) }
+  else form('');
+  const pAns = st && st.partner;
+  $('#theirs').innerHTML = theirT ? `<div class="ans"><b>${esc(ctx.partnerName)} trả lời</b>${esc(theirT.answer)}</div>` : `<div class="ans locked">${pAns ? `🔒 ${esc(ctx.partnerName)} đã trả lời rồi. Trả lời xong là bạn xem được ngay!` : `⏳ ${esc(ctx.partnerName)} chưa trả lời câu hôm nay`}</div>`;
+  // history
+  const byDay = {}; all.forEach(r => { (byDay[r.day] = byDay[r.day] || {})[r.user_id === ctx.me.id ? 'me' : 'pa'] = r.answer });
+  const days = Object.keys(byDay).filter(d => d !== today && byDay[d].me && byDay[d].pa).sort().reverse();
+  $('#histEmpty').classList.toggle('hidden', days.length > 0);
+  $('#hist').innerHTML = days.map(d => `<div class="h"><div class="note">${new Date(d + 'T00:00:00').toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div><div class="q">${esc(Q[qIndex(d)])}</div><div class="a"><b style="color:var(--accent)">${esc(ctx.myName)}:</b> ${esc(byDay[d].me)}</div><div class="a"><b style="color:#9b86d1">${esc(ctx.partnerName)}:</b> ${esc(byDay[d].pa)}</div></div>`).join('');
+  const both = Object.keys(byDay).filter(d => byDay[d].me && byDay[d].pa);
+  $('#stTotal').textContent = both.length;
+  let s = 0, d = new Date(); if (!(byDay[today]?.me && byDay[today]?.pa)) d.setDate(d.getDate() - 1);
+  while (true) { const k = todayStr(d); if (byDay[k]?.me && byDay[k]?.pa) { s++; d.setDate(d.getDate() - 1) } else break }
+  $('#stStreak').textContent = s;
+}
+function form(v) {
+  $('#mine').innerHTML = `<textarea class="input" id="ansIn" maxlength="600" placeholder="Viết câu trả lời của bạn… (người ấy chỉ xem được sau khi cả hai cùng trả lời)">${esc(v)}</textarea><button class="btn primary block" id="send" style="margin-top:8px">Gửi câu trả lời 💌</button>`;
+  $('#send').onclick = async () => {
+    const a = $('#ansIn').value.trim(); if (!a) { toast('Viết gì đó đã nhé'); return }
+    const { error } = await sb.from('daily_answers').upsert({ day: today, user_id: ctx.me.id, answer: a }); if (error) { toast('Gửi không được, thử lại nhé'); return }
+    hearts(6); hey(ctx, 'daily', 'vừa trả lời câu hỏi hôm nay 💬', 'daily.html'); load();
+  };
+}
+load();
+</script>
+</body>
+</html>

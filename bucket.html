@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bucket list – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.bar{height:14px;background:var(--soft);border-radius:999px;overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .4s}
+.cats{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}.cats button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 11px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}.cats button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.it{display:flex;gap:10px;align-items:center;padding:10px;border-radius:14px;background:var(--soft);margin:6px 0}
+.it .ck{width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);background:var(--card);cursor:pointer;flex:0 0 auto;font-size:16px;display:grid;place-items:center;padding:0;color:var(--accent-ink)}
+.it.done .ck{background:var(--accent)}
+.it.done .tt b{text-decoration:line-through;opacity:.7}
+.it .tt{flex:1;min-width:0}.it .tt small{display:block;color:var(--muted);font-size:12px}
+.it img{width:52px;height:52px;object-fit:cover;border-radius:10px;cursor:pointer}
+.sug{display:flex;flex-wrap:wrap;gap:6px}.sug button{border:1px dashed var(--accent);background:transparent;border-radius:999px;padding:5px 10px;font-size:13px;cursor:pointer;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <h3>🌟 Những điều hai đứa sẽ làm cùng nhau</h3>
+    <div class="bar"><i id="bar" style="width:0"></i></div>
+    <p class="note" id="prog"></p>
+    <div class="row" style="margin-top:8px"><input class="input" id="nt" placeholder="Thêm một điều muốn làm cùng nhau…" maxlength="100" style="margin:0"><button class="btn primary" id="add">Thêm</button></div>
+    <div class="cats" id="ncat" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <div class="cats" id="filt"></div>
+    <div id="list"></div>
+    <p class="note" id="empty">Danh sách đang trống. Thêm điều đầu tiên hoặc chọn gợi ý bên dưới nhé.</p>
+  </div>
+  <div class="card"><h3>💡 Gợi ý</h3><div class="sug" id="sug"></div></div>
+</div>
+<input type="file" id="ph" accept="image/*" hidden>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { sb, $, $$, esc, toast, boot, header, joinMain, hey, hearts, compressImage, uploadMedia, mediaUrl } from './common.js';
+header('Bucket list');
+const ctx = await boot();
+joinMain(ctx, 'bucket');
+const CATS = { travel: '✈️ Du lịch', food: '🍜 Ăn uống', date: '💗 Hẹn hò', together: '🤝 Cùng làm', learn: '📚 Cùng học', khac: '✨ Khác' };
+const SUG = [['Ngắm bình minh cùng nhau', 'date'], ['Đi Đà Lạt', 'travel'], ['Ăn lẩu một đêm mưa', 'food'], ['Chụp ảnh đôi ở studio', 'date'], ['Nấu một bữa tối cho nhau', 'together'], ['Đi biển và thả diều', 'travel'], ['Học chung một ngôn ngữ mới', 'learn'], ['Xem pháo hoa giao thừa cùng nhau', 'date'], ['Đi phố cổ Hội An', 'travel'], ['Làm bánh cùng nhau', 'together'], ['Cắm trại, ngắm sao', 'travel'], ['Đi xem concert', 'date'], ['Trồng một chậu cây chung', 'together'], ['Ăn hết một con phố ẩm thực', 'food'], ['Đọc chung một cuốn sách', 'learn'], ['Đi nước ngoài lần đầu cùng nhau', 'travel'], ['Đạp xe quanh hồ', 'date'], ['Làm vòng tay đôi', 'together']];
+let rows = [], filt = 'all', ncat = 'date', proofFor = null;
+$('#ncat').innerHTML = Object.entries(CATS).map(([k, v]) => `<button data-c="${k}" class="${k === ncat ? 'on' : ''}">${v}</button>`).join('');
+$('#ncat').onclick = e => { const b = e.target.closest('button'); if (!b) return; ncat = b.dataset.c; $$('#ncat button').forEach(x => x.classList.toggle('on', x === b)) };
+$('#filt').innerHTML = `<button data-c="all" class="on">Tất cả</button><button data-c="todo">Chưa làm</button><button data-c="done">Đã làm ✓</button>` + Object.entries(CATS).map(([k, v]) => `<button data-c="${k}">${v}</button>`).join('');
+$('#filt').onclick = e => { const b = e.target.closest('button'); if (!b) return; filt = b.dataset.c; $$('#filt button').forEach(x => x.classList.toggle('on', x === b)); render() };
+async function load() { const { data } = await sb.from('bucket').select('*').order('created_at'); rows = data || []; render() }
+function render() {
+  const done = rows.filter(r => r.done).length; $('#bar').style.width = rows.length ? (done / rows.length * 100) + '%' : '0';
+  $('#prog').textContent = rows.length ? `Đã làm được ${done}/${rows.length} điều${done === rows.length && rows.length ? ' · tuyệt vời! 🎉' : ''}` : '';
+  const v = rows.filter(r => filt === 'all' || (filt === 'todo' ? !r.done : filt === 'done' ? r.done : r.cat === filt)).sort((a, b) => a.done - b.done);
+  $('#empty').classList.toggle('hidden', v.length > 0);
+  $('#list').innerHTML = v.map(r => `<div class="it ${r.done ? 'done' : ''}" data-id="${r.id}"><button class="ck" data-act="ck">${r.done ? '✓' : ''}</button><div class="tt"><b>${esc(r.title)}</b><small>${CATS[r.cat] || ''} · ${esc(r.by === ctx.me.id ? ctx.myName : ctx.partnerName)} thêm${r.done && r.done_at ? ' · xong ' + new Date(r.done_at).toLocaleDateString('vi-VN') : ''}</small></div>${r.photo_path ? `<img data-p="${esc(r.photo_path)}" data-act="view" alt="">` : r.done ? `<button class="btn small" data-act="photo">📷</button>` : ''}<button class="btn small" data-act="del">✕</button></div>`).join('');
+  $$('#list img[data-p]').forEach(async im => { try { im.src = await mediaUrl(im.dataset.p) } catch (e) { } });
+  const have = new Set(rows.map(r => r.title));
+  $('#sug').innerHTML = SUG.filter(s => !have.has(s[0])).map(s => `<button data-t="${esc(s[0])}" data-c="${s[1]}">＋ ${esc(s[0])}</button>`).join('');
+}
+async function add(title, cat) { const { error } = await sb.from('bucket').insert({ title, cat }); if (error) { toast('Thêm không được'); return } hey(ctx, 'bucket', `vừa thêm vào bucket list: ${title} 🌟`, 'bucket.html'); load() }
+$('#add').onclick = () => { const t = $('#nt').value.trim(); if (!t) return; $('#nt').value = ''; add(t, ncat) };
+$('#nt').onkeydown = e => { if (e.key === 'Enter') $('#add').click() };
+$('#sug').onclick = e => { const b = e.target.closest('button'); if (b) add(b.dataset.t, b.dataset.c) };
+$('#list').onclick = async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return; const id = b.closest('.it').dataset.id; const r = rows.find(x => x.id === id);
+  if (b.dataset.act === 'ck') { const d = !r.done; await sb.from('bucket').update({ done: d, done_at: d ? new Date().toISOString() : null }).eq('id', id); if (d) { hearts(10); toast('Xong một điều rồi! Thêm ảnh kỷ niệm nhé 📷', 'Thêm ảnh', () => { proofFor = id; $('#ph').click() }); hey(ctx, 'bucket', `đánh dấu đã làm: ${r.title} 🎉`, 'bucket.html') } load() }
+  if (b.dataset.act === 'photo') { proofFor = id; $('#ph').click() }
+  if (b.dataset.act === 'view') window.open(b.src, '_blank');
+  if (b.dataset.act === 'del') { if (!confirm('Xoá "' + r.title + '"?')) return; await sb.from('bucket').delete().eq('id', id); load() }
+};
+$('#ph').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f || !proofFor) return; toast('Đang tải ảnh…');
+  try { const b = await compressImage(f, 2000, .88); const { path } = await uploadMedia(ctx, b, 'bucket'); await sb.from('bucket').update({ photo_path: path }).eq('id', proofFor); await sb.from('album').insert({ path, source: 'bucket', caption: '🌟 ' + (rows.find(r => r.id === proofFor)?.title || '') }); toast('Đã lưu ảnh, cũng thêm vào Album chung ♡'); load() } catch (x) { toast('Tải ảnh lỗi, thử lại nhé') } };
+load();
+</script>
+</body>
+</html>

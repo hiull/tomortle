@@ -711,8 +711,8 @@ function wallMenu(wi,sx,sy){const c=WCAT[wi.t];const B=[];let sub='';const front
  if(wi.t==='window'){B.push([R.rain?'☀️ Cho tạnh mưa':'🌧️ Cho trời mưa',go(()=>{R.rain=!R.rain;saveRoom();updateAudio()}),1])}
  else if(wi.t==='door'){B.push(['🏠 Ra ngoài (về nhà)',go(()=>nav('./')),1])}
  else if(wi.t==='mirror'){B.push(['👗 Ngắm & thay đồ',go(openAvatar),1])}
- else if(wi.t==='calendar'){const d=daysToMeet();sub=d==null?'Chưa hẹn ngày gặp, đặt ở trang Nhà nhé':d<=0?'Hôm nay gặp nhau!':`Còn ${d} ngày nữa là gặp nhau`;B.push(['📅 Đặt ngày gặp',()=>nav('./'),0])}
- else if(wi.t==='frame'){const dt=daysTogether();sub=dt?`Ngày thứ ${dt} bên nhau ♡`:'♡';B.push(['💗',()=>burst(me,'💗',6)])}
+ else if(wi.t==='calendar'){const d=daysToMeet();sub=d==null?'Chưa hẹn ngày gặp, đặt ở trang Nhà nhé':d<=0?'Hôm nay gặp nhau!':`Còn ${d} ngày nữa là gặp nhau`;B.push(['📅 Mở Lịch chung',go(()=>nav('calendar.html')),1])}
+ else if(wi.t==='frame'){const dt=daysTogether();sub=dt?`Ngày thứ ${dt} bên nhau ♡`:'♡';B.push(['🗂️ Mở Album chung',go(()=>nav('album.html')),1])}
  else if(wi.t==='clock'){sub=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}
  else return null;
  menu(sx,sy,c.n,sub,B);return true}

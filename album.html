@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Album chung – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.agrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+@media(min-width:600px){.agrid{grid-template-columns:repeat(4,1fr)}}
+.agrid figure{margin:0;position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:var(--soft);cursor:pointer}
+.agrid img{width:100%;height:100%;object-fit:cover;display:block}
+.agrid figure span{position:absolute;left:4px;bottom:4px;font-size:10px;font-weight:800;background:rgba(0,0,0,.5);color:#fff;border-radius:6px;padding:1px 5px}
+.agrid figure b{position:absolute;right:4px;top:4px;font-size:12px}
+.month{margin:16px 0 6px;font-family:var(--head),serif;font-size:19px;display:flex;align-items:center;gap:8px}
+.month small{font-family:var(--font);font-size:12px;color:var(--muted);font-weight:500}
+.lb{position:fixed;inset:0;background:rgba(10,5,10,.92);z-index:120;display:none;flex-direction:column;align-items:center;justify-content:center;padding:14px}
+.lb.on{display:flex}
+.lb img{max-width:100%;max-height:70vh;border-radius:12px;object-fit:contain}
+.lb .meta{color:#fff;text-align:center;margin:10px 0 6px;font-size:14px;max-width:520px}
+.lb .row{flex-wrap:wrap;justify-content:center}
+.lb .nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:0;color:#fff;font-size:26px;width:44px;height:44px;border-radius:50%;cursor:pointer}
+.stats{display:flex;gap:8px;text-align:center}.stats div{flex:1;background:var(--soft);border-radius:14px;padding:8px}.stats b{display:block;font-size:20px;color:var(--accent)}.stats span{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="stats"><div><b id="sAll">0</b><span>tấm ảnh</span></div><div><b id="sBooth">0</b><span>từ Photobooth</span></div><div><b id="sLike">0</b><span>tấm thích nhất</span></div></div>
+    <label class="btn primary block" style="margin-top:12px">📷 Thêm ảnh<input type="file" id="file" accept="image/*" multiple hidden></label>
+    <div class="seg2" id="filt" style="margin-top:8px"><button data-f="all" class="on">Tất cả</button><button data-f="booth">📸 Booth</button><button data-f="like">💗 Thích</button></div>
+    <p class="note">Ảnh lưu hoặc gửi từ Photobooth sẽ tự vào đây. Chỉ hai bạn xem được.</p>
+    <div id="prog" class="note hidden"></div>
+  </div>
+  <div id="list"></div>
+  <p class="note center hidden" id="empty" style="text-align:center;padding:30px 0">Chưa có ảnh nào. Chụp một tấm Photobooth hoặc thêm ảnh kỷ niệm nhé 📸</p>
+</div>
+<div class="lb" id="lb">
+  <button class="nav" id="prev" style="left:8px">‹</button><button class="nav" id="next" style="right:8px">›</button>
+  <img id="lbImg" alt="">
+  <div class="meta" id="lbMeta"></div>
+  <div class="row" style="gap:8px">
+    <button class="btn small" id="lbLike">💗 Thích</button>
+    <button class="btn small" id="lbCap">✏️ Ghi chú</button>
+    <a class="btn small" id="lbDl" download>⬇️ Tải về</a>
+    <button class="btn small" id="lbDel">🗑 Xoá</button>
+    <button class="btn small primary" id="lbClose">Đóng</button>
+  </div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { sb, $, $$, esc, toast, boot, header, joinMain, compressImage, uploadMedia, mediaUrl, hey, hearts } from './common.js';
+header('Album chung');
+const ctx = await boot();
+joinMain(ctx, 'album');
+let rows = [], view = [], filt = 'all', cur = -1;
+const who = id => id === ctx.me.id ? ctx.myName : ctx.partnerName;
+async function load() {
+  const { data, error } = await sb.from('album').select('*').order('taken_at', { ascending: false });
+  if (error) { toast('Không tải được album'); return }
+  rows = data || []; render();
+}
+function render() {
+  $('#sAll').textContent = rows.length; $('#sBooth').textContent = rows.filter(r => r.source === 'booth').length; $('#sLike').textContent = rows.filter(r => (r.liked_by || []).length).length;
+  view = rows.filter(r => filt === 'all' || (filt === 'booth' ? r.source === 'booth' : (r.liked_by || []).length));
+  $('#empty').classList.toggle('hidden', view.length > 0);
+  const groups = {};
+  view.forEach((r, i) => { const d = new Date(r.taken_at); const k = `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`; (groups[k] = groups[k] || []).push([r, i]) });
+  $('#list').innerHTML = Object.entries(groups).map(([k, a]) => `<div class="month">${k} <small>${a.length} ảnh</small></div><div class="agrid">${a.map(([r, i]) => `<figure data-i="${i}"><img data-p="${esc(r.path)}" alt="" loading="lazy"><span>${r.source === 'booth' ? '📸 ' : ''}${new Date(r.taken_at).getDate()}/${new Date(r.taken_at).getMonth() + 1}</span>${(r.liked_by || []).length ? `<b>${'💗'.repeat(r.liked_by.length)}</b>` : ''}</figure>`).join('')}</div>`).join('');
+  const io = new IntersectionObserver(es => es.forEach(async e => { if (!e.isIntersecting) return; io.unobserve(e.target); try { e.target.src = await mediaUrl(e.target.dataset.p) } catch (x) { } }), { rootMargin: '300px' });
+  $$('#list img').forEach(im => io.observe(im));
+}
+$('#list').onclick = e => { const f = e.target.closest('figure'); if (f) open(+f.dataset.i) };
+$('#filt').onclick = e => { const b = e.target.closest('button'); if (!b) return; filt = b.dataset.f; $$('#filt button').forEach(x => x.classList.toggle('on', x === b)); render() };
+async function open(i) {
+  cur = i; const r = view[i]; if (!r) return; $('#lb').classList.add('on'); $('#lbImg').src = '';
+  const url = await mediaUrl(r.path); $('#lbImg').src = url; $('#lbDl').href = url;
+  const d = new Date(r.taken_at);
+  $('#lbMeta').innerHTML = `${r.caption ? `<b style="font-size:16px">${esc(r.caption)}</b><br>` : ''}${r.source === 'booth' ? '📸 Photobooth' : '📷 ' + esc(who(r.by)) + ' thêm'} · ${d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}${(r.liked_by || []).length ? ' · ' + (r.liked_by || []).map(id => esc(who(id))).join(' & ') + ' thích 💗' : ''}`;
+  $('#lbLike').textContent = (r.liked_by || []).includes(ctx.me.id) ? '💔 Bỏ thích' : '💗 Thích';
+  $('#lbDel').dataset.arm = ''; $('#lbDel').textContent = '🗑 Xoá';
+}
+const close = () => { $('#lb').classList.remove('on'); cur = -1 };
+$('#lbClose').onclick = close;
+$('#prev').onclick = () => open((cur - 1 + view.length) % view.length);
+$('#next').onclick = () => open((cur + 1) % view.length);
+let sx = null; $('#lb').addEventListener('touchstart', e => sx = e.touches[0].clientX, { passive: true }); $('#lb').addEventListener('touchend', e => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 50) dx > 0 ? $('#prev').click() : $('#next').click() });
+document.addEventListener('keydown', e => { if (cur < 0) return; if (e.key === 'ArrowLeft') $('#prev').click(); if (e.key === 'ArrowRight') $('#next').click(); if (e.key === 'Escape') close() });
+$('#lbLike').onclick = async () => {
+  const r = view[cur]; const s = new Set(r.liked_by || []); const liking = !s.has(ctx.me.id); liking ? s.add(ctx.me.id) : s.delete(ctx.me.id);
+  r.liked_by = [...s]; await sb.from('album').update({ liked_by: r.liked_by }).eq('id', r.id); if (liking) { hearts(8); if (r.by !== ctx.me.id) hey(ctx, 'album', 'vừa thả tim một tấm ảnh trong Album 💗', 'album.html') } open(cur); render()
+};
+$('#lbCap').onclick = async () => { const r = view[cur]; const c = prompt('Ghi chú cho tấm ảnh:', r.caption || ''); if (c == null) return; r.caption = c.trim().slice(0, 140); await sb.from('album').update({ caption: r.caption }).eq('id', r.id); open(cur) };
+$('#lbDel').onclick = async () => {
+  const b = $('#lbDel'); if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = 'Bấm lần nữa để xoá'; return }
+  const r = view[cur]; const { error } = await sb.from('album').delete().eq('id', r.id); if (error) { toast('Không xoá được'); return }
+  if (r.by === ctx.me.id) sb.storage.from('media').remove([r.path]);
+  rows = rows.filter(x => x !== r); close(); render(); toast('Đã xoá ảnh');
+};
+$('#file').onchange = async e => {
+  const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+  const p = $('#prog'); p.classList.remove('hidden'); let ok = 0;
+  for (const [i, f] of files.entries()) {
+    p.textContent = `Đang tải ${i + 1}/${files.length}…`;
+    try { const b = await compressImage(f, 2400, .9); const { path } = await uploadMedia(ctx, b, 'album'); const taken = f.lastModified ? new Date(f.lastModified).toISOString() : new Date().toISOString(); const { error } = await sb.from('album').insert({ path, source: 'upload', taken_at: taken }); if (error) throw error; ok++ } catch (x) { console.warn(x) }
+  }
+  p.classList.add('hidden'); toast(`Đã thêm ${ok} ảnh ♡`); if (ok) hey(ctx, 'album', `vừa thêm ${ok} ảnh vào Album chung 📷`, 'album.html'); load();
+};
+load();
+</script>
+</body>
+</html>
