@@ -155,8 +155,8 @@ $('#pJoin').onclick = async () => {
   toast('Ghép đôi thành công ♡'); route();
 };
 $('#pShare').onclick = async () => {
-  const text = `Vào Tomortle với mình nhé ♡\n1. Mở ${location.origin + location.pathname}\n2. Tạo tài khoản\n3. Nhập mã: ${couple.invite_code}`;
-  if (navigator.share) { try { await navigator.share({ title: 'Tomortle', text }); return } catch (e) { if (e.name === 'AbortError') return } }
+  const text = `Vào Tomortle × Molly với mình nhé ♡\n1. Mở ${location.origin + location.pathname}\n2. Tạo tài khoản\n3. Nhập mã: ${couple.invite_code}`;
+  if (navigator.share) { try { await navigator.share({ title: 'Tomortle × Molly', text }); return } catch (e) { if (e.name === 'AbortError') return } }
   try { await navigator.clipboard.writeText(text); toast('Đã copy lời mời') } catch (e) { toast('Mã: ' + couple.invite_code) }
 };
 
