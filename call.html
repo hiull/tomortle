@@ -60,17 +60,18 @@
 </div>
 <div id="toast"></div><div class="fx" id="fx"></div>
 <script type="module">
-import { $, $$, esc, toast, vib, sb, boot, header, joinMain, invite, featureChannel } from './common.js';
+import { $, $$, esc, toast, vib, sb, boot, header, joinMain, invite, featureChannel , getIce } from './common.js';
 const PAGE = 'call';
 header('Gọi video');
 const ctx = await boot();
 const ME = ctx.me.id, YOU = ctx.partnerId, CALLER = ME < YOU; // one fixed side places the WebRTC call
 $('#pav').textContent = ctx.partnerProfile.emoji || '🙂';
-const ICE = { iceServers: [
+let ICE = { iceServers: [
   { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }] };
+getIce(ICE).then(c => { ICE = c; window.__ice = c });
 const pid = id => 'tmx-' + ctx.couple.channel_key.slice(0, 8) + '-' + id.slice(0, 8);
 const ch = featureChannel(ctx, 'call');
 const send = (event, payload = {}) => ch.send({ type: 'broadcast', event, payload });

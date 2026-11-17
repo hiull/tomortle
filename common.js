@@ -276,3 +276,17 @@ function renderBell() {
   document.getElementById('bellEmpty').classList.toggle('hidden', it.length > 0);
   L.innerHTML = it.map(x => `<a href="${x.u}" class="${x.isNew ? '' : 'old'}"><i>${x.i}</i><span>${esc(x.t)}${x.s ? `<small>${esc(String(x.s).slice(0, 90))}</small>` : ''}<small>${ago(x.at)}</small></span>${x.isNew ? '<em>MỚI</em>' : ''}</a>`).join('');
 }
+
+/* ---------- WebRTC ICE servers: Metered TURN if configured (key kept in DB, not in repo) ---------- */
+export async function getIce(fallback) {
+  const base = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }];
+  try {
+    const c = JSON.parse(sessionStorage.getItem('iceCache') || 'null'); if (c && c.exp > Date.now()) return { iceServers: c.list };
+    const cfg = await loadState('turn', null); if (!cfg || !cfg.app || !cfg.key) return fallback || { iceServers: base };
+    const r = await fetch(`https://${cfg.app}.metered.live/api/v1/turn/credentials?apiKey=${encodeURIComponent(cfg.key)}`);
+    if (!r.ok) throw new Error('turn ' + r.status);
+    const list = [...base, ...(await r.json())];
+    sessionStorage.setItem('iceCache', JSON.stringify({ list, exp: Date.now() + 50 * 60e3 }));
+    return { iceServers: list };
+  } catch (e) { console.warn('ICE', e); return fallback || { iceServers: base } }
+}

@@ -664,7 +664,7 @@ async function enterCouple(){
 }
 function startCouplePeer(){
   if(peer){try{peer.destroy()}catch(e){}}
-  peer=new Peer(cmPid(CMctx.me.id),{config:ICE,debug:1});
+  peer=new Peer(cmPid(CMctx.me.id),{config:(window.TMX&&window.TMX.ice)||ICE,debug:1});
   peer.on('open',()=>tryDial(true));
   peer.on('call',call=>{if(mediaCall&&mediaCall!==call){try{mediaCall.close()}catch(e){}}mediaCall=call;call.answer(localStream);bindCall(call)});
   peer.on('disconnected',()=>{setTimeout(()=>{try{if(peer&&!peer.destroyed)peer.reconnect()}catch(e){}},1500)});
@@ -1337,7 +1337,7 @@ syncInputs();syncSeg();
 </script>
 <script type="module">
 /* Couple mode: when signed in to Tomortle × Molly, use the shared private room (no room codes) */
-import { sb, joinMain, uploadMedia, featureChannel, compressImage } from './common.js';
+import { sb, joinMain, uploadMedia, featureChannel, compressImage, getIce } from './common.js';
 try {
   const { data: { session } } = await sb.auth.getSession(); if (!session) throw 0;
   const me = session.user; const { data: couple } = await sb.from('couple').select('*').maybeSingle(); if (!couple || !couple.user_b) throw 0;
@@ -1357,6 +1357,7 @@ try {
       invite: () => { const url = location.origin + location.pathname + '?go=1'; ctx.main && ctx.main.send({ type: 'broadcast', event: 'booth', payload: { url } }); }
     };
   } };
+  try { window.TMX.ice = await getIce(typeof ICE !== 'undefined' ? ICE : undefined) } catch (e) { }
   window.dispatchEvent(new Event('tmx-ready'));
 } catch (e) { if (e) console.warn(e) }
 </script>
