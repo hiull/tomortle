@@ -229,3 +229,7 @@ header{display:flex;align-items:center;gap:10px;padding:6px 2px 12px}
 .shelf span{background:var(--soft);border-radius:999px;padding:4px 10px;font-size:15px}
 .greet{display:flex;align-items:center;gap:10px}
 .greet i{font-style:normal;font-size:34px}
+/* highlighted names */
+.logo .brand{background:linear-gradient(90deg,#ff4f8b,#ff8a5c 55%,#c86bff);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.pname{color:var(--accent);font-size:18px;text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.pchip #pchipName{color:var(--accent);font-weight:800}

@@ -16,13 +16,14 @@
     <h3>🎀 Tặng quà cho <span class="pn"></span></h3>
     <div class="giftgrid" id="grid"></div>
     <input class="input" id="msg" maxlength="300" placeholder="Lời nhắn kèm (không bắt buộc)" style="margin-top:10px">
-    <button class="btn primary block" id="send" style="margin-top:10px">Gửi quà</button>
+    <p class="note">Chạm một món nhiều lần để tặng nhiều cái. Chọn được nhiều loại quà cùng lúc. Nhấn giữ (hoặc chuột phải) để bớt.</p>
+    <div class="row" style="margin-top:6px"><button class="btn ghost hidden" id="clear">Bỏ chọn</button><button class="btn primary" id="send" style="flex:1">Chọn quà ở trên</button></div>
   </div>
   <div class="card">
     <h3>🛍️ Gửi quà thật</h3>
     <p class="note">Đặt đồ giao tận nơi cho người ấy. Nhớ nhập đúng địa chỉ của người ấy nhé.</p>
     <div class="tiles">
-      <a class="tile" href="https://food.grab.com/vn/vi/" target="_blank" rel="noopener"><i>🧋</i>GrabFood<small>Trà sữa, đồ ăn</small></a>
+      <a class="tile" href="https://food.grab.com/vn/vi/" target="_blank" rel="noopener"><i>🥤</i>GrabFood<small>Trà sữa, đồ ăn</small></a>
       <a class="tile" href="https://shopeefood.vn/" target="_blank" rel="noopener"><i>🍰</i>ShopeeFood<small>Bánh, đồ ăn</small></a>
       <a class="tile" href="https://shopee.vn/search?keyword=hoa%20t%C6%B0%C6%A1i" target="_blank" rel="noopener"><i>💐</i>Hoa tươi<small>Shopee</small></a>
     </div>
@@ -31,30 +32,41 @@
 </div>
 <div id="toast"></div><div class="fx" id="fx"></div>
 <script type="module">
-import { $, $$, esc, toast, vib, hearts, sb, boot, header, joinMain, ping, ago } from './common.js';
+import { $, $$, esc, toast, vib, hearts, sb, boot, header, joinMain, ping, ago, markGiftsSeen } from './common.js';
 header('Quà tặng');
 const ctx = await boot();
 joinMain(ctx, 'gifts');
 const ME = ctx.me.id, YOU = ctx.partnerId;
 $$('.pn').forEach(e => e.textContent = ctx.partnerName);
-export const GIFTS = [['🌹', 'Hoa hồng'], ['💐', 'Bó hoa'], ['🧋', 'Trà sữa'], ['🍫', 'Sô-cô-la'], ['🧸', 'Gấu bông'], ['🎂', 'Bánh kem'], ['🍓', 'Dâu tây'], ['☕', 'Cà phê'], ['🌙', 'Ngủ ngon'], ['💋', 'Nụ hôn'], ['🫂', 'Cái ôm'], ['💍', 'Lời hứa']];
-let pick = 0;
-$('#grid').innerHTML = GIFTS.map(([e, n], i) => `<button data-i="${i}" class="${i === 0 ? 'on' : ''}">${e}<small>${n}</small></button>`).join('');
-$('#grid').onclick = e => { const b = e.target.closest('button'); if (!b) return; pick = +b.dataset.i; $$('#grid button').forEach(x => x.classList.toggle('on', x === b)) };
+export const GIFTS = [['🌹', 'Hoa hồng'], ['💐', 'Bó hoa'], ['🥤', 'Trà sữa'], ['🍫', 'Sô-cô-la'], ['🧸', 'Gấu bông'], ['🎂', 'Bánh kem'], ['🍓', 'Dâu tây'], ['☕', 'Cà phê'], ['🌙', 'Ngủ ngon'], ['💋', 'Nụ hôn'], ['🤗', 'Cái ôm'], ['💍', 'Lời hứa']];
+const cart = {};
+function renderGrid() {
+  $('#grid').innerHTML = GIFTS.map(([e, n], i) => `<button data-i="${i}" class="${cart[i] ? 'on' : ''}" style="position:relative">${e}<small>${n}</small>${cart[i] ? `<span class="badge2" style="position:absolute;top:4px;right:4px">×${cart[i]}</span>` : ''}</button>`).join('');
+  const total = Object.values(cart).reduce((a, b) => a + b, 0);
+  $('#send').textContent = total ? `Gửi ${total} món quà 🎁` : 'Chọn quà ở trên';
+  $('#send').disabled = !total; $('#clear').classList.toggle('hidden', !total);
+}
+$('#grid').onclick = e => { const b = e.target.closest('button'); if (!b) return; const i = +b.dataset.i; cart[i] = Math.min(99, (cart[i] || 0) + 1); vib(10); renderGrid() };
+$('#grid').oncontextmenu = e => { const b = e.target.closest('button'); if (!b) return; e.preventDefault(); const i = +b.dataset.i; if (cart[i]) { cart[i]--; if (!cart[i]) delete cart[i] } renderGrid() };
+$('#clear').onclick = () => { for (const k in cart) delete cart[k]; renderGrid() };
 $('#send').onclick = async () => {
-  const [e, n] = GIFTS[pick]; const message = $('#msg').value.trim() || null;
-  const { error } = await sb.from('vgifts').insert({ to_id: YOU, gift: e + ' ' + n, message });
+  const items = Object.entries(cart).map(([i, qty]) => ({ gift: GIFTS[i].join(' '), qty }));
+  if (!items.length) return; const message = $('#msg').value.trim() || null;
+  const rows = items.map((it, k) => ({ to_id: YOU, gift: it.gift, qty: it.qty, message: k === items.length - 1 ? message : null }));
+  const { error } = await sb.from('vgifts').insert(rows);
   if (error) { toast('Lỗi: ' + error.message); return }
-  ping(ctx, 'vgift', { gift: e + ' ' + n, message }); $('#msg').value = ''; hearts(8); toast(`Đã tặng ${n} cho ${ctx.partnerName}`); load();
+  ping(ctx, 'vgift', { gifts: items, message }); $('#msg').value = ''; for (const k in cart) delete cart[k]; renderGrid(); hearts(10);
+  toast(`Đã tặng ${items.reduce((a, b) => a + b.qty, 0)} món quà cho ${ctx.partnerName}`); load();
 };
+renderGrid();
 async function load() {
   const { data } = await sb.from('vgifts').select('*').order('created_at', { ascending: false }).limit(300);
   const all = data || []; const mine = all.filter(g => g.to_id === ME);
-  const count = {}; mine.forEach(g => { const e = g.gift.split(' ')[0]; count[e] = (count[e] || 0) + 1 });
+  const count = {}; mine.forEach(g => { const e = g.gift.split(' ')[0]; count[e] = (count[e] || 0) + (g.qty || 1) });
   $('#shelf').innerHTML = Object.entries(count).map(([e, c]) => `<span>${e} ×${c}</span>`).join('') || '<p class="note">Chưa nhận món quà nào.</p>';
-  $('#cnt').textContent = mine.length ? mine.length + ' món' : '';
-  $('#recent').innerHTML = all.slice(0, 15).map(g => `<div class="vrow"><span class="k">${esc(g.gift.split(' ')[0])}</span><div class="t"><b>${g.from_id === ME ? 'Bạn tặng ' + esc(ctx.partnerName) : esc(ctx.partnerName) + ' tặng bạn'} ${esc(g.gift.split(' ').slice(1).join(' '))}</b>${g.message ? `<div>${esc(g.message)}</div>` : ''}<span class="note" style="margin:0">${ago(g.created_at)}</span></div></div>`).join('');
-  for (const g of mine.filter(g => !g.seen_at)) sb.rpc('vgift_seen', { gid: g.id });
+  const tot = mine.reduce((a, g) => a + (g.qty || 1), 0); $('#cnt').textContent = tot ? tot + ' món' : '';
+  $('#recent').innerHTML = all.slice(0, 15).map(g => `<div class="vrow"><span class="k">${esc(g.gift.split(' ')[0])}</span><div class="t"><b>${g.from_id === ME ? 'Bạn tặng ' + esc(ctx.partnerName) : esc(ctx.partnerName) + ' tặng bạn'} ${(g.qty || 1) > 1 ? g.qty + ' ' : ''}${esc(g.gift.split(' ').slice(1).join(' '))}</b>${g.message ? `<div>${esc(g.message)}</div>` : ''}<span class="note" style="margin:0">${ago(g.created_at)}</span></div></div>`).join('');
+  if (mine.some(g => !g.seen_at)) await markGiftsSeen();
 }
 ctx.main.on('broadcast', { event: 'vgift' }, () => load());
 load();

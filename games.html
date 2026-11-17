@@ -27,7 +27,7 @@
     <div class="score" id="quizScore"></div>
     <div class="qcard" id="quizQ"></div>
     <div id="quizBody" style="margin-top:12px"></div>
-    <p class="note center">Một người trả lời về bản thân, người kia đoán. Mở đáp án, người trả lời chấm điểm. Mỗi câu đổi vai.</p>
+    <p class="note center">Mỗi câu: một người trả lời thật về bản thân, người kia đoán. Khi cả hai chốt sẽ mở đáp án, người trả lời chấm điểm cho người đoán. Câu sau đổi vai.</p>
   </section>
 
   <section id="t-cards" class="card hidden">
@@ -123,17 +123,23 @@ function newQuiz(subject, prev) { return { i: Math.floor(Math.random() * QS.leng
 if (!Q || Q.i == null) Q = newQuiz(ME, Q);
 function renderQuiz() {
   const subjectIsMe = Q.subject === ME;
-  $('#quizScore').innerHTML = `<div><b>${(Q.score || {})[ME] || 0}</b>Bạn</div><div><b>${(Q.score || {})[YOU] || 0}</b>${esc(ctx.partnerName)}</div>`;
-  $('#quizQ').innerHTML = `<small>${subjectIsMe ? 'Câu hỏi về BẠN' : 'Câu hỏi về ' + esc(ctx.partnerName).toUpperCase()}</small>${esc(QS[Q.i])}`;
+  const myN = ctx.myName, yourN = ctx.partnerName;
+  const subjN = subjectIsMe ? myN : yourN, guessN = subjectIsMe ? yourN : myN;
+  $('#quizScore').innerHTML = `<div><b>${(Q.score || {})[ME] || 0}</b>${esc(myN)} (bạn)</div><div><b>${(Q.score || {})[YOU] || 0}</b>${esc(yourN)}</div>`;
+  $('#quizQ').innerHTML = `<small>Câu hỏi về <b style="color:var(--accent)">${esc(subjN)}</b></small>${esc(QS[Q.i])}
+    <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px;font-size:13px;font-weight:700">
+      <span style="background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:4px 10px">✍️ ${esc(subjN)} trả lời thật</span>
+      <span style="background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 10px">🤔 ${esc(guessN)} đoán</span></div>`;
   const body = $('#quizBody');
   if (Q.reveal) {
-    body.innerHTML = `<div class="reveal"><div><b>${subjectIsMe ? 'Bạn trả lời' : esc(ctx.partnerName) + ' trả lời'}</b>${esc(Q.ans)}</div><div><b>${subjectIsMe ? esc(ctx.partnerName) + ' đoán' : 'Bạn đoán'}</b>${esc(Q.guess)}</div></div>` +
-      (Q.verdict ? `<p class="center" style="font-weight:800;font-size:18px">${{ right: '💯 Chuẩn luôn! +2', close: '🤏 Gần đúng +1', wrong: '❌ Sai rồi nha' }[Q.verdict]}</p><button class="btn primary block" id="qNext">Câu tiếp</button>` :
-        (subjectIsMe ? `<p class="note center">Người ấy đoán đúng không?</p><div class="row" style="justify-content:center"><button class="btn" data-v="right">💯 Đúng</button><button class="btn" data-v="close">🤏 Gần đúng</button><button class="btn" data-v="wrong">❌ Sai</button></div>` : `<p class="note center">Đợi ${esc(ctx.partnerName)} chấm điểm…</p>`));
+    body.innerHTML = `<div class="reveal"><div><b>✍️ ${esc(subjN)} trả lời</b>${esc(Q.ans)}</div><div><b>🤔 ${esc(guessN)} đoán</b>${esc(Q.guess)}</div></div>` +
+      (Q.verdict ? `<p class="center" style="font-weight:800;font-size:18px">${{ right: '💯 Chuẩn luôn! ' + esc(guessN) + ' +2', close: '🤏 Gần đúng, ' + esc(guessN) + ' +1', wrong: '❌ ' + esc(guessN) + ' đoán sai rồi' }[Q.verdict]}</p><button class="btn primary block" id="qNext">Câu tiếp (đổi vai: ${esc(guessN)} trả lời)</button>` :
+        (subjectIsMe ? `<p class="note center"><b>Bạn chấm điểm:</b> ${esc(yourN)} đoán đúng không?</p><div class="row" style="justify-content:center"><button class="btn" data-v="right">💯 Đúng</button><button class="btn" data-v="close">🤏 Gần đúng</button><button class="btn" data-v="wrong">❌ Sai</button></div>` : `<p class="note center">Đợi ${esc(yourN)} chấm điểm câu đoán của bạn…</p>`));
   } else {
     const mine = subjectIsMe ? Q.ans : Q.guess, theirs = subjectIsMe ? Q.guess : Q.ans;
-    if (mine == null) body.innerHTML = `<form class="row" id="qForm"><input class="input" id="qIn" maxlength="80" style="margin:0" placeholder="${subjectIsMe ? 'Câu trả lời của bạn (người ấy sẽ không thấy cho tới khi mở)' : 'Bạn đoán người ấy sẽ trả lời…'}" autocomplete="off"><button class="btn primary">Chốt</button></form><p class="note center">${theirs != null ? esc(ctx.partnerName) + ' đã chốt xong ✓' : esc(ctx.partnerName) + ' đang nghĩ…'}</p>`;
-    else body.innerHTML = `<p class="center">Bạn đã chốt ✓</p><p class="note center">${theirs != null ? '' : 'Đợi ' + esc(ctx.partnerName) + ' chốt…'}</p>`;
+    const task = subjectIsMe ? `<b>Lượt của bạn:</b> trả lời thật về <b>chính bạn</b>. ${esc(yourN)} sẽ không thấy cho tới khi cả hai chốt.` : `<b>Lượt của bạn:</b> đoán xem <b>${esc(yourN)}</b> sẽ trả lời gì.`;
+    if (mine == null) body.innerHTML = `<p class="note center" style="font-size:14px">${task}</p><form class="row" id="qForm"><input class="input" id="qIn" maxlength="80" style="margin:0" placeholder="${subjectIsMe ? 'Câu trả lời của bạn…' : 'Bạn đoán ' + esc(yourN) + ' trả lời…'}" autocomplete="off"><button class="btn primary">Chốt</button></form><p class="note center">${theirs != null ? esc(yourN) + ' đã chốt xong ✓' : esc(yourN) + (subjectIsMe ? ' đang đoán…' : ' đang trả lời…')}</p>`;
+    else body.innerHTML = `<p class="center">Bạn đã chốt ✓</p><p class="note center">${theirs != null ? '' : 'Đợi ' + esc(yourN) + (subjectIsMe ? ' đoán…' : ' trả lời…')}</p>`;
   }
 }
 $('#quizBody').addEventListener('submit', e => {

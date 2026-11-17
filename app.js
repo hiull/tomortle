@@ -1,4 +1,4 @@
-import { sb, giftPopup, mediaUrl } from './common.js';
+import { sb, giftPopup, markGiftsSeen, mediaUrl } from './common.js';
 
 const VERSION = 'Đợt 3 · 2026-11-17';
 
@@ -161,7 +161,7 @@ $('#pShare').onclick = async () => {
 const STATUSES = ['📚 Đang học', '💼 Đang làm', '🍜 Đang ăn', '🚌 Đang đi đường', '🎮 Đang chơi', '😴 Đi ngủ rồi', '🥺 Nhớ người ấy', '☕ Rảnh nè'];
 const MOODS = [['😄', 'Vui lắm'], ['🙂', 'Ổn'], ['😐', 'Bình thường'], ['😔', 'Hơi buồn'], ['😫', 'Mệt'], ['😡', 'Bực']];
 const LAMP_COLORS = ['#ff7aa2', '#ff4d4d', '#ffb347', '#ffe066', '#7ed957', '#5ec8ff', '#9b7bff', '#ffffff'];
-const EMOJIS = ['🙂', '😺', '🐻', '🐰', '🐶', '🦊', '🐼', '🐸', '🐧', '🦄', '🌸', '🌙', '⭐', '🍓', '🧋', '🎀'];
+const EMOJIS = ['🙂', '😺', '🐻', '🐰', '🐶', '🦊', '🐼', '🐸', '🐧', '🦄', '🌸', '🌙', '⭐', '🍓', '🥤', '🎀'];
 let homeBuilt = false;
 
 async function enterHome() {
@@ -299,7 +299,7 @@ function connectRealtime() {
     .on('broadcast', { event: 'status' }, () => refreshPartner())
     .on('broadcast', { event: 'mood' }, () => loadMoods())
     .on('broadcast', { event: 'couple' }, () => refreshCouple())
-    .on('broadcast', { event: 'vgift' }, ({ payload }) => { giftPopup(partnerProfile.display_name || 'Người ấy', payload.gift, payload.message); loadInbox() })
+    .on('broadcast', { event: 'vgift' }, ({ payload }) => { giftPopup(partnerProfile.display_name || 'Người ấy', payload.gifts || payload.gift, payload.message); markGiftsSeen().then(() => loadInbox()) })
     .on('broadcast', { event: 'letter' }, () => { vib([80, 60, 80]); toast((partnerProfile.display_name || 'Người ấy') + ' vừa gửi thư cho bạn 💌', 'Xem', () => location.href = 'letters.html'); loadInbox() })
     .on('broadcast', { event: 'note' }, () => { toast((partnerProfile.display_name || 'Người ấy') + ' vừa dán note lên tủ lạnh 📝', 'Xem', () => location.href = 'fridge.html'); loadInbox() })
     .on('broadcast', { event: 'voice' }, () => { vib([80, 60, 80]); toast((partnerProfile.display_name || 'Người ấy') + ' vừa gửi lời chào 🎙️', 'Nghe', () => location.href = 'voice.html'); loadInbox() })
@@ -327,7 +327,7 @@ async function loadInbox(first) {
     sb.from('letters').select('id', { count: 'exact', head: true }).eq('to_id', me.id).is('opened_at', null),
     sb.from('notes').select('id', { count: 'exact', head: true }).eq('from_id', partnerId).is('seen_at', null),
     sb.from('voices').select('*').eq('to_id', me.id).is('listened_at', null).order('created_at', { ascending: false }).limit(10),
-    sb.from('vgifts').select('*').eq('to_id', me.id).is('seen_at', null).order('created_at', { ascending: true }).limit(5)
+    sb.from('vgifts').select('*').eq('to_id', me.id).is('seen_at', null).order('created_at', { ascending: true }).limit(30)
   ]);
   setBadge('bLetters', L.count || 0); setBadge('bNotes', N.count || 0); setBadge('bVoice', (V.data || []).length); setBadge('bGifts', (G.data || []).length);
   // greeting card
@@ -343,7 +343,12 @@ async function loadInbox(first) {
     $('#greetAudio').addEventListener('play', () => { sb.rpc('voice_listened', { vid: v.id }).then(() => setTimeout(loadInbox, 1500)) }, { once: true });
   } else if (!v) { box.classList.add('hidden'); greetShownId = null }
   // unseen virtual gifts → pop up once
-  if (first) for (const g of (G.data || []).slice(-1)) { giftPopup(partnerProfile.display_name || 'Người ấy', g.gift, g.message); sb.rpc('vgift_seen', { gid: g.id }) }
+  const unseen = G.data || [];
+  if (first && unseen.length) {
+    const msg = unseen.map(g => g.message).filter(Boolean).slice(-1)[0] || null;
+    giftPopup(partnerProfile.display_name || 'Người ấy', unseen.map(g => ({ gift: g.gift, qty: g.qty || 1 })), msg);
+    await markGiftsSeen(); setBadge('bGifts', 0);
+  }
 }
 
 /* ---------- TOUCH ---------- */
@@ -395,13 +400,13 @@ function updateHug() {
   if (theyHold && !iHold && canVibrate) vib(80);
   const both = iHold && theyHold;
   if (both && !hugEl) {
-    hugEl = document.createElement('div'); hugEl.className = 'hug'; hugEl.innerHTML = `<div>🫂</div><p>Đang ôm ${esc(name)}…</p>`; document.body.appendChild(hugEl);
+    hugEl = document.createElement('div'); hugEl.className = 'hug'; hugEl.innerHTML = `<div>🤗</div><p>Đang ôm ${esc(name)}…</p>`; document.body.appendChild(hugEl);
     hearts(10); if (canVibrate) { vib([300, 120, 300]); hugVib = setInterval(() => vib([300, 120, 300]), 1100) }
   } else if (!both && hugEl) { hugEl.remove(); hugEl = null; clearInterval(hugVib); hugVib = null; vib(0) }
 }
 function onMiss() { hearts(14); vib([80, 60, 80, 60, 200]); toast((partnerProfile.display_name || 'Người ấy') + ' đang nhớ bạn lắm 💗', 'Nhớ lại', () => { send('miss'); hearts(6) }) }
 function hearts(n) {
-  const fx = $('#fx'); const set = ['💗', '💖', '💕', '❤️', '🩷', '💘'];
+  const fx = $('#fx'); const set = ['💗', '💖', '💕', '❤️', '💗', '💘'];
   for (let i = 0; i < n; i++) { const h = document.createElement('div'); h.className = 'fheart'; h.textContent = set[i % set.length]; h.style.left = Math.random() * 95 + 'vw'; h.style.fontSize = (20 + Math.random() * 26) + 'px'; h.style.animationDuration = (2.6 + Math.random() * 2) + 's'; h.style.animationDelay = (Math.random() * .8) + 's'; fx.appendChild(h); setTimeout(() => h.remove(), 5500) }
 }
 
@@ -424,10 +429,9 @@ function openLampFull() {
 
 /* ---------- BOOTH invite ---------- */
 function inviteBooth() {
-  const a = 'abcdefghjkmnpqrstuvwxyz23456789'; let code = ''; for (let i = 0; i < 6; i++) code += a[Math.floor(Math.random() * a.length)];
   const base = location.origin + location.pathname.replace(/[^/]*$/, '') + 'booth.html';
-  send('booth', { url: base + '?room=' + code });
-  location.href = base + '?room=' + code + '&host=1';
+  send('booth', { url: base + '?go=1' });
+  location.href = base + '?go=1&host=me';
 }
 
 /* ---------- SETTINGS ---------- */

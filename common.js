@@ -26,7 +26,7 @@ export function toast(msg, label, act) {
 }
 export function hearts(n = 10) {
   let fx = $('#fx'); if (!fx) { fx = document.createElement('div'); fx.id = 'fx'; fx.className = 'fx'; document.body.appendChild(fx) }
-  const set = ['💗', '💖', '💕', '❤️', '🩷', '💘'];
+  const set = ['💗', '💖', '💕', '❤️', '💗', '💘'];
   for (let i = 0; i < n; i++) { const h = document.createElement('div'); h.className = 'fheart'; h.textContent = set[i % set.length]; h.style.left = Math.random() * 95 + 'vw'; h.style.fontSize = (20 + Math.random() * 26) + 'px'; h.style.animationDuration = (2.6 + Math.random() * 2) + 's'; h.style.animationDelay = (Math.random() * .8) + 's'; fx.appendChild(h); setTimeout(() => h.remove(), 5500) }
 }
 export function floatEmoji(e, n = 6) {
@@ -80,7 +80,7 @@ export function joinMain(ctx, page, onPresence) {
     .on('broadcast', { event: 'invite' }, ({ payload }) => { if (payload.page === page) return; vib([80, 60, 80]); toast(`${ctx.partnerName} rủ bạn: ${payload.title}`, 'Vào', () => location.href = payload.url) })
     .on('broadcast', { event: 'booth' }, ({ payload }) => { vib([80, 60, 80]); toast(`${ctx.partnerName} mời bạn chụp photobooth 📸`, 'Vào', () => location.href = payload.url) })
     .on('broadcast', { event: 'miss' }, () => { hearts(12); vib([80, 60, 80]); toast(`${ctx.partnerName} đang nhớ bạn 💗`) })
-    .on('broadcast', { event: 'vgift' }, ({ payload }) => giftPopup(ctx.partnerName, payload.gift, payload.message))
+    .on('broadcast', { event: 'vgift' }, ({ payload }) => { giftPopup(ctx.partnerName, payload.gifts || payload.gift, payload.message); markGiftsSeen() })
     .on('broadcast', { event: 'letter' }, () => { if (page !== 'letters') { vib([80, 60, 80]); toast(`${ctx.partnerName} vừa gửi thư cho bạn 💌`, 'Xem', () => location.href = 'letters.html') } })
     .on('broadcast', { event: 'note' }, () => { if (page !== 'fridge') toast(`${ctx.partnerName} vừa dán note lên tủ lạnh 📝`, 'Xem', () => location.href = 'fridge.html') })
     .on('broadcast', { event: 'voice' }, () => { if (page !== 'voice') { vib([80, 60, 80]); toast(`${ctx.partnerName} vừa gửi lời chào 🎙️`, 'Nghe', () => location.href = 'voice.html') } });
@@ -178,9 +178,13 @@ export function fmtLeft(ms) {
 export function ago(t) { if (!t) return ''; const s = (Date.now() - new Date(t)) / 1000; if (s < 60) return 'vừa xong'; if (s < 3600) return Math.floor(s / 60) + ' phút trước'; if (s < 86400) return Math.floor(s / 3600) + ' giờ trước'; return Math.floor(s / 86400) + ' ngày trước' }
 export function ping(ctx, event, payload = {}) { ctx.main && ctx.main.send({ type: 'broadcast', event, payload }) }
 
-export function giftPopup(fromName, gift, message) {
-  const [e, ...rest] = String(gift || '🎁').split(' ');
+export function giftPopup(fromName, gifts, message, onClose) {
+  const list = (Array.isArray(gifts) ? gifts : [{ gift: gifts, qty: 1 }]).filter(Boolean);
+  const parts = list.map(g => { const [e, ...rest] = String(g.gift || '🎁').split(' '); return { e, name: rest.join(' '), qty: g.qty || 1 } });
   const el = document.createElement('div'); el.className = 'giftpop';
-  el.innerHTML = `<div class="g">${esc(e)}</div><p>${esc(fromName)} tặng bạn ${esc(rest.join(' '))}</p>${message ? `<div class="msg">${esc(message)}</div>` : ''}<p style="font-size:13px;font-weight:600;opacity:.8">Chạm để đóng</p>`;
-  el.onclick = () => el.remove(); document.body.appendChild(el); hearts(14); vib([100, 60, 100, 60, 200]);
+  const icons = parts.map(p => `<span style="display:inline-block;margin:0 4px">${esc(p.e)}${p.qty > 1 ? `<sup style="font-size:28px;color:#fff;font-weight:800">×${p.qty}</sup>` : ''}</span>`).join('');
+  const names = parts.map(p => (p.qty > 1 ? p.qty + ' ' : '') + p.name).join(', ');
+  el.innerHTML = `<div class="g" style="font-size:${parts.length > 2 ? 80 : 120}px">${icons}</div><p>${esc(fromName)} tặng bạn ${esc(names)}</p>${message ? `<div class="msg">${esc(message)}</div>` : ''}<p style="font-size:13px;font-weight:600;opacity:.8">Chạm để đóng</p>`;
+  el.onclick = () => { el.remove(); onClose && onClose() }; document.body.appendChild(el); hearts(14); vib([100, 60, 100, 60, 200]);
 }
+export function markGiftsSeen() { return sb.rpc('vgifts_seen_all').then(() => { }, () => { }) }
