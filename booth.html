@@ -123,6 +123,11 @@ header .sp{flex:1}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:14px}
 .chips button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-bottom:6px}
+.fgrid button{position:relative;border:2px solid transparent;border-radius:10px;padding:0;overflow:hidden;cursor:pointer;background:var(--card);aspect-ratio:9/16}
+.fgrid button img{width:100%;height:100%;object-fit:cover;display:block}
+.fgrid button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.fgrid button span{position:absolute;right:3px;bottom:3px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:1px 5px}
 .chips.thumbs-chips button{border-radius:12px;padding:4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;width:72px}
 .chips.thumbs-chips canvas{width:62px;height:62px;border-radius:8px;object-fit:cover;display:block}
 .preset{display:flex;align-items:center;gap:6px}
@@ -282,7 +287,10 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
         <div class="pane on" data-pane="frame">
           <h4>✨ Mẫu giống photobooth Hàn</h4>
           <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:6px"><button class="btn small primary" id="likeMoodit">📰 Giống ảnh Moodit</button><button class="btn small primary" id="likeBoarding">✈️ Giống vé máy bay</button></div>
-          <div class="chips" data-chip="tpl"><button data-v="none">Khung tự chỉnh</button><button data-v="magazine">📰 Tạp chí</button><button data-v="boarding">✈️ Vé máy bay</button></div>
+          <div class="chips" data-chip="tpl"><button data-v="none">Khung tự chỉnh</button><button data-v="magazine">📰 Tạp chí</button><button data-v="boarding">✈️ Vé máy bay</button><button data-v="img">🖼️ Khung ảnh</button></div>
+          <h4>🖼️ Khung ảnh xinh <span class="hint" style="font-weight:400">(chạm để dùng)</span></h4>
+          <div id="imgFrames" class="fgrid"></div>
+          <p class="hint" id="imgFrameHint" style="text-align:left;display:none"></p>
           <div id="tplMag" class="hidden"><label class="crow" style="display:block">Tiêu đề trên cùng<input class="txt" data-k="tplTitle" maxlength="24" style="margin-top:4px"></label></div>
           <div id="tplBp" class="hidden">
             <div class="row" style="gap:6px;margin-top:6px"><input class="txt" data-k="bpClass" maxlength="18" placeholder="Hạng vé"><input class="txt" data-k="bpBrand" maxlength="18" placeholder="Hãng bay"></div>
@@ -784,7 +792,7 @@ let mkT=null;$$('[data-k]').forEach(el=>{const k=el.dataset.k;el.addEventListene
 $$('[data-chip]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;const k=g.dataset.chip;let v=b.dataset.v;
   if(k==='bgType'&&v==='image'&&!S.bgImg){$('#bgFile').click();return}
   S[k]=isNaN(+v)?v:+v;syncInputs();frameChanged()}));
-function syncTplUI(){const t=S.tpl||'none';const a=$('#tplMag'),b=$('#tplBp'),cf=$('#customFrame');if(a)a.classList.toggle('hidden',t!=='magazine');if(b)b.classList.toggle('hidden',t!=='boarding');if(cf)cf.classList.toggle('hidden',t!=='none');if(S.bd&&S.bd!=='none'&&!SEG&&!segFailed)loadSeg().then(()=>{invalidate();buildFilterThumbs()}).catch(()=>{})}
+function syncTplUI(){const t=S.tpl||'none';const a=$('#tplMag'),b=$('#tplBp'),cf=$('#customFrame');if(a)a.classList.toggle('hidden',t!=='magazine');if(b)b.classList.toggle('hidden',t!=='boarding');if(cf)cf.classList.toggle('hidden',t!=='none');syncImgFrames();if(S.bd&&S.bd!=='none'&&!SEG&&!segFailed)loadSeg().then(()=>{invalidate();buildFilterThumbs()}).catch(()=>{})}
 function syncInputs(){syncTplUI();
   $$('[data-k]').forEach(el=>{const v=S[el.dataset.k];if(el.type==='checkbox')el.checked=!!v;else el.value=v;const o=el.nextElementSibling;if(o&&o.tagName==='OUTPUT')o.textContent=v});
   $$('[data-chip]').forEach(g=>{const k=g.dataset.chip;g.querySelectorAll('button[data-v]').forEach(b=>{const v=b.dataset.v;b.classList.toggle('on',isNaN(+v)?S[k]===v:Math.abs(+v-S[k])<.001)})});
@@ -1071,7 +1079,38 @@ function renderBoarding(c){
     x.textAlign='left';
   });
 }
+
+/* ===== Khung ảnh (ảnh mẫu có ô trống) ===== */
+let FRAMES=[];const frImg={};
+function frameMeta(){return FRAMES.find(f=>f.id===S.tplImg)||FRAMES[0]}
+function loadFrameImg(id){if(frImg[id])return frImg[id];const im=new Image();im.decoding='async';im.onload=()=>{im.ok=1;invalidate()};im.onerror=()=>{im.bad=1;invalidate()};im.src='frames/'+id+'.webp';frImg[id]=im;return im}
+function syncImgFrames(){const box=$('#imgFrames');if(!box)return;box.querySelectorAll('button').forEach(b=>b.classList.toggle('on',S.tpl==='img'&&b.dataset.fid===(S.tplImg||'f01')));
+  const h=$('#imgFrameHint');if(!h)return;const f=S.tpl==='img'&&frameMeta();if(!f||!ED){h.style.display='none';return}
+  const n=ED.shots.length,k=f.slots.length;h.style.display='';h.textContent=`Khung "${f.name}" có ${k} ô · bạn có ${n} kiểu`+(n<k?' → ảnh sẽ lặp lại cho đủ ô':n>k?` → chỉ dùng ${k} kiểu đầu`:' → vừa khít ✨')+(isSingle()?'':'. Hai người: mỗi ô chia đôi bạn | người ấy.')}
+fetch('frames/frames.json').then(r=>r.json()).then(list=>{FRAMES=list;const box=$('#imgFrames');if(!box)return;
+  box.innerHTML=list.map(f=>`<button data-fid="${f.id}" title="${f.name}"><img loading="lazy" src="frames/t${f.id.slice(1)}.jpg" alt="${f.name}"><span>${f.slots.length}</span></button>`).join('');
+  box.onclick=e=>{const b=e.target.closest('button[data-fid]');if(!b)return;S.tpl='img';S.tplImg=b.dataset.fid;loadFrameImg(S.tplImg);syncInputs();frameChanged()};
+  if(S.tpl==='img')loadFrameImg((frameMeta()||{}).id);syncImgFrames();invalidate()}).catch(()=>{});
+function slotPhoto(x,i,who,w,h){const src=photoFor(i,who);if(src)drawCover(x,filtered(src,i),-w/2,-h/2,w,h,.42);else{x.fillStyle='#e9e3dc';x.fillRect(-w/2,-h/2,w,h)}}
+function renderImgFrame(c){
+  const f=frameMeta();
+  if(!f){c.width=540*RK;c.height=960*RK;const x=c.getContext('2d');x.fillStyle='#f4eee8';x.fillRect(0,0,c.width,c.height);return}
+  const im=loadFrameImg(f.id);const Kf=Math.min(RK,2400/f.h);
+  c.width=Math.round(f.w*Kf);c.height=Math.round(f.h*Kf);const x=c.getContext('2d');x.setTransform(Kf,0,0,Kf,0,0);x.imageSmoothingQuality='high';
+  x.fillStyle='#ffffff';x.fillRect(0,0,f.w,f.h);
+  const n=Math.max(1,ED.shots.length),two=!isSingle(),one=(S.swap&&ED.shots.some(s=>s.them))?'them':'me';
+  f.slots.forEach(([cx,cy,w,h,a],j)=>{const i=j%n;x.save();x.translate(cx,cy);x.rotate(a*Math.PI/180);x.beginPath();x.rect(-w/2,-h/2,w,h);x.clip();
+    if(two){const L=S.swap?'them':'me',R=S.swap?'me':'them';
+      if(w/h>=.9){x.save();x.beginPath();x.rect(-w/2,-h/2,w/2,h);x.clip();x.translate(-w/4,0);slotPhoto(x,i,L,w/2,h);x.restore();x.save();x.beginPath();x.rect(0,-h/2,w/2,h);x.clip();x.translate(w/4,0);slotPhoto(x,i,R,w/2,h);x.restore()}
+      else{x.save();x.beginPath();x.rect(-w/2,-h/2,w,h/2);x.clip();x.translate(0,-h/4);slotPhoto(x,i,L,w,h/2);x.restore();x.save();x.beginPath();x.rect(-w/2,0,w,h/2);x.clip();x.translate(0,h/4);slotPhoto(x,i,R,w,h/2);x.restore()}}
+    else slotPhoto(x,i,one,w,h);
+    x.restore()});
+  if(im.ok)x.drawImage(im,0,0,f.w,f.h);
+  else{x.fillStyle='rgba(0,0,0,.35)';x.fillRect(0,0,f.w,f.h);x.fillStyle='#fff';x.font='600 28px "Be Vietnam Pro", sans-serif';x.textAlign='center';x.fillText(im.bad?'Không tải được khung, thử lại nhé':'Đang tải khung…',f.w/2,f.h/2)}
+  syncImgFrames();
+}
 function renderBase(c){
+  if(S.tpl==='img'){renderImgFrame(c);return}
   if(S.tpl==='magazine'){renderMagazine(c);return}
   if(S.tpl==='boarding'){renderBoarding(c);return}
   const n=ED.shots.length,g=geometry(n);c.width=Math.round(g.W*RK);c.height=Math.round(g.H*RK);const x=c.getContext('2d');x.setTransform(RK,0,0,RK,0,0);x.imageSmoothingQuality='high';
