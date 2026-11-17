@@ -40,7 +40,7 @@ $('#sThemes').onclick = e => { const b = e.target.closest('button'); if (!b) ret
 applyUI();
 
 /* ---------- PWA ---------- */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(() => { }); navigator.serviceWorker.addEventListener('controllerchange', () => { if (!sessionStorage.getItem('swr')) { sessionStorage.setItem('swr', '1'); location.reload() } }) }
 let deferredInstall = null;
 const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);

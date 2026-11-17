@@ -1,11 +1,11 @@
-const CACHE = 'tomortle-v14';
-const SHELL = ['./', './index.html', './app.css', './app.js', './booth.html', './icon.svg', './icon-192.png', './icon-180.png', './manifest.webmanifest', './common.js', './watch.html', './draw.html', './games.html', './study.html', './letters.html', './fridge.html', './voice.html', './gifts.html', './call.html', './room.html', './album.html', './daily.html', './calendar.html', './bucket.html', './fund.html', './map.html', './backup.html', './recap.html', './heart.html', './walk.html', './frames/frames.json'];
+const CACHE = 'tomortle-v15';
+const SHELL = ['./', './index.html', './app.css?v=15', './app.js?v=15', './booth.html', './icon.svg', './icon-192.png', './icon-180.png', './manifest.webmanifest', './common.js', './watch.html', './draw.html', './games.html', './study.html', './letters.html', './fridge.html', './voice.html', './gifts.html', './call.html', './room.html', './album.html', './daily.html', './calendar.html', './bucket.html', './fund.html', './map.html', './backup.html', './recap.html', './heart.html', './walk.html', './frames/frames.json'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {})); self.skipWaiting() });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())) });
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;
-  e.respondWith(fetch(e.request).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {}); return r }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html'))));
+  e.respondWith(fetch(e.request, { cache: 'no-cache' }).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {}); return r }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html'))));
 });
 
 self.addEventListener('push', e => {
