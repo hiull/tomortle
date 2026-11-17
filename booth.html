@@ -19,7 +19,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Dancing+Script:wght@600;700&family=Pacifico&family=Patrick+Hand&family=Playfair+Display:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Dancing+Script:wght@600;700&family=Pacifico&family=Patrick+Hand&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Anton&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 :root{
@@ -277,12 +277,25 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
           <button data-tab="text">Chữ</button>
           <button data-tab="filter">Filter</button>
           <button data-tab="sticker">Sticker</button>
+          <button data-tab="bd">Phông</button>
         </div>
         <div class="pane on" data-pane="frame">
-          <h4>Mẫu nhanh</h4>
-          <div class="chips" id="presetChips"></div>
+          <h4>✨ Mẫu giống photobooth Hàn</h4>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:6px"><button class="btn small primary" id="likeMoodit">📰 Giống ảnh Moodit</button><button class="btn small primary" id="likeBoarding">✈️ Giống vé máy bay</button></div>
+          <div class="chips" data-chip="tpl"><button data-v="none">Khung tự chỉnh</button><button data-v="magazine">📰 Tạp chí</button><button data-v="boarding">✈️ Vé máy bay</button></div>
+          <div id="tplMag" class="hidden"><label class="crow" style="display:block">Tiêu đề trên cùng<input class="txt" data-k="tplTitle" maxlength="24" style="margin-top:4px"></label></div>
+          <div id="tplBp" class="hidden">
+            <div class="row" style="gap:6px;margin-top:6px"><input class="txt" data-k="bpClass" maxlength="18" placeholder="Hạng vé"><input class="txt" data-k="bpBrand" maxlength="18" placeholder="Hãng bay"></div>
+            <div class="row" style="gap:6px;margin-top:6px"><input class="txt" data-k="bpFrom" maxlength="3" placeholder="Từ (mã)" style="text-transform:uppercase"><input class="txt" data-k="bpFromName" maxlength="22" placeholder="Tên nơi đi"></div>
+            <div class="row" style="gap:6px;margin-top:6px"><input class="txt" data-k="bpTo" maxlength="3" placeholder="Đến (mã)" style="text-transform:uppercase"><input class="txt" data-k="bpToName" maxlength="22" placeholder="Tên nơi đến"></div>
+            <div class="row" style="gap:6px;margin-top:6px"><input class="txt" data-k="bpGate" maxlength="3" placeholder="Cổng"><input class="txt" data-k="bpSeat" maxlength="3" placeholder="Ghế"></div>
+            <p class="hint" style="text-align:left">Hai người: dải trái là bạn, dải phải là người ấy. Một người: in 2 dải giống nhau như photobooth thật.</p>
+          </div>
           <h4>Số người trong ảnh</h4>
           <div class="chips" data-chip="people"><button data-v="two">👫 Hai người</button><button data-v="one">🙋 Một người</button></div>
+          <div id="customFrame">
+          <h4>Mẫu nhanh</h4>
+          <div class="chips" id="presetChips"></div>
           <h4>Bố cục</h4>
           <div class="chips" data-chip="layout">
             <button data-v="strip">Dải dọc</button><button data-v="grid">Lưới 2 cột</button><button data-v="horizontal">Dải ngang</button><button data-v="alternate">Xen kẽ từng người</button><button data-v="split">Ghép liền</button>
@@ -303,6 +316,14 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
           <div class="crow"><button class="btn small" id="btnOverlay">Tải khung PNG</button><button class="btn small ghost hidden" id="btnOverlayDel">Bỏ khung</button></div>
           <div class="chips hidden" data-chip="overlayFit" id="ovFit"><button data-v="stretch">Kéo giãn</button><button data-v="cover">Phủ kín</button><button data-v="contain">Vừa khít</button></div>
           <input type="file" id="ovFile" accept="image/png,image/*" hidden>
+          </div>
+        </div>
+        <div class="pane" data-pane="bd">
+          <h4>🎬 Phông nền studio</h4>
+          <p class="hint" style="text-align:left;margin:0 0 8px">App tự tách người ra khỏi nền thật rồi đặt lên phông như photobooth Hàn. Lần đầu dùng cần tải công cụ tách nền (khoảng 10 giây).</p>
+          <div class="chips" data-chip="bd"><button data-v="none">Nền thật</button><button data-v="mix">🎨 Mỗi kiểu một phông</button><button data-v="love">💌 Tường LOVE</button><button data-v="redglow">❤️ Đỏ phát sáng</button><button data-v="bday">🎂 Sinh nhật</button><button data-v="greenheart">💚 Xanh ánh tim</button><button data-v="pinkcloud">☁️ Mây hồng</button><button data-v="studio">🤍 Studio trắng</button></div>
+          <label class="crow" style="display:block;margin-top:10px">Chữ trên phông đỏ/xanh<input class="txt" data-k="bdText" maxlength="20" style="margin-top:4px"></label>
+          <p class="note" id="bdStatus"></p>
         </div>
         <div class="pane" data-pane="bg">
           <h4>Kiểu nền</h4>
@@ -737,7 +758,7 @@ async function runSession(cfg){
 }
 
 /* ============ Frame settings ============ */
-const DEF={layout:'strip',aspect:.75,pad:36,gap:18,inner:10,radius:14,border:6,borderColor:'#ffffff',bgType:'polka',bg1:'#ffd6e6',bg2:'#ffffff',footer:160,caption:'',showDate:true,font:'Pacifico',textColor:'#e0457b',textSize:56,filter:'pinkwhite',bright:0,swap:false,people:'two',deco:'hearts',decoColor:'#ff5c8a',mk_white:25,mk_pink:22,mk_smooth:25,mk_lip:10,glow:10,sharp:35,warm:0};
+const DEF={layout:'strip',aspect:.75,pad:36,gap:18,inner:10,radius:14,border:6,borderColor:'#ffffff',bgType:'polka',bg1:'#ffd6e6',bg2:'#ffffff',footer:160,caption:'',showDate:true,font:'Pacifico',textColor:'#e0457b',textSize:56,filter:'pinkwhite',bright:0,swap:false,people:'two',deco:'hearts',decoColor:'#ff5c8a',tpl:'none',tplTitle:'TOMORTLE',bd:'none',bdText:'VIET NAM',bpClass:'First Class',bpBrand:'Tomortle Air',bpFrom:'HAN',bpFromName:'HA NOI',bpTo:'SGN',bpToName:'HO CHI MINH CITY',bpGate:'01',bpSeat:'3A',mk_white:25,mk_pink:22,mk_smooth:25,mk_lip:10,glow:10,sharp:35,warm:0};
 let S=Object.assign({},DEF,{overlayFit:'stretch'},store.get('frame',{}));{const LF={pastel:'pinkwhite',rosy:'pinkwhite',warm:'canon',cool:'soft',punch:'canon'};if(LF[S.filter])S.filter=LF[S.filter];if(!S.v2){Object.assign(S,{filter:'pinkwhite',mk_white:25,mk_pink:22,mk_smooth:25,mk_lip:10,glow:10,sharp:35,v2:true});if(S.bgType==='solid'&&S.bg1==='#ffd6e3')Object.assign(S,{bgType:'polka',bg1:'#ffd6e6',bg2:'#ffffff',deco:'hearts',border:6})}}S.bgImg=null;S.overlayImg=null;const savedBgType=S.bgType;if(S.bgType==='image')S.bgType='solid';
 const PRESETS=[
   {n:'Polka hồng',c:'#ffd6e6',s:{bgType:'polka',bg1:'#ffd6e6',bg2:'#ffffff',textColor:'#e0457b',font:'Pacifico',radius:18,border:8,borderColor:'#ffffff',deco:'hearts',decoColor:'#ff5c8a',filter:'pinkwhite',pad:40,gap:20}},
@@ -763,7 +784,8 @@ let mkT=null;$$('[data-k]').forEach(el=>{const k=el.dataset.k;el.addEventListene
 $$('[data-chip]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;const k=g.dataset.chip;let v=b.dataset.v;
   if(k==='bgType'&&v==='image'&&!S.bgImg){$('#bgFile').click();return}
   S[k]=isNaN(+v)?v:+v;syncInputs();frameChanged()}));
-function syncInputs(){
+function syncTplUI(){const t=S.tpl||'none';const a=$('#tplMag'),b=$('#tplBp'),cf=$('#customFrame');if(a)a.classList.toggle('hidden',t!=='magazine');if(b)b.classList.toggle('hidden',t!=='boarding');if(cf)cf.classList.toggle('hidden',t!=='none');if(S.bd&&S.bd!=='none'&&!SEG&&!segFailed)loadSeg().then(()=>{invalidate();buildFilterThumbs()}).catch(()=>{})}
+function syncInputs(){syncTplUI();
   $$('[data-k]').forEach(el=>{const v=S[el.dataset.k];if(el.type==='checkbox')el.checked=!!v;else el.value=v;const o=el.nextElementSibling;if(o&&o.tagName==='OUTPUT')o.textContent=v});
   $$('[data-chip]').forEach(g=>{const k=g.dataset.chip;g.querySelectorAll('button[data-v]').forEach(b=>{const v=b.dataset.v;b.classList.toggle('on',isNaN(+v)?S[k]===v:Math.abs(+v-S[k])<.001)})});
 }
@@ -781,7 +803,7 @@ async function blobToCanvas(b,max){const u=URL.createObjectURL(b);try{return toC
 $$('#tabs button').forEach(b=>b.onclick=()=>{$$('#tabs button').forEach(x=>x.classList.toggle('on',x===b));$$('.pane').forEach(p=>p.classList.toggle('on',p.dataset.pane===b.dataset.tab))});
 
 /* ============ Filters ============ */
-const FILTERS=[['none','Gốc'],['canon','Canon R50'],['pinkwhite','Trắng hồng'],['vintage','Vintage'],['bw','Đen trắng'],['film','Film'],['soft','Mềm']];
+const FILTERS=[['none','Gốc'],['canon','Canon R50'],['studio','Studio sáng'],['flash','Đèn flash'],['pinkwhite','Trắng hồng'],['vintage','Vintage'],['bw','Đen trắng'],['film','Film'],['soft','Mềm']];
 const LEGACY_F={pastel:'pinkwhite',rosy:'pinkwhite',warm:'canon',cool:'soft',punch:'canon'};
 const MKKEYS=['mk_white','mk_pink','mk_smooth','mk_lip','glow','sharp','bright','warm'];
 function mkParams(){const P={};MKKEYS.forEach(k=>P[k]=+S[k]||0);return P}
@@ -803,6 +825,8 @@ function applyFilter(src,f,P){
     r+=B;g+=B;b+=B;
     switch(f){
       case 'canon':r=r*.93+20;g=g*.94+13;b=b*.92+16;y=.299*r+.587*g+.114*b;r=y+(r-y)*1.08+3;g=y+(g-y)*1.02;b=y+(b-y)*1.04;break;
+      case 'studio':r=r*.9+28;g=g*.9+27;b=b*.9+30;y=.299*r+.587*g+.114*b;r=y+(r-y)*.94+2;g=y+(g-y)*.92;b=y+(b-y)*.94+1;r=(r-128)*1.04+128;g=(g-128)*1.04+128;b=(b-128)*1.04+128;break;
+      case 'flash':y=.299*r+.587*g+.114*b;r=(y+(r-y)*1.12-128)*1.08+128+10;g=(y+(g-y)*1.08-128)*1.08+128+5;b=(y+(b-y)*1.04-128)*1.08+128+2;break;
       case 'pinkwhite':r=r*.88+34;g=g*.88+26;b=b*.88+32;y=.299*r+.587*g+.114*b;r=y+(r-y)*.92+6;g=y+(g-y)*.9;b=y+(b-y)*.92+5;break;
       case 'bw':y=.299*r+.587*g+.114*b;y=(y-128)*1.2+128;r=g=b=y;break;
       case 'vintage':{const sr=.393*r+.769*g+.189*b,sg=.349*r+.686*g+.168*b,sb=.272*r+.534*g+.131*b;r=r*.45+sr*.55;g=g*.45+sg*.55;b=b*.45+sb*.55;r=r*.86+26;g=g*.86+20;b=b*.84+12;break}
@@ -820,8 +844,83 @@ function applyFilter(src,f,P){
   if(f==='vintage'||f==='film'||f==='bw'){const cx=c.width/2,cy=c.height/2,m=Math.max(cx,cy);const gr=x.createRadialGradient(cx,cy,m*.45,cx,cy,m*1.15);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.34)');x.fillStyle=gr;x.fillRect(0,0,c.width,c.height)}
   return c;
 }
+/* ---- background removal (MediaPipe selfie segmentation, loaded on demand) ---- */
+let SEG=null,segLoading=null,segFailed=false;
+const MP='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const SEG_MODEL='https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite';
+function bdStatus(t){const el=$('#bdStatus');if(el)el.textContent=t||''}
+let fontsReady=false;
+function loadDecoFonts(){if(fontsReady||!document.fonts)return Promise.resolve();return Promise.all(['24px "Patrick Hand"','700 24px "Playfair Display"','800 24px "Baloo 2"','24px Anton','24px Pacifico','600 24px "Be Vietnam Pro"','italic 600 24px "Be Vietnam Pro"'].map(f=>document.fonts.load(f).catch(()=>{}))).then(()=>{fontsReady=true;if(ED)ED.shots.forEach(s=>{if(s.me)s.me._fc={};if(s.them)s.them._fc={}});invalidate()})}
+loadDecoFonts();
+function loadSeg(){
+  if(segLoading)return segLoading;bdStatus('Đang tải công cụ tách nền…');
+  segLoading=(async()=>{
+    const V=await import(MP+'/vision_bundle.mjs');const fs=await V.FilesetResolver.forVisionTasks(MP+'/wasm');
+    const opt=d=>({baseOptions:{modelAssetPath:SEG_MODEL,delegate:d},runningMode:'IMAGE',outputCategoryMask:false,outputConfidenceMasks:true});
+    try{SEG=await V.ImageSegmenter.createFromOptions(fs,opt('GPU'))}catch(e){SEG=await V.ImageSegmenter.createFromOptions(fs,opt('CPU'))}
+    bdStatus('');return SEG;
+  })().catch(e=>{console.warn(e);segFailed=true;bdStatus('Máy này chưa tách nền được, thử Chrome hoặc Safari mới nhất nhé.');throw e});
+  return segLoading;
+}
+function maskOf(src){
+  if(src._mask)return src._mask;
+  const s=Math.min(1,768/Math.max(src.width,src.height));const sm=document.createElement('canvas');sm.width=Math.round(src.width*s);sm.height=Math.round(src.height*s);sm.getContext('2d').drawImage(src,0,0,sm.width,sm.height);
+  const res=SEG.segment(sm);const m=res.confidenceMasks[0];const w=m.width,hh=m.height,arr=m.getAsFloat32Array();
+  const mc=document.createElement('canvas');mc.width=w;mc.height=hh;const mx=mc.getContext('2d'),id=mx.createImageData(w,hh);
+  for(let i=0;i<arr.length;i++){let a=(arr[i]-.3)/.45;a=a<0?0:a>1?1:a;a=a*a*(3-2*a);const j=i*4;id.data[j]=id.data[j+1]=id.data[j+2]=255;id.data[j+3]=a*255}
+  mx.putImageData(id,0,0);try{res.close&&res.close()}catch(e){}
+  const full=document.createElement('canvas');full.width=src.width;full.height=src.height;const fx=full.getContext('2d');fx.imageSmoothingQuality='high';fx.drawImage(mc,0,0,full.width,full.height);
+  return src._mask=full;
+}
+const BD_MIX=['love','redglow','bday','greenheart'];
+function drawBackdrop(x,w,hh,kind){
+  const rnd=mulberry(kind.length*97+13),U=Math.min(w,hh*.8)/100;
+  const glow=(shape,col='#fff',blur=U*7)=>{x.save();x.shadowColor=col;x.shadowBlur=blur;x.fillStyle=col;shape();x.fill();x.restore()};
+  const serif=(t,col,y)=>{if(!t)return;x.save();x.fillStyle=col;x.textAlign='center';x.textBaseline='middle';let fs=U*10;x.font=`700 ${fs}px "Playfair Display", serif`;while(x.measureText(t).width>w*.8&&fs>10){fs-=2;x.font=`700 ${fs}px "Playfair Display", serif`}x.shadowColor='rgba(255,255,255,.6)';x.shadowBlur=U*1.5;x.fillText(t,w/2,y);x.restore()};
+  if(kind==='love'){
+    x.fillStyle='#f7efe8';x.fillRect(0,0,w,hh);
+    x.save();x.globalAlpha=.85;x.fillStyle='#fffaf6';heartPath(x,w/2,hh*.5,U*62);x.fill();x.restore();
+    const words=['LOVE','love you','more','forever','LOVE','in love','for you','LOVE','you'];
+    x.save();x.fillStyle='#e4362d';x.textBaseline='middle';
+    for(let y=U*6,row=0;y<hh;y+=U*13,row++){let X=-U*6+(row%2)*U*9;while(X<w){const t=words[Math.floor(rnd()*words.length)];const fs=U*(8+rnd()*5);x.font=`${fs}px "Patrick Hand", "Dancing Script", cursive`;x.save();x.translate(X,y+(rnd()-.5)*U*3);x.rotate((rnd()-.5)*.25);x.globalAlpha=.55+rnd()*.35;x.fillText(t,0,0);x.restore();X+=x.measureText(t).width+U*(3+rnd()*4);if(rnd()<.35){x.save();x.globalAlpha=.8;heartPath(x,X,y,U*2.6);x.fill();x.restore();X+=U*4}}}
+    x.restore();
+  }else if(kind==='redglow'||kind==='greenheart'){
+    const red=kind==='redglow';const g=x.createRadialGradient(w/2,hh*.55,w*.1,w/2,hh*.55,Math.max(w,hh)*.75);
+    g.addColorStop(0,red?'#e8262e':'#2f6d46');g.addColorStop(1,red?'#a50d16':'#0d2717');x.fillStyle=g;x.fillRect(0,0,w,hh);
+    if(red)glow(()=>{x.beginPath();const cx=w/2,cy=hh*.5,R=U*30;for(let i=0;i<=40;i++){const a=i/40*Math.PI*2,rr=R*(1+.18*Math.sin(a*5));x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr*1.1)}x.closePath()},'rgba(255,255,255,.92)',U*9);
+    else glow(()=>heartPath(x,w/2,hh*.56,U*70),'rgba(255,255,255,.9)',U*10);
+    serif(S.bdText,'#fff8f0',hh*.11);
+  }else if(kind==='bday'){
+    x.fillStyle='#3daa4b';x.fillRect(0,0,w,hh);
+    const cols=['#ffd23f','#ff5c8a','#4f8cff','#ff8a3d','#9b5de5','#ffffff','#e63946'];
+    for(let i=0;i<70;i++){x.save();x.fillStyle=cols[i%cols.length];x.translate(rnd()*w,rnd()*hh);x.rotate(rnd()*3);x.fillRect(-U,-U*.5,U*2.2,U*1.1);x.restore()}
+    const ax=w*.14,ay=hh*.36,aw=w*.72,ah=hh*.64+U*4,r=U*3.2;x.fillStyle='#fffdf8';
+    x.fillRect(ax+r,ay+r,aw-2*r,ah);for(let X=ax+r;X<=ax+aw-r+1;X+=r*1.7){x.beginPath();x.arc(X,ay+r,r,0,7);x.fill()}for(let y=ay+r;y<=hh;y+=r*1.7){x.beginPath();x.arc(ax+r,y,r,0,7);x.fill();x.beginPath();x.arc(ax+aw-r,y,r,0,7);x.fill()}
+    const t1='happy',t2='birthday';const lc=['#ff5c8a','#4f8cff','#ffd23f','#9b5de5','#ff8a3d','#3ccf91','#e63946','#ffffff'];
+    const word=(t,cy,fs)=>{x.font=`800 ${fs}px "Baloo 2", sans-serif`;let tw=0;const ws=[...t].map(c=>{const m=x.measureText(c).width;tw+=m;return m});let X=(w-tw)/2;[...t].forEach((c,i)=>{x.save();x.translate(X+ws[i]/2,cy);x.rotate((rnd()-.5)*.3);x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=fs*.22;x.strokeStyle='#1d3557';x.strokeText(c,0,0);x.lineWidth=fs*.1;x.strokeStyle='#fff';x.strokeText(c,0,0);x.fillStyle=lc[(i+cy|0)%lc.length];x.fillText(c,0,0);x.restore();X+=ws[i]})};
+    word(t1,hh*.1,U*13);word(t2,hh*.22,U*14);
+  }else if(kind==='pinkcloud'){
+    const g=x.createLinearGradient(0,0,0,hh);g.addColorStop(0,'#ffc6db');g.addColorStop(1,'#ffe6ef');x.fillStyle=g;x.fillRect(0,0,w,hh);
+    x.fillStyle='rgba(255,255,255,.9)';for(let i=0;i<6;i++){const cx=rnd()*w,cy=rnd()*hh*.9,s=U*(6+rnd()*6);[[0,0,1],[s*.9,s*.15,.8],[-s*.9,s*.2,.75],[s*.4,-s*.5,.7]].forEach(([dx,dy,k])=>{x.beginPath();x.arc(cx+dx,cy+dy,s*k,0,7);x.fill()})}
+    x.fillStyle='#ff7aa2';for(let i=0;i<16;i++){x.save();x.globalAlpha=.7;heartPath(x,rnd()*w,rnd()*hh,U*(2+rnd()*2.5));x.fill();x.restore()}
+  }else{ // studio
+    const g=x.createRadialGradient(w/2,hh*.42,w*.05,w/2,hh*.5,Math.max(w,hh)*.8);g.addColorStop(0,'#ffffff');g.addColorStop(1,'#d9d9de');x.fillStyle=g;x.fillRect(0,0,w,hh);
+  }
+}
+function withBackdrop(fsrc,src,kind){
+  const m=maskOf(src);const out=document.createElement('canvas');out.width=fsrc.width;out.height=fsrc.height;const ox=out.getContext('2d');
+  drawBackdrop(ox,out.width,out.height,kind);
+  const p=document.createElement('canvas');p.width=out.width;p.height=out.height;const px=p.getContext('2d');px.drawImage(fsrc,0,0);px.globalCompositeOperation='destination-in';px.drawImage(m,0,0,p.width,p.height);
+  ox.save();ox.shadowColor='rgba(0,0,0,.18)';ox.shadowBlur=out.width*.02;ox.shadowOffsetY=out.width*.006;ox.drawImage(p,0,0);ox.restore();
+  return out;
+}
 function prepSrc(src){if(src._d)return src._d;const m=1500;if(Math.max(src.width,src.height)<=m)return src._d=src;return src._d=toCanvas(src,m)}
-function filtered(src){if(!src)return null;const P=mkParams();const k=S.filter+'|'+MKKEYS.map(q=>P[q]).join(',');src._fc=src._fc||{};if(!src._fc[k]){const keys=Object.keys(src._fc);if(keys.length>6)delete src._fc[keys[0]];src._fc[k]=applyFilter(prepSrc(src),S.filter,P)}return src._fc[k]}
+function filtered(src,i=0){if(!src)return null;const P=mkParams();
+  let bd=S.bd==='mix'?BD_MIX[i%BD_MIX.length]:(S.bd||'none');
+  if(bd!=='none'&&!SEG){if(!segFailed)loadSeg().then(()=>{invalidate();buildFilterThumbs()}).catch(()=>{});bd='none'}
+  const k=S.filter+'|'+MKKEYS.map(q=>P[q]).join(',')+'|'+bd+(bd==='redglow'||bd==='greenheart'?S.bdText:'');src._fc=src._fc||{};
+  if(!src._fc[k]){const keys=Object.keys(src._fc);if(keys.length>10)delete src._fc[keys[0]];const ps=prepSrc(src);let f=applyFilter(ps,S.filter,P);if(bd!=='none'){try{f=withBackdrop(f,ps,bd)}catch(e){console.warn(e)}}src._fc[k]=f}
+  return src._fc[k]}
 function buildFilterThumbs(){
   const box=$('#filterChips');box.innerHTML='';if(!ED)return;
   const src0=ED.shots.map(s=>s.me||s.them).find(Boolean);
@@ -832,6 +931,8 @@ function buildFilterThumbs(){
     b.append(document.createTextNode(n));box.appendChild(b)});
 }
 const MK_NATURAL={mk_white:15,mk_pink:12,mk_smooth:20,mk_lip:0,glow:0,sharp:35,bright:0,warm:0},MK_SWEET={mk_white:35,mk_pink:35,mk_smooth:40,mk_lip:20,glow:20,sharp:30,bright:4,warm:4},MK_OFF={mk_white:0,mk_pink:0,mk_smooth:0,mk_lip:0,glow:0,sharp:20,bright:0,warm:0};
+$('#likeMoodit').onclick=()=>{Object.assign(S,{tpl:'magazine',bd:'mix',filter:'flash',mk_white:20,mk_pink:15,mk_smooth:25,glow:5,sharp:40});if(ED&&ED.shots.length<4)toast('Mẫu này đẹp nhất khi chụp 4 kiểu nhé');syncInputs();buildFilterThumbs();frameChanged()};
+$('#likeBoarding').onclick=()=>{Object.assign(S,{tpl:'boarding',bd:'studio',filter:'studio',mk_white:30,mk_pink:15,mk_smooth:25,glow:10,sharp:35});syncInputs();buildFilterThumbs();frameChanged()};
 $('#mkNatural').onclick=()=>{Object.assign(S,MK_NATURAL);syncInputs();buildFilterThumbs();frameChanged()};
 $('#mkSweet').onclick=()=>{Object.assign(S,MK_SWEET);syncInputs();buildFilterThumbs();frameChanged()};
 $('#mkOff').onclick=()=>{Object.assign(S,MK_OFF);syncInputs();buildFilterThumbs();frameChanged()};
@@ -869,7 +970,7 @@ function geometry(n){
 function rrPath(x,c,y0,w,h,r,corners){r=Math.max(0,Math.min(r,w/2,h/2));const[tl,tr,br,bl]=corners||[r,r,r,r];
   x.beginPath();x.moveTo(c+tl,y0);x.lineTo(c+w-tr,y0);x.arcTo(c+w,y0,c+w,y0+tr,tr);x.lineTo(c+w,y0+h-br);x.arcTo(c+w,y0+h,c+w-br,y0+h,br);x.lineTo(c+bl,y0+h);x.arcTo(c,y0+h,c,y0+h-bl,bl);x.lineTo(c,y0+tl);x.arcTo(c,y0,c+tl,y0,tl);x.closePath()}
 function cornersFor(r,rad){rad=Math.max(0,Math.min(rad,r.w/2,r.h/2));if(r.join==='l')return[rad,0,0,rad];if(r.join==='r')return[0,rad,rad,0];return[rad,rad,rad,rad]}
-function drawCover(x,img,dx,dy,w,h){const s=Math.max(w/img.width,h/img.height),sw=w/s,sh=h/s;x.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,dx,dy,w,h)}
+function drawCover(x,img,dx,dy,w,h,fy=.5){const s=Math.max(w/img.width,h/img.height),sw=w/s,sh=h/s;x.drawImage(img,(img.width-sw)/2,(img.height-sh)*fy,sw,sh,dx,dy,w,h)}
 function heartPath(x,cx,cy,s){x.beginPath();x.moveTo(cx,cy+s*.35);x.bezierCurveTo(cx-s*.9,cy-s*.25,cx-s*.35,cy-s*.95,cx,cy-s*.4);x.bezierCurveTo(cx+s*.35,cy-s*.95,cx+s*.9,cy-s*.25,cx,cy+s*.35);x.closePath()}
 function drawBg(x,W,H){
   x.fillStyle=S.bg1;x.fillRect(0,0,W,H);const t=S.bgType;
@@ -911,7 +1012,68 @@ function drawDeco(x,g){
     else flowerPath(x,px,py,s,i%3?col:'#ffffff');
     x.restore()});
 }
+function fmtDate(sep){const d=new Date();return d.getFullYear()+sep+String(d.getMonth()+1).padStart(2,'0')+sep+String(d.getDate()).padStart(2,'0')}
+function photoFor(i,who){const sh=ED.shots[i];if(!sh)return null;return who==='them'?sh.them:sh.me}
+function drawPhoto(x,i,who,X,Y,w,hh,fy){const src=photoFor(i,who);x.save();x.beginPath();x.rect(X,Y,w,hh);x.clip();if(src)drawCover(x,filtered(src,i),X,Y,w,hh,fy);else{x.fillStyle='#eee';x.fillRect(X,Y,w,hh)}x.restore()}
+function renderMagazine(c){
+  const n=ED.shots.length,two=!isSingle(),who=(S.swap&&ED.shots.some(s=>s.them))?'them':'me';
+  const Wl=540,m=24,titleH=66,gap=10,footH=58,cw=(Wl-2*m-gap)/2,ch=Math.round(cw/0.75);
+  const cells=[];if(two){for(let i=0;i<n;i++){cells.push([i,S.swap?'them':'me'],[i,S.swap?'me':'them'])}}else for(let i=0;i<n;i++)cells.push([i,who]);
+  const rows=Math.ceil(cells.length/2),Hl=m+titleH+rows*ch+(rows-1)*gap+footH+m;
+  c.width=Wl*RK;c.height=Math.round(Hl*RK);const x=c.getContext('2d');x.setTransform(RK,0,0,RK,0,0);x.imageSmoothingQuality='high';
+  x.fillStyle='#ffffff';x.fillRect(0,0,Wl,Hl);x.strokeStyle='#111';x.lineWidth=1;x.strokeRect(.5,.5,Wl-1,Hl-1);
+  x.fillStyle='#111';x.textBaseline='alphabetic';let fs=46;x.font=`${fs}px Anton, "Be Vietnam Pro", sans-serif`;const tt=(S.tplTitle||'TOMORTLE').toUpperCase();while(x.measureText(tt).width>Wl-2*m&&fs>16){fs-=2;x.font=`${fs}px Anton, "Be Vietnam Pro", sans-serif`}
+  x.fillText(tt,m,m+48);x.fillRect(m,m+titleH-10,Wl-2*m,1.2);
+  cells.forEach(([i,w],k)=>{const col=k%2,row=Math.floor(k/2);let X=m+col*(cw+gap);if(cells.length%2&&k===cells.length-1)X=(Wl-cw)/2;drawPhoto(x,i,w,X,m+titleH+row*(ch+gap),cw,ch,.42)});
+  const fy=Hl-m-footH+18;x.fillRect(m,fy,Wl-2*m,1.2);x.font='600 15px "Be Vietnam Pro", sans-serif';x.textAlign='right';x.fillText(fmtDate('.'),Wl-m,Hl-m-6);x.textAlign='left';
+  const cap=(S.caption||'').trim();if(cap){x.font=`15px "${S.font}", cursive`;x.fillStyle='#111';x.fillText(cap,m,Hl-m-6)}
+}
+function planePath(x,cx,cy,s){x.save();x.translate(cx,cy);x.beginPath();x.moveTo(s,0);x.lineTo(s*.55,-s*.12);x.lineTo(-s*.1,-s*.12);x.lineTo(-s*.45,-s*.75);x.lineTo(-s*.65,-s*.75);x.lineTo(-s*.42,-s*.12);x.lineTo(-s*.8,-s*.12);x.lineTo(-s*.95,-s*.38);x.lineTo(-s*1.05,-s*.38);x.lineTo(-s*.95,0);x.lineTo(-s*1.05,s*.38);x.lineTo(-s*.95,s*.38);x.lineTo(-s*.8,s*.12);x.lineTo(-s*.42,s*.12);x.lineTo(-s*.65,s*.75);x.lineTo(-s*.45,s*.75);x.lineTo(-s*.1,s*.12);x.lineTo(s*.55,s*.12);x.closePath();x.fill();x.restore()}
+function vText(x,t,X,Y,rot){x.save();x.translate(X,Y);x.rotate(rot);x.textAlign='center';x.textBaseline='middle';x.fillText(t,0,0);x.restore()}
+function renderBoarding(c){
+  const n=ED.shots.length,two=!isSingle();const one=(S.swap&&ED.shots.some(s=>s.them))?'them':'me';
+  const SW=270,sm=18,pw=SW-2*sm,ph=Math.round(pw*.72),gy=9,headH=34,footH=88,top=8;
+  const Hl=top+headH+n*ph+(n-1)*gy+10+footH+12,Wl=SW*2;
+  c.width=Wl*RK;c.height=Math.round(Hl*RK);const x=c.getContext('2d');x.setTransform(RK,0,0,RK,0,0);x.imageSmoothingQuality='high';
+  x.fillStyle='#ffffff';x.fillRect(0,0,Wl,Hl);
+  const whos=two?[S.swap?'them':'me',S.swap?'me':'them']:[one,one];
+  const now=new Date();let hr=now.getHours();const ap=hr>=12?'PM':'AM';hr=hr%12||12;const time=String(hr).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const flight='TM'+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0');
+  whos.forEach((who,si)=>{
+    const X0=si*SW,px=X0+sm;
+    // header
+    const hg=x.createLinearGradient(px,0,px+pw,0);hg.addColorStop(0,'#2b2b2e');hg.addColorStop(1,'#4a4a50');x.fillStyle=hg;rrPath(x,px,top,pw,headH+6,0,[12,12,0,0]);x.fill();
+    x.save();x.globalAlpha=.12;x.fillStyle='#fff';for(let k=0;k<3;k++){x.beginPath();x.moveTo(px+pw*.42+k*14,top);x.lineTo(px+pw*.42+k*14+8,top);x.lineTo(px+pw*.42+k*14-14,top+headH);x.lineTo(px+pw*.42+k*14-22,top+headH);x.fill()}x.restore();
+    x.fillStyle='#fff';x.font='italic 600 17px "Be Vietnam Pro", sans-serif';x.textBaseline='middle';x.textAlign='left';x.fillText(S.bpClass||'First Class',px+12,top+headH/2+1);
+    x.fillStyle='#a9c8ff';x.font='13px Pacifico, cursive';x.textAlign='right';x.fillText(S.bpBrand||'Tomortle Air',px+pw-10,top+headH/2+1);x.textAlign='left';
+    // photos
+    for(let i=0;i<n;i++)drawPhoto(x,i,who,px,top+headH+i*(ph+gy),pw,ph,.38);
+    // side texts
+    x.fillStyle='#222';x.font='700 7.5px "Be Vietnam Pro", sans-serif';
+    const brand=(S.bpBrand||'Tomortle Air').toUpperCase();
+    vText(x,brand,X0+sm/2,top+headH+ph*.25,-Math.PI/2);vText(x,'··· BOARDING PASS ···',X0+sm/2,top+headH+ph+gy+ph*.5,-Math.PI/2);
+    if(n>2){vText(x,'··· BOARDING PASS ···',X0+SW-sm/2,top+headH+2*(ph+gy)+ph*.5,Math.PI/2)}vText(x,brand,X0+SW-sm/2,top+headH+(n-1)*(ph+gy)+ph*.6,Math.PI/2);
+    // boarding card
+    const cy=top+headH+n*ph+(n-1)*gy+10;
+    x.save();x.shadowColor='rgba(0,0,0,.22)';x.shadowBlur=8;x.shadowOffsetY=2;x.fillStyle='#fff';rrPath(x,px,cy,pw,footH,12);x.fill();x.restore();
+    const rnd=mulberry(si+7);x.fillStyle='#111';for(let yy=cy+12;yy<cy+footH-12;yy+=2.2){const th=rnd()<.5?1:1.8;x.fillRect(px+10,yy,14,th*.8)}
+    const L=px+30;x.textBaseline='alphabetic';
+    const lab=(t,X,Y)=>{x.font='600 5.5px "Be Vietnam Pro", sans-serif';x.fillStyle='#555';x.fillText(t,X,Y)},val=(t,X,Y,fs=12)=>{x.font=`700 ${fs}px "Be Vietnam Pro", sans-serif`;x.fillStyle='#111';x.fillText(t,X,Y)};
+    lab('FLIGHT',L,cy+24);val(flight,L+22,cy+25);
+    lab('TIME',L,cy+46);val(time,L+22,cy+47);x.font='700 6.5px "Be Vietnam Pro", sans-serif';x.fillText(ap,L+22+x.measureText(time).width*1.9,cy+47);
+    lab('GATE',L,cy+70);val(S.bpGate||'01',L+18,cy+71);lab('SEAT',L+40,cy+70);val(S.bpSeat||'3A',L+57,cy+71);
+    const C1=px+pw*.6,C2=px+pw*.87;
+    x.textAlign='center';lab('FROM / TỪ',C1,cy+20);lab('TO / ĐẾN',C2,cy+20);
+    x.fillStyle='#111';x.font='26px Anton, sans-serif';x.fillText((S.bpFrom||'HAN').toUpperCase().slice(0,3),C1,cy+52);x.fillText((S.bpTo||'SGN').toUpperCase().slice(0,3),C2,cy+52);
+    planePath(x,(C1+C2)/2,cy+42,7.5);
+    const city=(t,X)=>{let fs=5.5;x.font=`600 ${fs}px "Be Vietnam Pro", sans-serif`;while(x.measureText(t).width>pw*.27&&fs>3.5){fs-=.25;x.font=`600 ${fs}px "Be Vietnam Pro", sans-serif`}x.fillStyle='#444';x.fillText(t,X,cy+64)};
+    city((S.bpFromName||'').toUpperCase(),C1);city((S.bpToName||'').toUpperCase(),C2);
+    x.textAlign='left';
+  });
+}
 function renderBase(c){
+  if(S.tpl==='magazine'){renderMagazine(c);return}
+  if(S.tpl==='boarding'){renderBoarding(c);return}
   const n=ED.shots.length,g=geometry(n);c.width=Math.round(g.W*RK);c.height=Math.round(g.H*RK);const x=c.getContext('2d');x.setTransform(RK,0,0,RK,0,0);x.imageSmoothingQuality='high';
   drawBg(x,g.W,g.H);
   for(const r of g.rects){
@@ -919,7 +1081,7 @@ function renderBase(c){
     if(S.border>0&&!r.join){x.fillStyle=S.borderColor;rrPath(x,r.x-S.border,r.y-S.border,r.w+S.border*2,r.h+S.border*2,S.radius+S.border);x.fill()}
     if(S.border>0&&r.join==='l'){x.fillStyle=S.borderColor;const b=S.border;rrPath(x,r.x-b,r.y-b,r.w*2+b*2,r.h+b*2,S.radius+b);x.fill()}
     x.save();rrPath(x,r.x,r.y,r.w,r.h,0,cr);x.clip();
-    if(src)drawCover(x,filtered(src),r.x,r.y,r.w,r.h);
+    if(src)drawCover(x,filtered(src,r.i),r.x,r.y,r.w,r.h,.42);
     else{x.fillStyle='rgba(0,0,0,.08)';x.fillRect(r.x,r.y,r.w,r.h);x.fillStyle='rgba(255,255,255,.7)';x.font='bold 90px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('♡',r.x+r.w/2,r.y+r.h/2)}
     x.restore();
   }
