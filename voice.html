@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lời chào – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <div class="card center">
+    <h3 style="justify-content:center">🎙️ Gửi lời chào cho <span class="pn"></span></h3>
+    <div class="seg2" id="kind"><button data-k="morning">🌅 Buổi sáng</button><button data-k="night">🌙 Chúc ngủ ngon</button><button data-k="any">💬 Bất kỳ</button></div>
+    <button class="recbtn" id="recBtn">🎙️</button>
+    <p class="note" id="recInfo">Bấm để ghi âm (tối đa 3 phút), bấm lần nữa để dừng.</p>
+    <div id="preview" class="hidden">
+      <audio id="pAudio" controls style="width:100%"></audio>
+      <input class="input" id="pNote" maxlength="200" placeholder="Ghi chú kèm (không bắt buộc)">
+      <div class="row" style="justify-content:center;margin-top:8px;gap:8px"><button class="btn" id="pRedo">Ghi lại</button><button class="btn primary" id="pSend">Gửi 💌</button></div>
+    </div>
+    <p class="note">Lời chào buổi sáng sẽ hiện trên màn hình nhà của người ấy từ 5 giờ đến 11 giờ sáng, lời chúc ngủ ngon từ 8 giờ tối đến 2 giờ sáng.</p>
+  </div>
+  <div class="card"><h3>📥 Từ <span class="pn"></span></h3><div class="list" id="inList"></div></div>
+  <div class="card"><h3>📤 Bạn đã gửi</h3><div class="list" id="outList"></div></div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { $, $$, esc, toast, vib, hearts, sb, boot, header, joinMain, ping, uploadMedia, mediaUrl, createRecorder, ago } from './common.js';
+header('Lời chào');
+const ctx = await boot();
+joinMain(ctx, 'voice').on('broadcast', { event: 'voice' }, () => { load(); toast(`${ctx.partnerName} vừa gửi lời chào 🎙️`); vib([80, 60, 80]) });
+const ME = ctx.me.id, YOU = ctx.partnerId;
+$$('.pn').forEach(e => e.textContent = ctx.partnerName);
+const h = new Date().getHours();
+let kind = (h >= 4 && h < 12) ? 'morning' : (h >= 19 || h < 3) ? 'night' : 'any';
+const setKind = k => { kind = k; $$('#kind button').forEach(b => b.classList.toggle('on', b.dataset.k === k)) };
+$('#kind').onclick = e => { const b = e.target.closest('button'); if (b) setKind(b.dataset.k) }; setKind(kind);
+const KI = { morning: '🌅', night: '🌙', any: '💬' }, KN = { morning: 'Chào buổi sáng', night: 'Chúc ngủ ngon', any: 'Lời nhắn' };
+
+let rec = null, timer = null, result = null;
+$('#recBtn').onclick = async () => {
+  if (!rec) {
+    rec = createRecorder(); try { await rec.start() } catch (e) { rec = null; toast('Không mở được micro. Cho phép micro trong cài đặt trình duyệt nhé'); return }
+    $('#preview').classList.add('hidden'); $('#recBtn').classList.add('on'); $('#recBtn').textContent = '⏹'; vib(20);
+    timer = setInterval(() => { const s = rec.elapsed(); $('#recInfo').textContent = `Đang ghi… ${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`; if (s >= 180) $('#recBtn').click() }, 250);
+  } else {
+    clearInterval(timer); result = await rec.stop(); rec = null; $('#recBtn').classList.remove('on'); $('#recBtn').textContent = '🎙️';
+    if (!result || !result.blob.size) { $('#recInfo').textContent = 'Không ghi được, thử lại nhé.'; return }
+    $('#recInfo').textContent = `Đã ghi ${Math.round(result.duration)} giây. Nghe thử rồi gửi nhé.`;
+    $('#pAudio').src = URL.createObjectURL(result.blob); $('#preview').classList.remove('hidden');
+  }
+};
+$('#pRedo').onclick = () => { result = null; $('#preview').classList.add('hidden'); $('#recBtn').click() };
+$('#pSend').onclick = async () => {
+  if (!result) return; const btn = $('#pSend'); btn.disabled = true; btn.textContent = 'Đang gửi…';
+  try {
+    const { path, type } = await uploadMedia(ctx, result.blob, 'voices');
+    const { error } = await sb.from('voices').insert({ to_id: YOU, kind, path, mime: type, duration: result.duration, note: $('#pNote').value.trim() || null });
+    if (error) throw error;
+    ping(ctx, 'voice', {}); hearts(6); toast('Đã gửi 🎙️'); result = null; $('#pNote').value = ''; $('#preview').classList.add('hidden'); $('#recInfo').textContent = 'Bấm để ghi âm (tối đa 3 phút), bấm lần nữa để dừng.'; load();
+  } catch (e) { toast('Gửi lỗi: ' + (e.message || e)) }
+  btn.disabled = false; btn.textContent = 'Gửi 💌';
+};
+
+let voices = [];
+async function load() {
+  const { data } = await sb.from('voices').select('*').order('created_at', { ascending: false }).limit(60);
+  voices = data || []; render();
+}
+async function render() {
+  const row = v => `<div class="vrow ${v.to_id === ME && !v.listened_at ? 'new' : ''}"><span class="k">${KI[v.kind]}</span><div class="t"><b>${KN[v.kind]}${v.to_id === ME && !v.listened_at ? ' <span class="badge2">mới</span>' : ''}</b><span class="note" style="margin:0">${ago(v.created_at)}${v.duration ? ' · ' + Math.round(v.duration) + 's' : ''}${v.from_id === ME ? (v.listened_at ? ' · ✓ đã nghe' : ' · chưa nghe') : ''}</span>${v.note ? `<div>${esc(v.note)}</div>` : ''}<audio controls preload="none" data-id="${v.id}" data-path="${esc(v.path)}"></audio></div>${v.from_id === ME ? `<button class="btn small ghost" data-del="${v.id}">✕</button>` : ''}</div>`;
+  const inbox = voices.filter(v => v.to_id === ME), out = voices.filter(v => v.from_id === ME);
+  $('#inList').innerHTML = inbox.map(row).join('') || '<p class="note">Chưa có lời chào nào.</p>';
+  $('#outList').innerHTML = out.map(row).join('') || '<p class="note">Bạn chưa gửi lời chào nào.</p>';
+  for (const a of $$('audio[data-path]')) { mediaUrl(a.dataset.path).then(u => a.src = u).catch(() => { }) }
+}
+document.addEventListener('play', async e => {
+  const a = e.target; if (!a.dataset || !a.dataset.id) return; const v = voices.find(x => x.id === a.dataset.id);
+  if (v && v.to_id === ME && !v.listened_at) { await sb.rpc('voice_listened', { vid: v.id }); v.listened_at = new Date().toISOString(); ping(ctx, 'voice-heard', {}) }
+}, true);
+document.addEventListener('click', async e => { const d = e.target.closest('[data-del]'); if (!d) return; const v = voices.find(x => x.id === d.dataset.del); if (!v) return; await sb.from('voices').delete().eq('id', v.id); await sb.storage.from('media').remove([v.path]); load() });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load() });
+load();
+</script>
+</body>
+</html>

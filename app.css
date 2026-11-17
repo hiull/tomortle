@@ -168,3 +168,64 @@ header{display:flex;align-items:center;gap:10px;padding:6px 2px 12px}
 .timer .tt span{color:var(--muted);font-weight:700}
 .tasks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tasks .mini input{width:100%;border:0;background:transparent;font-size:15px;outline:none;color:var(--ink);padding:4px 0}
+/* ---- đợt 3 ---- */
+.list{display:flex;flex-direction:column;gap:8px}
+.env{display:flex;gap:12px;align-items:center;background:var(--soft);border-radius:16px;padding:12px;cursor:pointer;border:1px solid var(--line);text-align:left;width:100%;font:inherit;color:inherit}
+.env i{font-style:normal;font-size:34px;flex:none}
+.env .t{flex:1;min-width:0}
+.env .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.env .t span{font-size:13px;color:var(--muted)}
+.env.locked{opacity:.85;cursor:default}
+.env.new{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.badge2{background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:11px;padding:1px 7px;font-weight:800}
+.lpaper{border-radius:16px;padding:22px 18px;font-family:'Dancing Script','Patrick Hand',cursive;font-size:21px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:#4a2c3a}
+.lpaper.pink{background:#fff0f5 repeating-linear-gradient(#fff0f5 0 33px,#f7cfe0 33px 34px)}
+.lpaper.cream{background:#fffaf0 repeating-linear-gradient(#fffaf0 0 33px,#ecdcbc 33px 34px)}
+.lpaper.kraft{background:#e9d7b7;color:#4a3420}
+.lpaper.night{background:linear-gradient(160deg,#2b2140,#151022);color:#f3e6ff}
+.lpaper h2{font-family:inherit;margin:0 0 10px;font-size:26px}
+.styles{display:flex;gap:8px}
+.styles button{width:44px;height:44px;border-radius:12px;border:2px solid var(--line);cursor:pointer}
+.styles button.on{border-color:var(--accent)}
+.attach{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.attach span{background:var(--soft);border-radius:999px;padding:4px 10px;font-size:13px}
+.giftbox{font-size:110px;text-align:center;cursor:pointer;user-select:none;animation:wiggle 1.2s infinite}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}}
+.giftbox.open{animation:pop2 .6s forwards}
+@keyframes pop2{50%{transform:scale(1.3)}100%{transform:scale(0);opacity:0}}
+.big-modal .sheet{max-width:560px}
+/* fridge */
+.fridge{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;padding:6px}
+.sticky{position:relative;min-height:130px;padding:14px 12px 30px;border-radius:4px;box-shadow:0 6px 14px rgba(0,0,0,.12);font-family:'Patrick Hand',cursive;font-size:18px;line-height:1.3;color:#3b2f25;word-break:break-word;white-space:pre-wrap}
+.sticky::before{content:"";position:absolute;top:-8px;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff8a8a,#c0392b);box-shadow:0 2px 3px rgba(0,0,0,.3)}
+.sticky .meta{position:absolute;left:10px;right:8px;bottom:6px;display:flex;justify-content:space-between;align-items:center;font-family:var(--font);font-size:11px;color:rgba(0,0,0,.5)}
+.sticky .meta button{border:0;background:none;cursor:pointer;font-size:14px;padding:0 2px}
+.sticky.fresh{animation:drop .5s}
+@keyframes drop{from{transform:translateY(-30px) rotate(-8deg);opacity:0}}
+.colors{display:flex;gap:6px}
+.colors button{width:30px;height:30px;border-radius:6px;border:2px solid var(--card);box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.colors button.on{box-shadow:0 0 0 3px var(--accent)}
+/* voice */
+.recbtn{width:96px;height:96px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);font-size:38px;cursor:pointer;display:block;margin:10px auto;box-shadow:var(--shadow);touch-action:none}
+.recbtn.on{animation:pulse2 1s infinite;background:#e53935}
+@keyframes pulse2{50%{box-shadow:0 0 0 18px rgba(229,57,53,.15)}}
+.vrow{display:flex;align-items:center;gap:10px;background:var(--soft);border-radius:14px;padding:10px;border:1px solid var(--line)}
+.vrow.new{border-color:var(--accent)}
+.vrow .k{font-size:26px}
+.vrow .t{flex:1;min-width:0;font-size:14px}
+.vrow .t b{display:block}
+.vrow audio{width:100%;height:36px;margin-top:4px}
+/* gifts */
+.giftgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.giftgrid button{background:var(--soft);border:2px solid var(--line);border-radius:16px;padding:10px 4px;cursor:pointer;font-size:34px;line-height:1.1}
+.giftgrid button small{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-top:4px}
+.giftgrid button.on{border-color:var(--accent);background:var(--card)}
+.giftpop{position:fixed;inset:0;z-index:110;display:grid;place-content:center;text-align:center;background:rgba(30,10,25,.55);backdrop-filter:blur(4px);animation:fade .3s;padding:20px;cursor:pointer}
+.giftpop .g{font-size:140px;animation:pop3 .8s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop3{from{transform:scale(0) rotate(-30deg)}}
+.giftpop p{color:#fff;font-weight:800;font-size:20px;margin:6px 0;text-shadow:0 2px 10px rgba(0,0,0,.4)}
+.giftpop .msg{background:#fff;color:#4a2c3a;border-radius:16px;padding:12px 16px;font-family:'Patrick Hand',cursive;font-size:20px;max-width:340px;margin:10px auto 0}
+.shelf{display:flex;flex-wrap:wrap;gap:6px}
+.shelf span{background:var(--soft);border-radius:999px;padding:4px 10px;font-size:15px}
+.greet{display:flex;align-items:center;gap:10px}
+.greet i{font-style:normal;font-size:34px}

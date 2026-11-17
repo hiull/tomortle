@@ -1,5 +1,5 @@
-const CACHE = 'tomortle-v3';
-const SHELL = ['./', './index.html', './app.css', './app.js', './booth.html', './icon.svg', './icon-192.png', './icon-180.png', './manifest.webmanifest', './common.js', './watch.html', './draw.html', './games.html', './study.html'];
+const CACHE = 'tomortle-v4';
+const SHELL = ['./', './index.html', './app.css', './app.js', './booth.html', './icon.svg', './icon-192.png', './icon-180.png', './manifest.webmanifest', './common.js', './watch.html', './draw.html', './games.html', './study.html', './letters.html', './fridge.html', './voice.html', './gifts.html'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {})); self.skipWaiting() });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())) });
 self.addEventListener('fetch', e => {

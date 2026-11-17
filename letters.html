@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Thư & quà – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Dancing+Script:wght@600&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <div class="seg2" id="tabs" style="margin-bottom:12px"><button data-t="inbox" class="on">📬 Hộp thư</button><button data-t="write">✍️ Viết thư</button><button data-t="gift">🎁 Gói quà</button></div>
+
+  <section id="t-inbox">
+    <div class="card"><h3>📨 Gửi cho bạn</h3><div class="list" id="inList"></div></div>
+    <div class="card"><h3>🔒 Đang khoá <small>chưa tới ngày mở</small></h3><div class="list" id="lockList"></div></div>
+    <div class="card"><h3>📤 Bạn đã gửi</h3><div class="list" id="outList"></div></div>
+  </section>
+
+  <section id="t-write" class="card hidden">
+    <h3>Viết thư cho <span class="pn"></span></h3>
+    <label class="field">Tiêu đề<input id="wTitle" maxlength="120" placeholder="vd: Gửi em lúc 2 giờ sáng"></label>
+    <label class="field">Nội dung<textarea id="wBody" rows="9" maxlength="20000" placeholder="Viết gì đó thật lòng…" style="font-family:'Patrick Hand',cursive;font-size:19px"></textarea></label>
+    <label class="field">Giấy viết</label>
+    <div class="styles" id="wStyle"></div>
+    <label class="field">Khi nào người ấy được mở?</label>
+    <div class="seg2" id="wWhen"><button data-w="now" class="on">Đọc ngay</button><button data-w="date">Hẹn ngày</button><button data-w="cond">Mở khi…</button></div>
+    <div id="wDateBox" class="hidden"><label class="field">Ngày giờ mở<input type="datetime-local" id="wDate"></label><p class="note">Trước giờ này người ấy chỉ thấy phong thư khoá và đồng hồ đếm ngược. Thư được khoá trên máy chủ, không xem lén được.</p></div>
+    <div id="wCondBox" class="hidden"><div class="chips" id="wConds" style="margin-top:8px"></div><input class="input" id="wCondCustom" placeholder="Hoặc tự viết: Mở khi…" maxlength="60" style="margin-top:8px"></div>
+    <label class="field">Đính kèm (ảnh, video, ghi âm)</label>
+    <div class="row" style="flex-wrap:wrap"><label class="btn small">📷 Ảnh / video<input type="file" id="wFiles" accept="image/*,video/*" multiple hidden></label><button class="btn small" id="wRec">🎙️ Ghi âm</button></div>
+    <div class="attach" id="wAttach"></div>
+    <button class="btn primary block" id="wSend" style="margin-top:10px">Gửi thư 💌</button>
+  </section>
+
+  <section id="t-gift" class="card hidden">
+    <h3>Gói hộp quà bí mật</h3>
+    <p class="note">Bỏ vào hộp ảnh, video hoặc lời nhắn thoại. Đến đúng ngày, người ấy mới mở được và sẽ có màn mở quà.</p>
+    <label class="field">Tên hộp quà<input id="gTitle" maxlength="120" placeholder="vd: Quà 100 ngày"></label>
+    <label class="field">Lời nhắn kèm<textarea id="gBody" rows="4" maxlength="2000" placeholder="Viết vài dòng…"></textarea></label>
+    <label class="field">Mở vào lúc<input type="datetime-local" id="gDate"></label>
+    <div class="row" style="flex-wrap:wrap"><label class="btn small">📷 Ảnh / video<input type="file" id="gFiles" accept="image/*,video/*" multiple hidden></label><button class="btn small" id="gRec">🎙️ Ghi âm</button></div>
+    <div class="attach" id="gAttach"></div>
+    <button class="btn primary block" id="gSend" style="margin-top:10px">Gói & gửi 🎁</button>
+  </section>
+</div>
+
+<div class="modal big-modal" id="mView"><div class="sheet"><h3><span id="vHead"></span><span class="sp"></span><button class="btn small" data-close>Đóng</button></h3><div id="vBody"></div></div></div>
+<div class="modal" id="mRec"><div class="sheet center"><h3>Ghi âm<span class="sp"></span><button class="btn small" data-close>Huỷ</button></h3><button class="recbtn" id="recBtn">🎙️</button><p id="recInfo" class="note">Bấm để bắt đầu ghi, bấm lần nữa để dừng.</p></div></div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { $, $$, esc, toast, vib, hearts, sb, boot, header, joinMain, ping, uploadMedia, compressImage, renderMedia, createRecorder, fmtLeft, ago } from './common.js';
+const PAGE = 'letters';
+header('Thư & quà');
+const ctx = await boot();
+joinMain(ctx, PAGE).on('broadcast', { event: 'letter' }, () => { load(); toast(`${ctx.partnerName} vừa gửi cho bạn 💌`) });
+const ME = ctx.me.id, YOU = ctx.partnerId;
+$$('.pn').forEach(e => e.textContent = ctx.partnerName);
+$$('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) { m.classList.remove('on'); if (m.id === 'mRec') rec && rec.cancel() } }));
+
+/* tabs */
+function setTab(t) { $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t)); ['inbox', 'write', 'gift'].forEach(k => $('#t-' + k).classList.toggle('hidden', k !== t)) }
+$('#tabs').onclick = e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.t) };
+const startTab = new URLSearchParams(location.search).get('t'); if (startTab) setTab(startTab);
+
+/* ---------- inbox ---------- */
+let letters = [], locked = [];
+const STYLES = { pink: '#ffe3ee', cream: '#fff4dc', kraft: '#e9d7b7', night: '#2b2140' };
+const icon = l => l.kind === 'gift' ? '🎁' : (l.open_when ? '💭' : '💌');
+async function load() {
+  const [{ data: a }, { data: b }] = await Promise.all([
+    sb.from('letters').select('*').order('created_at', { ascending: false }).limit(200),
+    sb.rpc('letters_locked')
+  ]);
+  letters = a || []; locked = b || []; render();
+}
+function render() {
+  const inbox = letters.filter(l => l.to_id === ME), out = letters.filter(l => l.from_id === ME);
+  $('#inList').innerHTML = inbox.length ? inbox.map(l => `<button class="env ${l.opened_at ? '' : 'new'}" data-id="${l.id}"><i>${icon(l)}</i><div class="t"><b>${esc(l.title || (l.kind === 'gift' ? 'Hộp quà' : 'Thư không tên'))}</b><span>${l.open_when ? 'Mở khi ' + esc(l.open_when) + ' · ' : ''}${ago(l.created_at)}</span></div>${l.opened_at ? '' : '<span class="badge2">mới</span>'}</button>`).join('') : '<p class="note">Chưa có thư nào. Nhắc khéo người ấy viết đi 😝</p>';
+  $('#lockList').innerHTML = locked.length ? locked.map(l => `<div class="env locked"><i>🔒</i><div class="t"><b>${esc(l.title || (l.kind === 'gift' ? 'Hộp quà bí mật' : 'Thư hẹn giờ'))}</b><span data-unlock="${l.unlock_at}">Mở sau ${fmtLeft(new Date(l.unlock_at) - Date.now())}</span></div></div>`).join('') : '<p class="note">Không có thư nào đang khoá.</p>';
+  $('#outList').innerHTML = out.length ? out.map(l => { const lockedNow = l.unlock_at && new Date(l.unlock_at) > Date.now(); return `<button class="env" data-id="${l.id}"><i>${icon(l)}</i><div class="t"><b>${esc(l.title || 'Không tên')}</b><span>${lockedNow ? '🔒 mở sau ' + fmtLeft(new Date(l.unlock_at) - Date.now()) : (l.opened_at ? '✓ Đã mở ' + ago(l.opened_at) : 'Chưa mở')}${l.reaction ? ' · có hồi âm 💬' : ''}</span></div></button>` }).join('') : '<p class="note">Bạn chưa gửi thư nào.</p>';
+}
+setInterval(() => {
+  $$('[data-unlock]').forEach(s => { const left = new Date(s.dataset.unlock) - Date.now(); s.textContent = 'Mở sau ' + fmtLeft(left); if (left <= 0) { load(); toast('Có thư vừa mở khoá 💌'); vib([100, 60, 100]) } });
+}, 1000);
+document.addEventListener('click', e => { const b = e.target.closest('.env[data-id]'); if (b) openLetter(b.dataset.id) });
+
+async function openLetter(id) {
+  const l = letters.find(x => x.id === id); if (!l) return;
+  const mine = l.from_id === ME; const style = l.style || 'pink';
+  $('#vHead').textContent = mine ? 'Thư bạn gửi' : `Từ ${ctx.partnerName}`;
+  const body = $('#vBody');
+  const content = async () => {
+    let atts = ''; for (const a of (l.attachments || [])) { try { atts += await renderMedia(a) } catch (e) { atts += '<p class="note">Không tải được tệp</p>' } }
+    return `<div class="lpaper ${esc(style)}"><h2>${esc(l.title || '')}</h2>${esc(l.body || '')}</div>${atts}` +
+      (l.reaction ? `<div class="mini" style="margin-top:10px"><b>${mine ? ctx.partnerName + ' hồi âm' : 'Bạn đã hồi âm'}</b>${esc(l.reaction)}</div>` : '') +
+      (!mine ? `<form class="row" id="replyForm" style="margin-top:10px"><input class="input" id="replyIn" maxlength="500" placeholder="Hồi âm một câu…" style="margin:0"><button class="btn primary">Gửi</button></form>` : '');
+  };
+  if (l.kind === 'gift' && !mine && !l.opened_at) {
+    body.innerHTML = `<div class="giftbox" id="gb">🎁</div><p class="center" style="font-weight:700">Chạm vào hộp để mở quà</p>`;
+    $('#mView').classList.add('on');
+    $('#gb').onclick = async () => { $('#gb').classList.add('open'); vib([60, 40, 120]); setTimeout(async () => { hearts(16); body.innerHTML = await content(); bindReply(l) }, 550); markOpened(l) };
+    return;
+  }
+  body.innerHTML = '<p class="note center">Đang mở…</p>'; $('#mView').classList.add('on');
+  body.innerHTML = await content(); bindReply(l);
+  if (!mine && !l.opened_at) { markOpened(l); hearts(6) }
+}
+async function markOpened(l) { await sb.rpc('letter_open', { lid: l.id }); l.opened_at = new Date().toISOString(); render(); ping(ctx, 'letter-opened', { id: l.id }) }
+function bindReply(l) {
+  const f = $('#replyForm'); if (!f) return;
+  f.onsubmit = async e => { e.preventDefault(); const t = $('#replyIn').value.trim(); if (!t) return; await sb.rpc('letter_open', { lid: l.id, react: t }); l.reaction = t; toast('Đã gửi hồi âm'); ping(ctx, 'letter', {}); $('#mView').classList.remove('on'); render() };
+}
+
+/* ---------- compose helpers ---------- */
+let rec = null, recTarget = null;
+const pending = { w: [], g: [] };
+function renderAttach(k) { $('#' + k + 'Attach').innerHTML = pending[k].map((f, i) => `<span>${f.type.startsWith('audio') ? '🎙️' : f.type.startsWith('video') ? '🎬' : '🖼️'} ${esc(f.name || 'ghi âm')} <button data-k="${k}" data-i="${i}" style="border:0;background:none;cursor:pointer">✕</button></span>`).join('') }
+document.addEventListener('click', e => { const b = e.target.closest('.attach button'); if (b) { pending[b.dataset.k].splice(+b.dataset.i, 1); renderAttach(b.dataset.k) } });
+async function addFiles(k, files) {
+  for (const f of files) {
+    if (f.size > 25 * 1024 * 1024) { toast(f.name + ' quá 25MB'); continue }
+    const blob = f.type.startsWith('image/') ? await compressImage(f) : f; pending[k].push({ b: blob, name: f.name, type: blob.type || f.type });
+  }
+  renderAttach(k);
+}
+$('#wFiles').onchange = e => { addFiles('w', [...e.target.files]); e.target.value = '' };
+$('#gFiles').onchange = e => { addFiles('g', [...e.target.files]); e.target.value = '' };
+$('#wRec').onclick = () => openRec('w'); $('#gRec').onclick = () => openRec('g');
+let recTimer = null;
+function openRec(k) { recTarget = k; rec = null; $('#recBtn').classList.remove('on'); $('#recBtn').textContent = '🎙️'; $('#recInfo').textContent = 'Bấm để bắt đầu ghi, bấm lần nữa để dừng.'; $('#mRec').classList.add('on') }
+$('#recBtn').onclick = async () => {
+  if (!rec) {
+    rec = createRecorder();
+    try { await rec.start() } catch (e) { rec = null; toast('Không mở được micro'); return }
+    $('#recBtn').classList.add('on'); $('#recBtn').textContent = '⏹';
+    recTimer = setInterval(() => { const s = rec.elapsed(); $('#recInfo').textContent = `Đang ghi… ${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`; if (s > 300) $('#recBtn').click() }, 250);
+  } else {
+    clearInterval(recTimer); const r = await rec.stop(); rec = null; $('#mRec').classList.remove('on');
+    if (r && r.blob.size) { pending[recTarget].push({ b: r.blob, name: `ghi âm ${Math.round(r.duration)}s`, type: r.blob.type }); renderAttach(recTarget); toast('Đã thêm đoạn ghi âm') }
+  }
+};
+async function uploadAll(k) { const out = []; for (const it of pending[k]) { const { path, type } = await uploadMedia(ctx, it.b, 'letters'); out.push({ path, type }) } return out }
+
+/* write */
+let style = 'pink', when = 'now', cond = '';
+$('#wStyle').innerHTML = Object.entries(STYLES).map(([k, c]) => `<button data-s="${k}" style="background:${c}" class="${k === style ? 'on' : ''}"></button>`).join('');
+$('#wStyle').onclick = e => { const b = e.target.closest('button'); if (!b) return; style = b.dataset.s; $$('#wStyle button').forEach(x => x.classList.toggle('on', x === b)) };
+$('#wWhen').onclick = e => { const b = e.target.closest('button'); if (!b) return; when = b.dataset.w; $$('#wWhen button').forEach(x => x.classList.toggle('on', x === b)); $('#wDateBox').classList.toggle('hidden', when !== 'date'); $('#wCondBox').classList.toggle('hidden', when !== 'cond') };
+const CONDS = ['buồn', 'nhớ anh/em', 'giận anh/em', 'mất ngủ', 'cần động lực', 'thấy cô đơn', 'vui quá', 'mệt mỏi'];
+$('#wConds').innerHTML = CONDS.map(c => `<button data-c="${c}">${c}</button>`).join('');
+$('#wConds').onclick = e => { const b = e.target.closest('button'); if (!b) return; cond = b.dataset.c; $('#wCondCustom').value = ''; $$('#wConds button').forEach(x => x.classList.toggle('on', x === b)) };
+$('#wSend').onclick = async () => {
+  const title = $('#wTitle').value.trim(), body = $('#wBody').value.trim();
+  if (!body && !pending.w.length) { toast('Viết gì đó trước nhé'); return }
+  let unlock_at = null, open_when = null;
+  if (when === 'date') { if (!$('#wDate').value) { toast('Chọn ngày giờ mở'); return } unlock_at = new Date($('#wDate').value).toISOString(); if (new Date(unlock_at) < Date.now()) { toast('Ngày mở phải ở tương lai'); return } }
+  if (when === 'cond') { open_when = $('#wCondCustom').value.trim() || cond; if (!open_when) { toast('Chọn "Mở khi…"'); return } }
+  const btn = $('#wSend'); btn.disabled = true; btn.textContent = 'Đang gửi…';
+  try {
+    const attachments = await uploadAll('w');
+    const { error } = await sb.from('letters').insert({ to_id: YOU, kind: 'letter', title, body, style, unlock_at, open_when, attachments });
+    if (error) throw error;
+    ping(ctx, 'letter', {}); hearts(8); toast(unlock_at ? 'Đã gửi thư hẹn giờ 🔒' : 'Đã gửi thư 💌');
+    $('#wTitle').value = ''; $('#wBody').value = ''; pending.w = []; renderAttach('w'); setTab('inbox'); load();
+  } catch (e) { toast('Gửi lỗi: ' + (e.message || e)) }
+  btn.disabled = false; btn.textContent = 'Gửi thư 💌';
+};
+
+/* gift */
+$('#gSend').onclick = async () => {
+  if (!pending.g.length && !$('#gBody').value.trim()) { toast('Bỏ gì đó vào hộp quà đã'); return }
+  const d = $('#gDate').value; const unlock_at = d ? new Date(d).toISOString() : null;
+  if (unlock_at && new Date(unlock_at) < Date.now()) { toast('Ngày mở phải ở tương lai'); return }
+  const btn = $('#gSend'); btn.disabled = true; btn.textContent = 'Đang gói quà…';
+  try {
+    const attachments = await uploadAll('g');
+    const { error } = await sb.from('letters').insert({ to_id: YOU, kind: 'gift', title: $('#gTitle').value.trim() || 'Hộp quà bí mật', body: $('#gBody').value.trim(), style: 'pink', unlock_at, attachments });
+    if (error) throw error;
+    ping(ctx, 'letter', {}); hearts(10); toast('Đã gửi hộp quà 🎁');
+    $('#gTitle').value = ''; $('#gBody').value = ''; $('#gDate').value = ''; pending.g = []; renderAttach('g'); setTab('inbox'); load();
+  } catch (e) { toast('Gửi lỗi: ' + (e.message || e)) }
+  btn.disabled = false; btn.textContent = 'Gói & gửi 🎁';
+};
+
+sb.channel('letters-db').on('postgres_changes', { event: '*', schema: 'public', table: 'letters' }, () => load()).subscribe();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load() });
+load();
+</script>
+</body>
+</html>

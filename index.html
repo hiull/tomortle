@@ -23,7 +23,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Dancing+Script:wght@600&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -89,6 +89,8 @@
   <section class="screen" id="scrHome">
     <div class="install hidden card" id="installBox"><span>📲</span><span class="sp" id="installText">Cài Tomortle × Molly ra màn hình chính để mở nhanh như app.</span><button class="btn small primary" id="btnInstall">Cài</button><button class="btn small ghost" id="btnInstallX">✕</button></div>
 
+    <div class="card hidden" id="greetBox"></div>
+
     <div class="card">
       <div class="couple">
         <div><div class="av" id="avMe"><span></span><i class="dot on"></i></div><div class="pname" id="nmMe"></div><div class="pstatus" id="stMe"></div></div>
@@ -141,6 +143,18 @@
     </div>
 
     <div class="card">
+      <h3>💝 Gửi gắm</h3>
+      <div class="tiles">
+        <a class="tile" href="letters.html" style="position:relative"><i>💌</i>Thư & quà<small>Hẹn giờ mở</small><span class="badge2 hidden" id="bLetters" style="position:absolute;top:6px;right:6px"></span></a>
+        <a class="tile" href="fridge.html" style="position:relative"><i>🧊</i>Tủ lạnh<small>Note dán tủ</small><span class="badge2 hidden" id="bNotes" style="position:absolute;top:6px;right:6px"></span></a>
+        <a class="tile" href="voice.html" style="position:relative"><i>🎙️</i>Lời chào<small>Sáng & tối</small><span class="badge2 hidden" id="bVoice" style="position:absolute;top:6px;right:6px"></span></a>
+        <a class="tile" href="gifts.html" style="position:relative"><i>🎀</i>Quà tặng<small>Quà ảo & thật</small><span class="badge2 hidden" id="bGifts" style="position:absolute;top:6px;right:6px"></span></a>
+        <a class="tile" href="letters.html?t=write"><i>✍️</i>Viết thư<small>Ngay bây giờ</small></a>
+        <a class="tile" href="letters.html?t=gift"><i>🎁</i>Gói quà<small>Bí mật</small></a>
+      </div>
+    </div>
+
+    <div class="card">
       <h3>✨ Làm cùng nhau</h3>
       <div class="tiles">
         <a class="tile" id="tileBooth"><i>📸</i>Photobooth<small>Mời người ấy chụp</small></a>
@@ -149,7 +163,6 @@
         <a class="tile" href="games.html"><i>🎮</i>Game đôi<small>Caro · Hiểu nhau · Thẻ</small></a>
         <a class="tile" href="draw.html"><i>🎨</i>Vẽ cùng nhau<small>Chung một tờ giấy</small></a>
         <a class="tile" href="study.html"><i>📚</i>Học cùng nhau<small>Pomodoro chung</small></a>
-        <div class="tile soon"><i>💌</i>Thư hẹn giờ<small>Đợt 3</small></div>
         <div class="tile soon"><i>🗂️</i>Album chung<small>Đợt 4</small></div>
         <div class="tile soon"><i>❓</i>Câu hỏi mỗi ngày<small>Đợt 4</small></div>
       </div>

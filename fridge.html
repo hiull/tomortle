@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tủ lạnh chung – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <h3>📝 Dán một tờ note</h3>
+    <textarea class="input" id="nText" rows="3" maxlength="300" placeholder="vd: Nhớ ăn sáng nha 🥐" style="font-family:'Patrick Hand',cursive;font-size:19px"></textarea>
+    <div class="row" style="margin-top:8px;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div class="colors" id="nColors"></div>
+      <button class="btn primary" id="nAdd">Dán lên tủ</button>
+    </div>
+  </div>
+  <div class="card" style="background:linear-gradient(180deg,#f4f7fa,#e6ebf0);">
+    <h3 style="color:#4a5560">🧊 Tủ lạnh của hai đứa <small id="nCount"></small></h3>
+    <div class="fridge" id="board"></div>
+    <p class="note center" id="nEmpty">Tủ còn trống. Dán tờ note đầu tiên đi!</p>
+  </div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { $, $$, esc, toast, vib, hearts, sb, boot, header, joinMain, ping, ago } from './common.js';
+header('Tủ lạnh chung');
+const ctx = await boot();
+joinMain(ctx, 'fridge');
+const ME = ctx.me.id;
+const COLORS = ['#fff59d', '#ffcdd2', '#c8e6c9', '#bbdefb', '#e1bee7', '#ffe0b2'];
+let color = COLORS[0], notes = [], freshIds = new Set();
+$('#nColors').innerHTML = COLORS.map(c => `<button data-c="${c}" style="background:${c}" class="${c === color ? 'on' : ''}"></button>`).join('');
+$('#nColors').onclick = e => { const b = e.target.closest('button'); if (!b) return; color = b.dataset.c; $$('#nColors button').forEach(x => x.classList.toggle('on', x === b)) };
+
+async function load() {
+  const { data } = await sb.from('notes').select('*').order('created_at', { ascending: false }).limit(120);
+  notes = data || []; render();
+  if (notes.some(n => n.from_id !== ME && !n.seen_at)) { await sb.rpc('notes_seen') }
+}
+function rot(id) { return ((id * 37) % 9 - 4) }
+function render() {
+  $('#board').innerHTML = notes.map(n => `<div class="sticky ${freshIds.has(n.id) ? 'fresh' : ''}" style="background:${esc(n.color || COLORS[0])};transform:rotate(${rot(n.id)}deg)">${esc(n.text)}<div class="meta"><span>${n.from_id === ME ? 'Bạn' : esc(ctx.partnerName)} · ${ago(n.created_at)}</span><span>${n.hearts ? '❤️' + n.hearts : ''}${n.from_id === ME ? `<button data-del="${n.id}" title="Gỡ">✕</button>` : `<button data-heart="${n.id}" title="Thả tim">🤍</button>`}</span></div></div>`).join('');
+  $('#nEmpty').classList.toggle('hidden', notes.length > 0); $('#nCount').textContent = notes.length ? notes.length + ' tờ' : '';
+  freshIds.clear();
+}
+$('#nAdd').onclick = async () => {
+  const text = $('#nText').value.trim(); if (!text) { $('#nText').focus(); return }
+  const { data, error } = await sb.from('notes').insert({ text, color }).select().single();
+  if (error) { toast('Lỗi: ' + error.message); return }
+  $('#nText').value = ''; freshIds.add(data.id); notes.unshift(data); render(); vib(20); ping(ctx, 'note', {});
+};
+$('#board').onclick = async e => {
+  const d = e.target.closest('[data-del]'), h = e.target.closest('[data-heart]');
+  if (d) { const id = +d.dataset.del; await sb.from('notes').delete().eq('id', id); notes = notes.filter(n => n.id !== id); render() }
+  if (h) { const id = +h.dataset.heart; await sb.rpc('note_heart', { nid: id }); const n = notes.find(x => x.id === id); if (n) n.hearts++; render(); hearts(4); ping(ctx, 'note-heart', {}) }
+};
+sb.channel('notes-db').on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, p => {
+  if (p.eventType === 'INSERT' && p.new.from_id !== ME) { freshIds.add(p.new.id); toast(`${ctx.partnerName} vừa dán note mới 📝`); vib([60, 40, 60]) }
+  load();
+}).subscribe();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load() });
+load();
+</script>
+</body>
+</html>

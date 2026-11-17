@@ -1,9 +1,6 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+import { sb, giftPopup, mediaUrl } from './common.js';
 
-const VERSION = 'Đợt 2 · 2026-11-17';
-const SB_URL = 'https://yktkofupegtvrviynnjk.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrdGtvZnVwZWd0dnJ2aXlubmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5MTI5MjMsImV4cCI6MjExMDQ4ODkyM30.dRsXfxiAjIXUkwPQ65p2oMl6HfogL0QZdg27feOs9nQ';
-const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const VERSION = 'Đợt 3 · 2026-11-17';
 
 /* ---------- helpers ---------- */
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
@@ -173,7 +170,7 @@ async function enterHome() {
   store.set('name', myProfile.display_name || '');
   if (!homeBuilt) buildHome();
   renderProfiles(); renderDays(); renderCountdown(); renderLamp(couple.lamp_color, null);
-  loadMoods(); loadWeather();
+  loadMoods(); loadWeather(); loadInbox(true);
   show('scrHome'); maybeInstallBox(); connectRealtime();
   $('#sVersion').textContent = VERSION;
 }
@@ -302,6 +299,10 @@ function connectRealtime() {
     .on('broadcast', { event: 'status' }, () => refreshPartner())
     .on('broadcast', { event: 'mood' }, () => loadMoods())
     .on('broadcast', { event: 'couple' }, () => refreshCouple())
+    .on('broadcast', { event: 'vgift' }, ({ payload }) => { giftPopup(partnerProfile.display_name || 'Người ấy', payload.gift, payload.message); loadInbox() })
+    .on('broadcast', { event: 'letter' }, () => { vib([80, 60, 80]); toast((partnerProfile.display_name || 'Người ấy') + ' vừa gửi thư cho bạn 💌', 'Xem', () => location.href = 'letters.html'); loadInbox() })
+    .on('broadcast', { event: 'note' }, () => { toast((partnerProfile.display_name || 'Người ấy') + ' vừa dán note lên tủ lạnh 📝', 'Xem', () => location.href = 'fridge.html'); loadInbox() })
+    .on('broadcast', { event: 'voice' }, () => { vib([80, 60, 80]); toast((partnerProfile.display_name || 'Người ấy') + ' vừa gửi lời chào 🎙️', 'Nghe', () => location.href = 'voice.html'); loadInbox() })
     .on('broadcast', { event: 'invite' }, ({ payload }) => { vib([100, 80, 100]); toast((partnerProfile.display_name || 'Người ấy') + ' rủ bạn ' + payload.title, 'Vào', () => location.href = payload.url) })
     .on('broadcast', { event: 'booth' }, ({ payload }) => { vib([100, 80, 100]); toast((partnerProfile.display_name || 'Người ấy') + ' mời bạn chụp photobooth 📸', 'Vào', () => location.href = payload.url) })
     .subscribe(status => { if (status === 'SUBSCRIBED') channel.track({ page: 'home', at: Date.now() }) });
@@ -310,11 +311,40 @@ function connectRealtime() {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moods' }, p => { loadMoods(); if (p.new.user_id === partnerId) toast((partnerProfile.display_name || 'Người ấy') + ' vừa cập nhật tâm trạng ' + p.new.mood) })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'couple' }, p => { const lampChanged = p.new.lamp_color !== couple.lamp_color; couple = p.new; renderDays(); renderCountdown(); if (lampChanged) renderLamp(couple.lamp_color, null) })
     .subscribe();
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { refreshPartner(); refreshCouple(); loadMoods() } });
+  sb.channel('inbox-db').on('postgres_changes', { event: '*', schema: 'public', table: 'letters' }, () => loadInbox()).on('postgres_changes', { event: '*', schema: 'public', table: 'voices' }, () => loadInbox()).subscribe();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { refreshPartner(); refreshCouple(); loadMoods(); loadInbox() } });
 }
 async function refreshPartner() { const { data } = await sb.from('profiles').select('*').eq('id', partnerId).maybeSingle(); if (data) { partnerProfile = data; renderProfiles() } }
 async function refreshCouple() { const { data } = await sb.from('couple').select('*').maybeSingle(); if (data) { couple = data; renderDays(); renderCountdown(); renderLamp(couple.lamp_color, null) } }
 const send = (event, payload = {}) => channel && channel.send({ type: 'broadcast', event, payload });
+
+/* ---------- INBOX (đợt 3) ---------- */
+function setBadge(id, n) { const el = document.getElementById(id); if (!el) return; el.textContent = n > 99 ? '99+' : n; el.classList.toggle('hidden', !n) }
+let greetShownId = null;
+async function loadInbox(first) {
+  if (!me || !partnerId) return;
+  const [L, N, V, G] = await Promise.all([
+    sb.from('letters').select('id', { count: 'exact', head: true }).eq('to_id', me.id).is('opened_at', null),
+    sb.from('notes').select('id', { count: 'exact', head: true }).eq('from_id', partnerId).is('seen_at', null),
+    sb.from('voices').select('*').eq('to_id', me.id).is('listened_at', null).order('created_at', { ascending: false }).limit(10),
+    sb.from('vgifts').select('*').eq('to_id', me.id).is('seen_at', null).order('created_at', { ascending: true }).limit(5)
+  ]);
+  setBadge('bLetters', L.count || 0); setBadge('bNotes', N.count || 0); setBadge('bVoice', (V.data || []).length); setBadge('bGifts', (G.data || []).length);
+  // greeting card
+  const h = new Date().getHours(); const want = (h >= 5 && h < 11) ? 'morning' : (h >= 20 || h < 2) ? 'night' : null;
+  const v = (V.data || []).find(x => x.kind === want) || (V.data || []).find(x => x.kind === 'any');
+  const box = $('#greetBox');
+  if (v && v.id !== greetShownId) {
+    greetShownId = v.id; const name = partnerProfile.display_name || 'Người ấy';
+    const label = v.kind === 'morning' ? `${name} gửi lời chào buổi sáng 🌅` : v.kind === 'night' ? `${name} chúc bạn ngủ ngon 🌙` : `${name} gửi bạn một lời nhắn 💬`;
+    box.innerHTML = `<div class="greet"><i>${v.kind === 'morning' ? '🌅' : v.kind === 'night' ? '🌙' : '🎙️'}</i><div style="flex:1"><b>${esc(label)}</b>${v.note ? `<div class="note" style="margin:2px 0">${esc(v.note)}</div>` : ''}<audio controls preload="none" style="width:100%;margin-top:6px" id="greetAudio"></audio></div></div>`;
+    box.classList.remove('hidden');
+    mediaUrl(v.path).then(u => { const a = $('#greetAudio'); if (a) a.src = u }).catch(() => { });
+    $('#greetAudio').addEventListener('play', () => { sb.rpc('voice_listened', { vid: v.id }).then(() => setTimeout(loadInbox, 1500)) }, { once: true });
+  } else if (!v) { box.classList.add('hidden'); greetShownId = null }
+  // unseen virtual gifts → pop up once
+  if (first) for (const g of (G.data || []).slice(-1)) { giftPopup(partnerProfile.display_name || 'Người ấy', g.gift, g.message); sb.rpc('vgift_seen', { gid: g.id }) }
+}
 
 /* ---------- TOUCH ---------- */
 let vibLoop = null, theirBlob = null;

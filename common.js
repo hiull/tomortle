@@ -74,7 +74,11 @@ export function joinMain(ctx, page, onPresence) {
     .on('broadcast', { event: 'invite' }, ({ payload }) => { if (payload.page === page) return; vib([80, 60, 80]); toast(`${ctx.partnerName} rủ bạn: ${payload.title}`, 'Vào', () => location.href = payload.url) })
     .on('broadcast', { event: 'booth' }, ({ payload }) => { vib([80, 60, 80]); toast(`${ctx.partnerName} mời bạn chụp photobooth 📸`, 'Vào', () => location.href = payload.url) })
     .on('broadcast', { event: 'miss' }, () => { hearts(12); vib([80, 60, 80]); toast(`${ctx.partnerName} đang nhớ bạn 💗`) })
-    .subscribe(s => { if (s === 'SUBSCRIBED') ch.track({ page, at: Date.now() }) });
+    .on('broadcast', { event: 'vgift' }, ({ payload }) => giftPopup(ctx.partnerName, payload.gift, payload.message))
+    .on('broadcast', { event: 'letter' }, () => { if (page !== 'letters') { vib([80, 60, 80]); toast(`${ctx.partnerName} vừa gửi thư cho bạn 💌`, 'Xem', () => location.href = 'letters.html') } })
+    .on('broadcast', { event: 'note' }, () => { if (page !== 'fridge') toast(`${ctx.partnerName} vừa dán note lên tủ lạnh 📝`, 'Xem', () => location.href = 'fridge.html') })
+    .on('broadcast', { event: 'voice' }, () => { if (page !== 'voice') { vib([80, 60, 80]); toast(`${ctx.partnerName} vừa gửi lời chào 🎙️`, 'Nghe', () => location.href = 'voice.html') } });
+  setTimeout(() => ch.subscribe(s => { if (s === 'SUBSCRIBED') ch.track({ page, at: Date.now() }) }), 0);
   ctx.main = ch; renderChip(ctx);
   return ch;
 }
@@ -99,4 +103,78 @@ export function saveState(key, data, delay = 0) {
   clearTimeout(saveTimers[key]);
   const run = () => sb.from('shared_state').upsert({ key, data }).then(({ error }) => { if (error) console.warn('saveState', error) });
   if (delay) saveTimers[key] = setTimeout(run, delay); else return run();
+}
+
+/* ---------- media (Supabase Storage, private bucket "media") ---------- */
+export async function compressImage(file, max = 1600, q = .85) {
+  if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url });
+    const s = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(r => c.toBlob(b => r(b || file), 'image/jpeg', q));
+  } catch (e) { return file } finally { URL.revokeObjectURL(url) }
+}
+const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp', 'audio/mp4': 'm4a', 'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' };
+export async function uploadMedia(ctx, blob, folder) {
+  const type = (blob.type || 'application/octet-stream').split(';')[0];
+  const ext = EXT[type] || (type.split('/')[1] || 'bin');
+  const path = `${ctx.me.id}/${folder}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await sb.storage.from('media').upload(path, blob, { contentType: type, upsert: false });
+  if (error) throw error;
+  return { path, type };
+}
+const urlCache = {};
+export async function mediaUrl(path) {
+  const c = urlCache[path]; if (c && c.exp > Date.now()) return c.url;
+  const { data, error } = await sb.storage.from('media').createSignedUrl(path, 3600);
+  if (error) throw error; urlCache[path] = { url: data.signedUrl, exp: Date.now() + 3300e3 }; return data.signedUrl;
+}
+export async function renderMedia(att) {
+  const url = await mediaUrl(att.path); const t = att.type || '';
+  if (t.startsWith('image/')) return `<img src="${url}" alt="" style="width:100%;border-radius:12px;display:block;margin:8px 0">`;
+  if (t.startsWith('audio/')) return `<audio controls preload="metadata" src="${url}" style="width:100%;margin:8px 0"></audio>`;
+  if (t.startsWith('video/')) return `<video controls playsinline preload="metadata" src="${url}" style="width:100%;border-radius:12px;margin:8px 0"></video>`;
+  return `<a href="${url}" target="_blank">Tệp đính kèm</a>`;
+}
+
+/* ---------- voice recorder ---------- */
+export function pickAudioMime() {
+  if (!window.MediaRecorder) return null;
+  for (const m of ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']) { try { if (MediaRecorder.isTypeSupported(m)) return m } catch (e) { } }
+  return '';
+}
+export function createRecorder() {
+  let rec = null, chunks = [], stream = null, started = 0;
+  return {
+    async start() {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      const mime = pickAudioMime(); rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      chunks = []; rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data) }; rec.start(250); started = Date.now();
+    },
+    stop() {
+      return new Promise(res => {
+        if (!rec) return res(null);
+        rec.onstop = () => { stream.getTracks().forEach(t => t.stop()); const type = (rec.mimeType || chunks[0]?.type || 'audio/webm').split(';')[0]; res({ blob: new Blob(chunks, { type }), duration: (Date.now() - started) / 1000 }) };
+        rec.stop();
+      });
+    },
+    elapsed() { return started ? (Date.now() - started) / 1000 : 0 },
+    cancel() { try { rec && rec.state !== 'inactive' && rec.stop() } catch (e) { } stream && stream.getTracks().forEach(t => t.stop()) }
+  };
+}
+export function fmtLeft(ms) {
+  if (ms <= 0) return 'mở được rồi';
+  const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60, s = Math.floor(ms / 1e3) % 60;
+  if (d > 0) return `${d} ngày ${h} giờ`; if (h > 0) return `${h} giờ ${m} phút`; return `${m} phút ${s} giây`;
+}
+export function ago(t) { if (!t) return ''; const s = (Date.now() - new Date(t)) / 1000; if (s < 60) return 'vừa xong'; if (s < 3600) return Math.floor(s / 60) + ' phút trước'; if (s < 86400) return Math.floor(s / 3600) + ' giờ trước'; return Math.floor(s / 86400) + ' ngày trước' }
+export function ping(ctx, event, payload = {}) { ctx.main && ctx.main.send({ type: 'broadcast', event, payload }) }
+
+export function giftPopup(fromName, gift, message) {
+  const [e, ...rest] = String(gift || '🎁').split(' ');
+  const el = document.createElement('div'); el.className = 'giftpop';
+  el.innerHTML = `<div class="g">${esc(e)}</div><p>${esc(fromName)} tặng bạn ${esc(rest.join(' '))}</p>${message ? `<div class="msg">${esc(message)}</div>` : ''}<p style="font-size:13px;font-weight:600;opacity:.8">Chạm để đóng</p>`;
+  el.onclick = () => el.remove(); document.body.appendChild(el); hearts(14); vib([100, 60, 100, 60, 200]);
 }
