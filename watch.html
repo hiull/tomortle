@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Xem cùng nhau – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="seg2" id="modeSeg" style="margin-bottom:10px"><button data-m="video" class="on">🎬 Xem phim</button><button data-m="music">🎵 Nghe nhạc</button></div>
+    <div class="row"><input class="input" id="url" placeholder="Dán link YouTube vào đây" style="margin:0" autocomplete="off"><button class="btn primary" id="btnAdd">Thêm</button></div>
+    <p class="note">Mở YouTube, bấm Chia sẻ → Sao chép đường liên kết, rồi dán vào đây. Bài/phim đầu tiên sẽ phát luôn, các bài sau vào hàng chờ.</p>
+  </div>
+
+  <div class="card">
+    <div class="player" id="player"><div id="yt"></div><div class="unlock hidden" id="unlock"><b>▶</b><span id="unlockText">Bấm để xem cùng</span></div></div>
+    <div class="row" style="margin-top:10px;justify-content:center;gap:10px">
+      <button class="btn" id="btnPrev">⏮</button><button class="btn primary" id="btnPlay">▶ Phát</button><button class="btn" id="btnNext">⏭</button><button class="btn" id="btnSync" title="Đồng bộ lại">🔄</button>
+    </div>
+    <p class="note center" id="syncNote">Ai bấm phát, tạm dừng hay tua thì máy bên kia làm theo.</p>
+    <div class="react" id="react"></div>
+  </div>
+
+  <div class="card">
+    <h3>💬 Trò chuyện <small><button class="btn small" id="btnInvite">Rủ người ấy vào</button></small></h3>
+    <div class="chat" id="chat"></div>
+    <form class="row" id="chatForm"><input class="input" id="chatIn" placeholder="Nhắn gì đó…" maxlength="200" style="margin:0" autocomplete="off"><button class="btn primary">Gửi</button></form>
+  </div>
+
+  <div class="card">
+    <h3>📜 Hàng chờ <small id="qCount"></small></h3>
+    <ul class="queue" id="queue"></ul>
+    <p class="note" id="qEmpty">Chưa có gì. Dán link YouTube ở trên nhé.</p>
+  </div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { $, $$, esc, toast, vib, boot, header, joinMain, invite, featureChannel, loadState, saveState, floatEmoji } from './common.js';
+
+const PAGE = 'watch';
+header('Xem cùng nhau');
+const ctx = await boot();
+joinMain(ctx, PAGE);
+const ch = featureChannel(ctx, 'watch');
+
+let S = await loadState('watch', { queue: [], idx: -1, t: 0, playing: false, mode: 'video' });
+S.queue = S.queue || []; if (S.idx == null) S.idx = -1;
+const params = new URLSearchParams(location.search);
+if (params.get('mode') === 'music' && !S.queue.length) S.mode = 'music';
+
+let player = null, ready = false, suppress = 0, unlocked = false, leader = false;
+const send = (event, payload = {}) => ch.send({ type: 'broadcast', event, payload });
+const persist = (d = 1200) => saveState('watch', S, d);
+const now = () => (player && ready && player.getCurrentTime) ? player.getCurrentTime() : 0;
+const isPlaying = () => player && ready && player.getPlayerState && player.getPlayerState() === 1;
+
+/* ---------- YouTube ---------- */
+function parseYT(s) {
+  s = s.trim(); if (/^[\w-]{11}$/.test(s)) return s;
+  try {
+    const u = new URL(s.startsWith('http') ? s : 'https://' + s);
+    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1, 12);
+    if (u.searchParams.get('v')) return u.searchParams.get('v').slice(0, 11);
+    const m = u.pathname.match(/\/(shorts|embed|live|v)\/([\w-]{11})/); if (m) return m[2];
+  } catch (e) { }
+  return null;
+}
+async function titleOf(id) {
+  try { const r = await fetch('https://noembed.com/embed?url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + id)); const j = await r.json(); return j.title || id } catch (e) { return id }
+}
+window.onYouTubeIframeAPIReady = () => {
+  player = new YT.Player('yt', {
+    width: '100%', height: '100%', playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+    events: {
+      onReady: () => { ready = true; const cur = S.queue[S.idx]; if (cur) { player.cueVideoById(cur.id, Math.max(0, S.t || 0)); if (S.playing) showUnlock('Người ấy đang phát. Bấm để xem cùng') } },
+      onStateChange: onYTState
+    }
+  });
+};
+const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
+
+function onYTState(e) {
+  const st = e.data; updatePlayBtn();
+  if (suppress > Date.now()) return;
+  if (st === 1) { leader = true; S.playing = true; S.t = now(); send('play', { t: S.t, idx: S.idx }); persist(); hideUnlock() }
+  else if (st === 2) { leader = true; S.playing = false; S.t = now(); send('pause', { t: S.t, idx: S.idx }); persist() }
+  else if (st === 0) { if (leader || !ctx.partnerHere) go(S.idx + 1, true) }
+}
+function quiet(ms = 1200) { suppress = Date.now() + ms }
+function applyRemote(t, play) {
+  if (!ready) return; quiet();
+  if (Math.abs(now() - t) > 1.2) player.seekTo(t, true);
+  if (play) { player.playVideo(); setTimeout(() => { if (!isPlaying() && !unlocked) showUnlock('Bấm để xem cùng') }, 1500) } else player.pauseVideo();
+}
+function go(i, autoplay) {
+  if (!S.queue.length) return;
+  if (i < 0 || i >= S.queue.length) { if (i >= S.queue.length) { S.playing = false; persist(); toast('Hết hàng chờ rồi') } return }
+  S.idx = i; S.t = 0; S.playing = !!autoplay; persist(400); render();
+  load(i, autoplay); send('load', { idx: i, play: !!autoplay, queue: S.queue });
+}
+function load(i, autoplay) {
+  const it = S.queue[i]; if (!it || !ready) return; quiet(2000);
+  if (autoplay) player.loadVideoById(it.id, 0); else player.cueVideoById(it.id, 0);
+}
+
+/* ---------- unlock (mobile autoplay) ---------- */
+function showUnlock(t) { $('#unlockText').textContent = t; $('#unlock').classList.remove('hidden') }
+function hideUnlock() { $('#unlock').classList.add('hidden') }
+$('#unlock').onclick = () => { unlocked = true; hideUnlock(); send('need-sync'); if (ready) { quiet(1500); player.playVideo() } };
+
+/* ---------- controls ---------- */
+function updatePlayBtn() { $('#btnPlay').textContent = isPlaying() ? '⏸ Dừng' : '▶ Phát' }
+$('#btnPlay').onclick = () => {
+  if (!ready) return; unlocked = true;
+  if (S.idx < 0 && S.queue.length) { go(0, true); return }
+  if (isPlaying()) player.pauseVideo(); else player.playVideo();
+};
+$('#btnNext').onclick = () => { leader = true; go(S.idx + 1, true) };
+$('#btnPrev').onclick = () => { leader = true; go(Math.max(0, S.idx - 1), true) };
+$('#btnSync').onclick = () => { send('need-sync'); toast('Đang đồng bộ với người ấy…') };
+$('#btnInvite').onclick = () => invite(ctx, PAGE, S.mode === 'music' ? 'nghe nhạc chung 🎵' : 'xem phim chung 🎬');
+
+$('#btnAdd').onclick = addUrl; $('#url').addEventListener('keydown', e => { if (e.key === 'Enter') addUrl() });
+async function addUrl() {
+  const id = parseYT($('#url').value); if (!id) { toast('Link YouTube chưa đúng'); return }
+  $('#url').value = ''; const item = { id, title: '…' }; S.queue.push(item); render();
+  item.title = await titleOf(id); render();
+  send('queue', { queue: S.queue }); persist(300);
+  if (S.idx < 0 || (S.idx >= S.queue.length - 1 && !isPlaying() && S.queue.length > 1 && player && player.getPlayerState && player.getPlayerState() === 0)) { leader = true; go(S.queue.length - 1, true) }
+  else toast('Đã thêm vào hàng chờ');
+}
+$('#modeSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.mode = b.dataset.m; renderMode(); send('mode', { mode: S.mode }); persist() };
+function renderMode() { $$('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.m === S.mode)); $('#player').classList.toggle('music', S.mode === 'music') }
+
+/* reactions + chat */
+const EMO = ['😂', '😍', '😭', '😱', '👏', '💗'];
+$('#react').innerHTML = EMO.map(e => `<button>${e}</button>`).join('');
+$('#react').onclick = e => { const b = e.target.closest('button'); if (!b) return; floatEmoji(b.textContent, 5); send('react', { e: b.textContent }) };
+function addChat(text, mine) { const d = document.createElement('div'); d.className = mine ? 'me' : ''; d.textContent = text; const c = $('#chat'); c.appendChild(d); while (c.children.length > 40) c.firstChild.remove(); c.scrollTop = c.scrollHeight }
+$('#chatForm').onsubmit = e => { e.preventDefault(); const t = $('#chatIn').value.trim(); if (!t) return; $('#chatIn').value = ''; addChat(t, true); send('chat', { t }) };
+
+/* queue render */
+function render() {
+  const q = $('#queue'); q.innerHTML = '';
+  S.queue.forEach((it, i) => {
+    const li = document.createElement('li'); if (i === S.idx) li.className = 'now';
+    li.innerHTML = `<img src="https://i.ytimg.com/vi/${esc(it.id)}/mqdefault.jpg" alt=""><span>${i === S.idx ? '▶ ' : ''}${esc(it.title)}</span><button data-play="${i}" title="Phát">▶</button><button data-del="${i}" title="Xoá">✕</button>`;
+    q.appendChild(li);
+  });
+  $('#qEmpty').classList.toggle('hidden', S.queue.length > 0); $('#qCount').textContent = S.queue.length ? S.queue.length + ' mục' : '';
+}
+$('#queue').onclick = e => {
+  const p = e.target.closest('[data-play]'), d = e.target.closest('[data-del]');
+  if (p) { leader = true; go(+p.dataset.play, true) }
+  if (d) { const i = +d.dataset.del; S.queue.splice(i, 1); if (i < S.idx) S.idx--; else if (i === S.idx) { S.idx = Math.min(S.idx, S.queue.length - 1); if (S.idx >= 0) load(S.idx, false) } render(); send('queue', { queue: S.queue, idx: S.idx }); persist(300) }
+};
+
+/* ---------- realtime ---------- */
+ch.on('broadcast', { event: 'play' }, ({ payload }) => { leader = false; if (payload.idx !== S.idx && S.queue[payload.idx]) { S.idx = payload.idx; render(); load(S.idx, false) } S.playing = true; applyRemote(payload.t + .3, true); updatePlayBtn() })
+  .on('broadcast', { event: 'pause' }, ({ payload }) => { leader = false; S.playing = false; applyRemote(payload.t, false) })
+  .on('broadcast', { event: 'load' }, ({ payload }) => { leader = false; if (payload.queue) S.queue = payload.queue; S.idx = payload.idx; render(); load(S.idx, payload.play); if (payload.play) setTimeout(() => { if (!isPlaying()) showUnlock('Bài mới! Bấm để phát cùng') }, 1800) })
+  .on('broadcast', { event: 'queue' }, ({ payload }) => { S.queue = payload.queue; if (payload.idx != null) S.idx = payload.idx; render() })
+  .on('broadcast', { event: 'mode' }, ({ payload }) => { S.mode = payload.mode; renderMode() })
+  .on('broadcast', { event: 'react' }, ({ payload }) => { floatEmoji(payload.e, 6); vib(30) })
+  .on('broadcast', { event: 'chat' }, ({ payload }) => { addChat(payload.t, false); vib(20) })
+  .on('broadcast', { event: 'need-sync' }, () => { if (ready && S.idx >= 0) send('sync', { t: now(), playing: isPlaying(), idx: S.idx, queue: S.queue }) })
+  .on('broadcast', { event: 'sync' }, ({ payload }) => {
+    if (payload.queue) S.queue = payload.queue;
+    if (payload.idx !== S.idx) { S.idx = payload.idx; render(); load(S.idx, false) }
+    setTimeout(() => applyRemote(payload.t + (payload.playing ? .4 : 0), payload.playing), 300);
+  })
+  .on('broadcast', { event: 'tick' }, ({ payload }) => {
+    if (!ready || payload.idx !== S.idx || suppress > Date.now()) return;
+    const drift = now() - payload.t;
+    if (payload.playing && isPlaying() && Math.abs(drift) > 2) { quiet(); player.seekTo(payload.t + .3, true) }
+  })
+  .subscribe();
+// leader heartbeat + periodic save
+setInterval(() => { if (leader && isPlaying()) { send('tick', { t: now(), playing: true, idx: S.idx }); S.t = now(); S.playing = true; persist(0) } }, 5000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) send('need-sync') });
+
+renderMode(); render();
+if (!S.queue.length) setTimeout(() => $('#url').focus(), 300);
+</script>
+</body>
+</html>

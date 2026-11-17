@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vẽ cùng nhau – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="board" id="board"><canvas id="cv" width="900" height="1200"></canvas><div class="pcursor hidden" id="pcur"><b id="pcurName"></b></div></div>
+    <div class="tools" id="colors"></div>
+    <div class="tools">
+      <button class="sz" data-w="4"><i style="width:4px;height:4px"></i></button>
+      <button class="sz on" data-w="9"><i style="width:8px;height:8px"></i></button>
+      <button class="sz" data-w="20"><i style="width:14px;height:14px"></i></button>
+      <button class="sz" data-w="44"><i style="width:22px;height:22px"></i></button>
+      <button class="btn small" id="btnEraser">🧽 Tẩy</button>
+      <button class="btn small" id="btnUndo">↩ Hoàn tác</button>
+    </div>
+    <div class="tools">
+      <button class="btn small" id="btnPaper">📄 Giấy kẻ</button>
+      <button class="btn small" id="btnSave">💾 Lưu ảnh</button>
+      <button class="btn small" id="btnClear">🗑️ Xoá hết</button>
+      <button class="btn small primary" id="btnInvite">Rủ người ấy vẽ</button>
+    </div>
+    <p class="note">Hai người vẽ trên cùng một tờ giấy, nét của ai cũng hiện ngay bên máy kia. "Hoàn tác" chỉ xoá nét của chính bạn.</p>
+  </div>
+</div>
+<div id="toast"></div>
+<script type="module">
+import { $, $$, toast, vib, boot, header, joinMain, invite, featureChannel, loadState, saveState, store } from './common.js';
+const PAGE = 'draw';
+header('Vẽ cùng nhau');
+const ctx = await boot();
+joinMain(ctx, PAGE);
+const ch = featureChannel(ctx, 'draw');
+const send = (event, payload) => ch.send({ type: 'broadcast', event, payload });
+
+const cv = $('#cv'), g = cv.getContext('2d'); g.lineCap = 'round'; g.lineJoin = 'round';
+let S = await loadState('draw', { strokes: [], paper: false });
+S.strokes = S.strokes || [];
+const COLORS = ['#222222', '#ff5c8a', '#e53935', '#ff9800', '#ffd60a', '#43a047', '#1e88e5', '#8e44ad', '#795548', '#ffffff'];
+let color = store.get('drawColor', '#ff5c8a'), width = 9, eraser = false;
+
+$('#colors').innerHTML = COLORS.map(c => `<button class="sw" data-c="${c}" style="background:${c}"></button>`).join('');
+function syncTools() {
+  $$('#colors .sw').forEach(b => b.classList.toggle('on', !eraser && b.dataset.c === color));
+  $$('.sz').forEach(b => b.classList.toggle('on', +b.dataset.w === width));
+  $('#btnEraser').classList.toggle('primary', eraser);
+  $('#board').classList.toggle('paper', !!S.paper);
+}
+$('#colors').onclick = e => { const b = e.target.closest('.sw'); if (!b) return; color = b.dataset.c; eraser = false; store.set('drawColor', color); syncTools() };
+$$('.sz').forEach(b => b.onclick = () => { width = +b.dataset.w; syncTools() });
+$('#btnEraser').onclick = () => { eraser = !eraser; syncTools() };
+$('#btnPaper').onclick = () => { S.paper = !S.paper; syncTools(); send('paper', { paper: S.paper }); saveState('draw', S, 800) };
+
+function drawSeg(st, from) {
+  const p = st.p; if (p.length < 2) return;
+  g.save(); g.globalCompositeOperation = st.er ? 'destination-out' : 'source-over'; g.strokeStyle = st.c; g.lineWidth = st.w; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath();
+  const s = Math.max(0, from - 2); g.moveTo(p[s], p[s + 1]);
+  if (p.length === 2) g.lineTo(p[0] + .1, p[1]);
+  for (let i = s + 2; i < p.length; i += 2) g.lineTo(p[i], p[i + 1]);
+  g.stroke(); g.restore();
+}
+function redraw() { g.clearRect(0, 0, cv.width, cv.height); for (const st of S.strokes) drawSeg(st, 0); for (const id in live) drawSeg(live[id], 0) }
+
+/* my drawing */
+let cur = null, sentUpTo = 0, flushT = null;
+const pos = e => { const r = cv.getBoundingClientRect(); return [Math.round((e.clientX - r.left) * cv.width / r.width), Math.round((e.clientY - r.top) * cv.height / r.height)] };
+cv.addEventListener('pointerdown', e => {
+  if (cur) return; cv.setPointerCapture(e.pointerId);
+  const [x, y] = pos(e); cur = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), by: ctx.me.id, c: color, w: eraser ? Math.max(width, 24) : width, er: eraser, p: [x, y] };
+  sentUpTo = 0; drawSeg(cur, 0); flush();
+});
+cv.addEventListener('pointermove', e => {
+  const [x, y] = pos(e);
+  if (!cur) { throttleCursor(x, y); return }
+  const n = cur.p.length; if (Math.abs(cur.p[n - 2] - x) + Math.abs(cur.p[n - 1] - y) < 2) return;
+  cur.p.push(x, y); drawSeg(cur, n);
+  if (!flushT) flushT = setTimeout(flush, 45);
+});
+const end = () => { if (!cur) return; flush(); send('end', { id: cur.id }); S.strokes.push(cur); trim(); cur = null; saveState('draw', S, 1500) };
+cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+function flush() { flushT = null; if (!cur) return; const from = Math.max(0, sentUpTo - 2); send('seg', { id: cur.id, by: cur.by, c: cur.c, w: cur.w, er: cur.er, from, p: cur.p.slice(from) }); sentUpTo = cur.p.length }
+function trim() { if (S.strokes.length > 1500) S.strokes.splice(0, S.strokes.length - 1500) }
+let lastCur = 0; function throttleCursor(x, y) { const t = Date.now(); if (t - lastCur < 120) return; lastCur = t; send('cursor', { x, y }) }
+
+/* partner drawing */
+const live = {};
+ch.on('broadcast', { event: 'seg' }, ({ payload: s }) => {
+  let st = live[s.id]; if (!st) st = live[s.id] = { id: s.id, by: s.by, c: s.c, w: s.w, er: s.er, p: [] };
+  const before = st.p.length; st.p.length = s.from; for (const v of s.p) st.p.push(v);
+  drawSeg(st, Math.min(before, s.from)); showCursor(st.p[st.p.length - 2], st.p[st.p.length - 1]);
+})
+  .on('broadcast', { event: 'end' }, ({ payload }) => { const st = live[payload.id]; if (st) { S.strokes.push(st); delete live[payload.id]; trim() } })
+  .on('broadcast', { event: 'cursor' }, ({ payload }) => showCursor(payload.x, payload.y))
+  .on('broadcast', { event: 'undo' }, ({ payload }) => { S.strokes = S.strokes.filter(s => s.id !== payload.id); redraw() })
+  .on('broadcast', { event: 'clear' }, () => { S.strokes = []; for (const k in live) delete live[k]; redraw(); toast(`${ctx.partnerName} đã xoá hết bảng`) })
+  .on('broadcast', { event: 'paper' }, ({ payload }) => { S.paper = payload.paper; syncTools() })
+  .subscribe();
+let curT = null;
+function showCursor(x, y) {
+  const r = cv.getBoundingClientRect(), el = $('#pcur'); if (x == null) return;
+  el.style.left = (x / cv.width * 100) + '%'; el.style.top = (y / cv.height * 100) + '%'; el.classList.remove('hidden');
+  clearTimeout(curT); curT = setTimeout(() => el.classList.add('hidden'), 2500);
+}
+$('#pcurName').textContent = ctx.partnerName;
+
+/* actions */
+$('#btnUndo').onclick = () => { for (let i = S.strokes.length - 1; i >= 0; i--) { if (S.strokes[i].by === ctx.me.id) { const id = S.strokes[i].id; S.strokes.splice(i, 1); redraw(); send('undo', { id }); saveState('draw', S, 800); return } } toast('Chưa có nét nào của bạn') };
+let clearArm = 0;
+$('#btnClear').onclick = () => {
+  if (Date.now() - clearArm > 3000) { clearArm = Date.now(); toast('Bấm "Xoá hết" lần nữa để xoá cả bảng'); return }
+  clearArm = 0; S.strokes = []; redraw(); send('clear', {}); saveState('draw', S); vib(30);
+};
+$('#btnSave').onclick = () => {
+  const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; const x = o.getContext('2d');
+  x.fillStyle = S.paper ? '#fffdf6' : '#ffffff'; x.fillRect(0, 0, o.width, o.height);
+  if (S.paper) { x.fillStyle = '#e8e2d0'; for (let y = 31 * 1200 / 1200 * 1.8; y < o.height; y += 32 * 1.8) x.fillRect(0, y, o.width, 1.8) }
+  x.drawImage(cv, 0, 0);
+  o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 've-cung-nhau.png'; document.body.appendChild(a); a.click(); a.remove(); toast('Đã lưu ảnh') }, 'image/png');
+};
+$('#btnInvite').onclick = () => invite(ctx, PAGE, 'vẽ cùng nhau 🎨');
+
+/* reload when partner saved while I was away */
+document.addEventListener('visibilitychange', async () => { if (!document.hidden && !cur) { const d = await loadState('draw', null); if (d) { S = d; S.strokes = S.strokes || []; syncTools(); redraw() } } });
+
+syncTools(); redraw();
+</script>
+</body>
+</html>

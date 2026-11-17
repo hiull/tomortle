@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Game đôi – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <div class="seg2" id="tabs" style="margin-bottom:12px"><button data-t="caro" class="on">⭕ Caro</button><button data-t="quiz">💭 Hiểu nhau</button><button data-t="cards">🃏 Thẻ bài</button></div>
+
+  <section id="t-caro" class="card">
+    <h3>Caro 15×15 <small><button class="btn small" id="caroNew">Ván mới</button></small></h3>
+    <div class="turn" id="caroTurn"></div>
+    <div class="caro" id="caroBoard"></div>
+    <div class="score" id="caroScore"></div>
+    <p class="note center">5 quân liên tiếp (ngang, dọc, chéo) là thắng. Người thua được đi trước ván sau.</p>
+  </section>
+
+  <section id="t-quiz" class="card hidden">
+    <h3>Ai hiểu ai hơn? <small><button class="btn small" id="quizSkip">Đổi câu</button></small></h3>
+    <div class="score" id="quizScore"></div>
+    <div class="qcard" id="quizQ"></div>
+    <div id="quizBody" style="margin-top:12px"></div>
+    <p class="note center">Một người trả lời về bản thân, người kia đoán. Mở đáp án, người trả lời chấm điểm. Mỗi câu đổi vai.</p>
+  </section>
+
+  <section id="t-cards" class="card hidden">
+    <h3>Rút thẻ cùng nhau</h3>
+    <div class="seg2" id="decks" style="margin-bottom:12px"></div>
+    <div class="qcard" id="cardBox"><small>Chọn bộ thẻ rồi bấm rút</small>🃏</div>
+    <div class="row" style="justify-content:center;margin-top:12px"><button class="btn primary" id="drawCard">Rút thẻ</button></div>
+    <p class="note center" id="cardBy"></p>
+  </section>
+
+  <button class="btn block" id="btnInvite">Rủ người ấy chơi</button>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { $, $$, esc, toast, vib, hearts, boot, header, joinMain, invite, featureChannel, loadState, saveState } from './common.js';
+const PAGE = 'games';
+header('Game đôi');
+const ctx = await boot();
+joinMain(ctx, PAGE);
+const ch = featureChannel(ctx, 'games');
+const send = (event, payload) => ch.send({ type: 'broadcast', event, payload });
+const ME = ctx.me.id, YOU = ctx.partnerId;
+const nameOf = id => id === ME ? 'Bạn' : ctx.partnerName;
+
+/* tabs */
+let tab = new URLSearchParams(location.search).get('g') || 'caro';
+function setTab(t) { tab = t; $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t)); ['caro', 'quiz', 'cards'].forEach(k => $('#t-' + k).classList.toggle('hidden', k !== t)) }
+$('#tabs').onclick = e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.t) };
+$('#btnInvite').onclick = () => invite(ctx, PAGE, tab === 'caro' ? 'chơi caro ⭕' : tab === 'quiz' ? 'chơi Ai hiểu ai hơn 💭' : 'rút thẻ câu hỏi 🃏');
+
+/* ================= CARO ================= */
+const N = 15;
+let C = await loadState('caro', null);
+function newCaro(starter) { return { b: '.'.repeat(N * N), turn: starter, starter, x: starter, win: null, line: [], last: -1, wins: (C && C.wins) || {} } }
+if (!C || !C.b) C = newCaro(ME);
+const board = $('#caroBoard');
+board.innerHTML = Array.from({ length: N * N }, (_, i) => `<button data-i="${i}"></button>`).join('');
+function renderCaro() {
+  const cells = board.children;
+  for (let i = 0; i < N * N; i++) {
+    const v = C.b[i], el = cells[i];
+    el.textContent = v === '.' ? '' : (v === 'x' ? '✕' : '◯'); el.className = v === '.' ? '' : v;
+    if (i === C.last) el.classList.add('last'); if (C.line.includes(i)) el.classList.add('win');
+  }
+  const mark = id => (id === C.x ? '✕' : '◯');
+  if (C.win === 'draw') $('#caroTurn').textContent = 'Hoà! Bấm "Ván mới" nhé';
+  else if (C.win) $('#caroTurn').textContent = C.win === ME ? '🎉 Bạn thắng rồi!' : `${ctx.partnerName} thắng rồi 😝`;
+  else $('#caroTurn').textContent = C.turn === ME ? `Tới lượt bạn (${mark(ME)})` : `Đợi ${ctx.partnerName} đi (${mark(YOU)})…`;
+  $('#caroScore').innerHTML = `<div><b>${(C.wins || {})[ME] || 0}</b>Bạn</div><div><b>${(C.wins || {})[YOU] || 0}</b>${esc(ctx.partnerName)}</div>`;
+}
+function checkWin(b, i) {
+  const r = Math.floor(i / N), c = i % N, v = b[i];
+  for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+    const line = [i];
+    for (const s of [1, -1]) { let rr = r + dr * s, cc = c + dc * s; while (rr >= 0 && rr < N && cc >= 0 && cc < N && b[rr * N + cc] === v) { line.push(rr * N + cc); rr += dr * s; cc += dc * s } }
+    if (line.length >= 5) return line;
+  }
+  return null;
+}
+board.onclick = e => {
+  const el = e.target.closest('button'); if (!el) return; const i = +el.dataset.i;
+  if (C.win) { toast('Ván đã xong, bấm "Ván mới"'); return }
+  if (C.turn !== ME) { toast(`Chưa tới lượt bạn`); return }
+  if (C.b[i] !== '.') return;
+  const v = C.x === ME ? 'x' : 'o';
+  C.b = C.b.slice(0, i) + v + C.b.slice(i + 1); C.last = i; C.turn = YOU;
+  const line = checkWin(C.b, i);
+  if (line) { C.win = ME; C.line = line; C.wins = C.wins || {}; C.wins[ME] = (C.wins[ME] || 0) + 1; hearts(10) }
+  else if (!C.b.includes('.')) C.win = 'draw';
+  renderCaro(); vib(15); send('caro', C); saveState('caro', C);
+};
+$('#caroNew').onclick = () => {
+  const loser = C.win && C.win !== 'draw' ? (C.win === ME ? YOU : ME) : (C.starter === ME ? YOU : ME);
+  C = newCaro(loser); renderCaro(); send('caro', C); saveState('caro', C); toast(loser === ME ? 'Bạn đi trước' : `${ctx.partnerName} đi trước`);
+};
+ch.on('broadcast', { event: 'caro' }, ({ payload }) => { const wasMine = C.turn === ME; C = payload; renderCaro(); if (C.win === YOU) toast(`${ctx.partnerName} thắng ván này 😝`); else if (C.turn === ME && !wasMine) vib(40) });
+renderCaro();
+
+/* ================= QUIZ ================= */
+const QS = [
+  'Món ăn có thể ăn cả tuần không chán?', 'Đồ uống gọi nhiều nhất khi ra quán?', 'Màu sắc yêu thích nhất?', 'Nếu được đi du lịch ngay mai, sẽ đi đâu?',
+  'Bộ phim xem đi xem lại nhiều nhất?', 'Bài hát đang nghe nhiều nhất dạo này?', 'Thứ khiến bực mình nhanh nhất?', 'Con vật muốn nuôi nhất?',
+  'Mùa yêu thích trong năm?', 'Thói quen trước khi đi ngủ?', 'Nỗi sợ lớn nhất (kể cả vớ vẩn)?', 'Món quà từng nhận được thích nhất?',
+  'Sáng dậy việc đầu tiên làm là gì?', 'Đồ ăn vặt không thể thiếu?', 'Nếu có 1 tỷ, sẽ mua gì đầu tiên?', 'Kỷ niệm vui nhất của hai đứa?',
+  'Lần đầu gặp nhau, ấn tượng đầu tiên về người kia?', 'Điều thích nhất ở người kia?', 'Ngôn ngữ tình yêu chính: lời nói, chạm, quà, thời gian hay hành động?', 'Môn học/việc ghét nhất?',
+  'Siêu năng lực muốn có?', 'Cách giải toả căng thẳng?', 'Ứng dụng mở nhiều nhất trên điện thoại?', 'Món muốn hai đứa cùng nấu?',
+  'Thời gian trong ngày thích nhất?', 'Biệt danh hồi nhỏ?', 'Ước mơ nghề nghiệp hồi bé?', 'Thứ muốn làm nhất trong lần gặp tới?',
+  'Mùi hương yêu thích?', 'Kiểu hẹn hò lý tưởng?', 'Điều hay làm khi nhớ người kia?', 'Đồ vật luôn mang theo người?',
+  'Thể loại nhạc nghe khi buồn?', 'Trà sữa topping gì?', 'Điều nhỏ nhặt làm vui cả ngày?', 'Nơi muốn sống sau này?'
+];
+let Q = await loadState('quiz', null);
+function newQuiz(subject, prev) { return { i: Math.floor(Math.random() * QS.length), subject, ans: null, guess: null, reveal: false, verdict: null, score: (prev && prev.score) || {} } }
+if (!Q || Q.i == null) Q = newQuiz(ME, Q);
+function renderQuiz() {
+  const subjectIsMe = Q.subject === ME;
+  $('#quizScore').innerHTML = `<div><b>${(Q.score || {})[ME] || 0}</b>Bạn</div><div><b>${(Q.score || {})[YOU] || 0}</b>${esc(ctx.partnerName)}</div>`;
+  $('#quizQ').innerHTML = `<small>${subjectIsMe ? 'Câu hỏi về BẠN' : 'Câu hỏi về ' + esc(ctx.partnerName).toUpperCase()}</small>${esc(QS[Q.i])}`;
+  const body = $('#quizBody');
+  if (Q.reveal) {
+    body.innerHTML = `<div class="reveal"><div><b>${subjectIsMe ? 'Bạn trả lời' : esc(ctx.partnerName) + ' trả lời'}</b>${esc(Q.ans)}</div><div><b>${subjectIsMe ? esc(ctx.partnerName) + ' đoán' : 'Bạn đoán'}</b>${esc(Q.guess)}</div></div>` +
+      (Q.verdict ? `<p class="center" style="font-weight:800;font-size:18px">${{ right: '💯 Chuẩn luôn! +2', close: '🤏 Gần đúng +1', wrong: '❌ Sai rồi nha' }[Q.verdict]}</p><button class="btn primary block" id="qNext">Câu tiếp</button>` :
+        (subjectIsMe ? `<p class="note center">Người ấy đoán đúng không?</p><div class="row" style="justify-content:center"><button class="btn" data-v="right">💯 Đúng</button><button class="btn" data-v="close">🤏 Gần đúng</button><button class="btn" data-v="wrong">❌ Sai</button></div>` : `<p class="note center">Đợi ${esc(ctx.partnerName)} chấm điểm…</p>`));
+  } else {
+    const mine = subjectIsMe ? Q.ans : Q.guess, theirs = subjectIsMe ? Q.guess : Q.ans;
+    if (mine == null) body.innerHTML = `<form class="row" id="qForm"><input class="input" id="qIn" maxlength="80" style="margin:0" placeholder="${subjectIsMe ? 'Câu trả lời của bạn (người ấy sẽ không thấy cho tới khi mở)' : 'Bạn đoán người ấy sẽ trả lời…'}" autocomplete="off"><button class="btn primary">Chốt</button></form><p class="note center">${theirs != null ? esc(ctx.partnerName) + ' đã chốt xong ✓' : esc(ctx.partnerName) + ' đang nghĩ…'}</p>`;
+    else body.innerHTML = `<p class="center">Bạn đã chốt ✓</p><p class="note center">${theirs != null ? '' : 'Đợi ' + esc(ctx.partnerName) + ' chốt…'}</p>`;
+  }
+}
+$('#quizBody').addEventListener('submit', e => {
+  e.preventDefault(); const v = $('#qIn').value.trim(); if (!v) return;
+  if (Q.subject === ME) Q.ans = v; else Q.guess = v;
+  if (Q.ans != null && Q.guess != null) Q.reveal = true;
+  syncQuiz();
+});
+$('#quizBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-v]'); if (b) { Q.verdict = b.dataset.v; const guesser = Q.subject === ME ? YOU : ME; Q.score = Q.score || {}; Q.score[guesser] = (Q.score[guesser] || 0) + ({ right: 2, close: 1, wrong: 0 }[Q.verdict]); if (Q.verdict !== 'wrong') hearts(8); syncQuiz(); return }
+  if (e.target.id === 'qNext') { Q = newQuiz(Q.subject === ME ? YOU : ME, Q); syncQuiz() }
+});
+$('#quizSkip').onclick = () => { Q.i = Math.floor(Math.random() * QS.length); Q.ans = Q.guess = null; Q.reveal = false; Q.verdict = null; syncQuiz() };
+function syncQuiz() { renderQuiz(); send('quiz', Q); saveState('quiz', Q) }
+ch.on('broadcast', { event: 'quiz' }, ({ payload }) => { const wasRev = Q.reveal; Q = payload; renderQuiz(); if (Q.reveal && !wasRev) vib(40); if (Q.verdict === 'right' && Q.subject === YOU) hearts(8) });
+renderQuiz();
+
+/* ================= CARDS ================= */
+const DECKS = {
+  truth: ['🙊 Thật lòng', [
+    'Lần đầu biết mình thích người kia là lúc nào?', 'Điều gì ở người kia làm bạn ghen nhất?', 'Có lần nào giận mà không nói ra không? Chuyện gì?', 'Tin nhắn ngại gửi nhất từng soạn rồi xoá?',
+    'Điều bạn chưa bao giờ kể cho người kia?', 'Bạn hay nghĩ về người kia vào lúc nào trong ngày?', 'Thói quen xấu nhất của bạn mà người kia chưa biết?', 'Ảnh chụp người kia mà bạn thích nhất?',
+    'Điều khiến bạn sợ nhất khi yêu xa?', 'Lần gần nhất bạn khóc là vì sao?', 'Bạn đã từng stalk trang cá nhân của người kia chưa? Xem tới đâu?', 'Lúc nào bạn thấy người kia đáng yêu nhất?',
+    'Câu nói của người kia mà bạn nhớ mãi?', 'Bạn có lén đặt tên danh bạ gì cho người kia không?', 'Điều muốn người kia làm nhiều hơn?', 'Nếu được đổi một điều trong mối quan hệ, sẽ đổi gì?']],
+  dare: ['😝 Thử thách', [
+    'Gửi cho người kia ảnh selfie xấu nhất ngay bây giờ.', 'Hát một đoạn bài hát bất kỳ qua voice note.', 'Đổi ảnh đại diện thành ảnh hai đứa trong 1 tiếng.', 'Viết một bài thơ 4 câu về người kia trong 2 phút.',
+    'Gọi video và làm 3 biểu cảm hài nhất có thể.', 'Gửi một voice nói "anh/em nhớ" bằng 3 giọng khác nhau.', 'Kể một chuyện xấu hổ hồi nhỏ.', 'Vẽ chân dung người kia trong mục Vẽ cùng nhau trong 60 giây.',
+    'Gửi ảnh thứ 7 trong thư viện ảnh của bạn.', 'Nói 5 điều bạn thích ở người kia trong 30 giây.', 'Nhảy 10 giây trước camera.', 'Nhắn cho người kia một tin bằng toàn emoji, để họ đoán nghĩa.',
+    'Đặt báo thức sáng mai gọi người kia dậy.', 'Chụp ảnh thứ bạn đang thấy ngay bây giờ gửi người kia.', 'Bắt chước cách nói chuyện của người kia.', 'Gửi người kia một bài hát làm bạn nhớ tới họ.']],
+  date: ['🌙 Hẹn hò', [
+    'Lần gặp tới, mỗi người lên kế hoạch 1 tiếng bất ngờ cho người kia.', 'Cùng chọn một món, mỗi người tự nấu rồi gọi video ăn chung.', 'Tối nay cùng xem một phim trong mục Xem cùng nhau.', 'Mỗi người kể 3 nơi muốn đi cùng nhau nhất.',
+    'Cùng lập danh sách 10 bài hát của hai đứa.', 'Viết cho nhau một lá thư tay, gặp nhau mới đưa.', 'Gọi video và cùng ngắm trăng/ngắm trời 5 phút không nói gì.', 'Cùng chơi 3 ván caro, ai thua phải làm theo một yêu cầu.',
+    'Tưởng tượng một ngày cuối tuần hoàn hảo của hai đứa, kể chi tiết.', 'Cùng chụp 4 kiểu photobooth chủ đề "ngày đầu quen nhau".', 'Đặt đồ ăn giao tới cho người kia làm bất ngờ.', 'Mỗi người chọn 1 video YouTube để người kia xem.']],
+  deep: ['💭 Sâu lắng', [
+    'Điều gì làm bạn cảm thấy được yêu nhiều nhất?', 'Bạn hình dung hai đứa 5 năm nữa thế nào?', 'Một điều bạn biết ơn ở người kia hôm nay?', 'Khoảnh khắc bạn tự hào về bản thân nhất?',
+    'Bạn muốn người kia an ủi mình như thế nào khi buồn?', 'Giá trị nào bạn coi trọng nhất trong tình yêu?', 'Điều gì từ gia đình ảnh hưởng nhiều nhất tới bạn?', 'Nếu chỉ còn một ngày, bạn muốn ở bên người kia làm gì?',
+    'Bạn từng thay đổi điều gì nhờ người kia?', 'Điều khó nói nhất với người kia là gì?', 'Bạn cần gì nhất từ người kia trong lúc xa nhau?', 'Kỷ niệm nào bạn muốn giữ mãi?',
+    'Bạn muốn hai đứa cùng học được điều gì?', 'Lời hứa bạn muốn dành cho người kia?']]
+};
+let K = await loadState('cards', { deck: 'truth', i: -1, by: null });
+$('#decks').innerHTML = Object.entries(DECKS).map(([k, [n]]) => `<button data-d="${k}">${n}</button>`).join('');
+function renderCards() {
+  $$('#decks button').forEach(b => b.classList.toggle('on', b.dataset.d === K.deck));
+  const [name, list] = DECKS[K.deck] || DECKS.truth;
+  $('#cardBox').innerHTML = K.i >= 0 && list[K.i] ? `<small>${esc(name)}</small>${esc(list[K.i])}` : `<small>${esc(name)}</small>Bấm "Rút thẻ" nhé 🃏`;
+  $('#cardBy').textContent = K.by ? (K.by === ME ? 'Bạn vừa rút thẻ này' : `${ctx.partnerName} vừa rút thẻ này`) : '';
+}
+$('#decks').onclick = e => { const b = e.target.closest('button'); if (!b) return; K.deck = b.dataset.d; K.i = -1; K.by = null; renderCards(); send('cards', K); saveState('cards', K) };
+$('#drawCard').onclick = () => {
+  const list = DECKS[K.deck][1]; let i; do { i = Math.floor(Math.random() * list.length) } while (list.length > 1 && i === K.i);
+  K.i = i; K.by = ME; renderCards(); vib(20); send('cards', K); saveState('cards', K);
+  $('#cardBox').animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0)' }], { duration: 350 });
+};
+ch.on('broadcast', { event: 'cards' }, ({ payload }) => { K = payload; renderCards(); vib(30); $('#cardBox').animate([{ transform: 'rotateY(90deg)' }, { transform: 'rotateY(0)' }], { duration: 350 }) });
+renderCards();
+
+ch.subscribe();
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden) return;
+  const [c, q, k] = await Promise.all([loadState('caro', null), loadState('quiz', null), loadState('cards', null)]);
+  if (c && c.b) { C = c; renderCaro() } if (q && q.i != null) { Q = q; renderQuiz() } if (k) { K = k; renderCards() }
+});
+setTab(tab);
+</script>
+</body>
+</html>

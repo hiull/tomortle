@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 
-const VERSION = 'Đợt 1 · 2026-11-17';
+const VERSION = 'Đợt 2 · 2026-11-17';
 const SB_URL = 'https://yktkofupegtvrviynnjk.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrdGtvZnVwZWd0dnJ2aXlubmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5MTI5MjMsImV4cCI6MjExMDQ4ODkyM30.dRsXfxiAjIXUkwPQ65p2oMl6HfogL0QZdg27feOs9nQ';
 const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
@@ -302,8 +302,9 @@ function connectRealtime() {
     .on('broadcast', { event: 'status' }, () => refreshPartner())
     .on('broadcast', { event: 'mood' }, () => loadMoods())
     .on('broadcast', { event: 'couple' }, () => refreshCouple())
+    .on('broadcast', { event: 'invite' }, ({ payload }) => { vib([100, 80, 100]); toast((partnerProfile.display_name || 'Người ấy') + ' rủ bạn ' + payload.title, 'Vào', () => location.href = payload.url) })
     .on('broadcast', { event: 'booth' }, ({ payload }) => { vib([100, 80, 100]); toast((partnerProfile.display_name || 'Người ấy') + ' mời bạn chụp photobooth 📸', 'Vào', () => location.href = payload.url) })
-    .subscribe(status => { if (status === 'SUBSCRIBED') channel.track({ at: Date.now() }) });
+    .subscribe(status => { if (status === 'SUBSCRIBED') channel.track({ page: 'home', at: Date.now() }) });
   dbChannel = sb.channel('db-changes')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, p => { if (p.new.id === partnerId) { partnerProfile = p.new; renderProfiles(); loadWeather() } })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'moods' }, p => { loadMoods(); if (p.new.user_id === partnerId) toast((partnerProfile.display_name || 'Người ấy') + ' vừa cập nhật tâm trạng ' + p.new.mood) })

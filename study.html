@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Học cùng nhau – Tomortle × Molly</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="timer">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="var(--soft)" stroke-width="7"/><circle id="ring" cx="50" cy="50" r="45" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="0"/></svg>
+      <div class="tt"><span id="phase">Sẵn sàng</span><b id="clock">25:00</b><span id="round"></span></div>
+    </div>
+    <div class="row" style="justify-content:center;gap:8px">
+      <button class="btn primary" id="btnStart">▶ Bắt đầu</button><button class="btn" id="btnSkip">⏭ Bỏ qua</button><button class="btn" id="btnReset">↺ Đặt lại</button>
+    </div>
+    <div class="row" style="justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <div class="seg2" id="focusSeg"><button data-v="25">25'</button><button data-v="45">45'</button><button data-v="50">50'</button></div>
+      <div class="seg2" id="breakSeg"><button data-v="5">☕5'</button><button data-v="10">☕10'</button></div>
+    </div>
+    <p class="note center">Hai đứa dùng chung một đồng hồ: ai bấm bắt đầu hay tạm dừng thì máy kia cũng theo.</p>
+  </div>
+
+  <div class="card">
+    <h3>📝 Đang làm gì</h3>
+    <div class="tasks">
+      <div class="mini"><b>Bạn</b><input id="myTask" maxlength="60" placeholder="vd: Ôn MKT301 chương 3"><div class="note" id="myMin" style="margin:4px 0 0"></div></div>
+      <div class="mini"><b id="theirLbl">Người ấy</b><div id="theirTask" style="padding:4px 0;min-height:24px"></div><div class="note" id="theirMin" style="margin:4px 0 0"></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🎧 Âm thanh nền <small>chỉ trên máy bạn</small></h3>
+    <div class="seg2" id="noiseSeg"><button data-n="off" class="on">Tắt</button><button data-n="rain">🌧️ Mưa</button><button data-n="brown">🌊 Sóng</button><button data-n="white">🌬️ Gió</button></div>
+    <div class="row" style="margin-top:10px;gap:8px"><button class="btn small" id="btnCheer">💪 Cổ vũ người ấy</button><button class="btn small primary" id="btnInvite">Rủ người ấy học cùng</button></div>
+  </div>
+</div>
+<div id="toast"></div><div class="fx" id="fx"></div>
+<script type="module">
+import { $, $$, esc, toast, vib, hearts, floatEmoji, boot, header, joinMain, invite, featureChannel, loadState, saveState } from './common.js';
+const PAGE = 'study';
+header('Học cùng nhau');
+const ctx = await boot();
+joinMain(ctx, PAGE);
+const ch = featureChannel(ctx, 'study');
+const send = (event, payload = {}) => ch.send({ type: 'broadcast', event, payload });
+const ME = ctx.me.id, YOU = ctx.partnerId;
+const today = () => new Date().toLocaleDateString('sv');
+
+let S = await loadState('study', null);
+if (!S) S = { phase: 'idle', ends: 0, left: null, focus: 25, brk: 5, round: 0, tasks: {}, log: {} };
+S.tasks = S.tasks || {}; S.log = S.log || {};
+$('#theirLbl').textContent = ctx.partnerName;
+
+function sync(save = true) { render(); send('state', S); if (save) saveState('study', S) }
+function total() { return (S.phase === 'break' ? S.brk : S.focus) * 60000 }
+function remaining() { if (S.phase === 'idle') return S.focus * 60000; if (S.left != null) return S.left; return Math.max(0, S.ends - Date.now()) }
+function fmt(ms) { const s = Math.ceil(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0') }
+function minutesFor(id) { const l = S.log[id]; return l && l.date === today() ? l.min : 0 }
+
+function render() {
+  const rem = remaining();
+  $('#clock').textContent = fmt(rem);
+  $('#phase').textContent = S.phase === 'idle' ? 'Sẵn sàng' : (S.phase === 'focus' ? (S.left != null ? '⏸ Tạm dừng · Tập trung' : '📚 Tập trung') : (S.left != null ? '⏸ Tạm dừng · Nghỉ' : '☕ Nghỉ ngơi'));
+  $('#round').textContent = S.round ? `Phiên ${S.round}` : '';
+  const frac = S.phase === 'idle' ? 0 : 1 - rem / total();
+  $('#ring').style.strokeDashoffset = (282.7 * frac).toFixed(1);
+  $('#btnStart').textContent = (S.phase !== 'idle' && S.left == null) ? '⏸ Tạm dừng' : '▶ ' + (S.phase === 'idle' ? 'Bắt đầu' : 'Tiếp tục');
+  $$('#focusSeg button').forEach(b => b.classList.toggle('on', +b.dataset.v === S.focus));
+  $$('#breakSeg button').forEach(b => b.classList.toggle('on', +b.dataset.v === S.brk));
+  if (document.activeElement !== $('#myTask')) $('#myTask').value = S.tasks[ME] || '';
+  $('#theirTask').textContent = S.tasks[YOU] || '…';
+  $('#myMin').textContent = `Hôm nay: ${minutesFor(ME)} phút tập trung`;
+  $('#theirMin').textContent = `Hôm nay: ${minutesFor(YOU)} phút tập trung`;
+  document.title = (S.phase !== 'idle' ? fmt(rem) + ' · ' : '') + 'Học cùng nhau';
+}
+
+$('#btnStart').onclick = () => {
+  ensureAudio();
+  if (S.phase === 'idle') { S.phase = 'focus'; S.round = (S.round || 0) + 1; S.ends = Date.now() + S.focus * 60000; S.left = null }
+  else if (S.left != null) { S.ends = Date.now() + S.left; S.left = null }
+  else { S.left = Math.max(0, S.ends - Date.now()) }
+  sync();
+};
+$('#btnSkip').onclick = () => { if (S.phase === 'idle') return; finishPhase(false) };
+$('#btnReset').onclick = () => { S.phase = 'idle'; S.left = null; S.ends = 0; S.round = 0; sync() };
+$('#focusSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.focus = +b.dataset.v; sync() };
+$('#breakSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.brk = +b.dataset.v; sync() };
+let taskT; $('#myTask').addEventListener('input', () => { S.tasks[ME] = $('#myTask').value; clearTimeout(taskT); taskT = setTimeout(() => sync(), 700) });
+
+function addMinutes(id, m) { const l = S.log[id]; if (!l || l.date !== today()) S.log[id] = { date: today(), min: 0 }; S.log[id].min += m }
+function finishPhase(natural) {
+  if (S.phase === 'focus') { if (natural) { addMinutes(ME, S.focus); addMinutes(YOU, S.focus) } S.phase = 'break'; S.ends = Date.now() + S.brk * 60000 }
+  else { S.phase = 'focus'; S.round++; S.ends = Date.now() + S.focus * 60000 }
+  S.left = null; sync(); chime();
+}
+setInterval(() => {
+  if (S.phase !== 'idle' && S.left == null && Date.now() >= S.ends) {
+    // whoever notices first advances; the other receives the state
+    const endedAt = S.ends; setTimeout(() => { if (S.ends === endedAt && S.left == null && S.phase !== 'idle') finishPhase(true) }, ME < YOU ? 0 : 1200);
+  }
+  render();
+}, 500);
+
+/* sounds */
+let AC, noise = null;
+function ensureAudio() { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume() } catch (e) { } }
+function chime() { vib([200, 100, 200]); if (!AC) return; [880, 1175, 1568].forEach((f, i) => { const o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = f; g.gain.value = .08; o.connect(g); g.connect(AC.destination); const t = AC.currentTime + i * .18; o.start(t); g.gain.exponentialRampToValueAtTime(.0001, t + .6); o.stop(t + .65) }); toast(S.phase === 'break' ? 'Hết giờ tập trung, nghỉ chút nhé ☕' : 'Hết giờ nghỉ, vào học thôi 📚') }
+function startNoise(kind) {
+  stopNoise(); if (kind === 'off') return; ensureAudio(); if (!AC) return;
+  const len = AC.sampleRate * 4, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0); let last = 0;
+  for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; if (kind === 'white') d[i] = w * .25; else { last = (last + .02 * w) / 1.02; d[i] = last * 3.2 } }
+  const src = AC.createBufferSource(); src.buffer = buf; src.loop = true; const g = AC.createGain(); g.gain.value = kind === 'rain' ? .5 : .7;
+  let node = src; if (kind === 'rain') { const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 400; src.connect(f); node = f; const w = AC.createBufferSource(); const b2 = AC.createBuffer(1, len, AC.sampleRate), d2 = b2.getChannelData(0); for (let i = 0; i < len; i++) d2[i] = (Math.random() * 2 - 1) * .12; w.buffer = b2; w.loop = true; const f2 = AC.createBiquadFilter(); f2.type = 'bandpass'; f2.frequency.value = 2500; w.connect(f2); f2.connect(g); w.start(); noise = { src, w } }
+  node.connect(g); g.connect(AC.destination); src.start(); noise = Object.assign(noise || {}, { src });
+}
+function stopNoise() { if (noise) { try { noise.src.stop() } catch (e) { } try { noise.w && noise.w.stop() } catch (e) { } noise = null } }
+$('#noiseSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; $$('#noiseSeg button').forEach(x => x.classList.toggle('on', x === b)); startNoise(b.dataset.n) };
+
+$('#btnCheer').onclick = () => { send('cheer'); floatEmoji('💪', 5); toast('Đã cổ vũ ' + ctx.partnerName) };
+$('#btnInvite').onclick = () => invite(ctx, PAGE, 'học cùng nhau 📚');
+
+ch.on('broadcast', { event: 'state' }, ({ payload }) => { const prevPhase = S.phase; const myTask = S.tasks[ME]; S = payload; S.tasks = S.tasks || {}; S.log = S.log || {}; if (document.activeElement === $('#myTask')) S.tasks[ME] = myTask; if (prevPhase !== S.phase && S.phase !== 'idle' && prevPhase !== 'idle') chime(); render() })
+  .on('broadcast', { event: 'cheer' }, () => { floatEmoji('💪', 6); hearts(4); vib([60, 40, 60]); toast(ctx.partnerName + ' đang cổ vũ bạn 💪') })
+  .on('broadcast', { event: 'need' }, () => send('state', S))
+  .subscribe(s => { if (s === 'SUBSCRIBED') send('need') });
+document.addEventListener('visibilitychange', async () => { if (!document.hidden) { const d = await loadState('study', null); if (d) { S = d; S.tasks = S.tasks || {}; S.log = S.log || {}; render() } } });
+render();
+</script>
+</body>
+</html>
