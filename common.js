@@ -88,6 +88,7 @@ export function joinMain(ctx, page, onPresence) {
   ch.on('broadcast', { event: 'hey' }, ({ payload }) => { if (payload.page === page) return; vib([60, 40, 60]); toast(`${ctx.partnerName} ${payload.text}`, 'Xem', () => location.href = payload.url) });
   setTimeout(() => ch.subscribe(s => { if (s === 'SUBSCRIBED') ch.track({ page, at: Date.now() }) }), 0);
   ctx.main = ch; renderChip(ctx); initBell(ctx);
+  if (page !== 'backup') driveNudge(ctx);
   ['hey','letter','note','voice','vgift'].forEach(ev => ch.on('broadcast', { event: ev }, () => refreshBell()));
   return ch;
 }
@@ -316,4 +317,15 @@ const pushLast = {};
 export function notifyPush(ctx, text, url, tag = 'tmx') {
   try { if (Date.now() - (pushLast[tag] || 0) < 15000) return; pushLast[tag] = Date.now();
     sb.functions.invoke('notify', { body: { title: ctx.myName || 'Tomortle × Molly', body: text, url: url || './', tag } }).catch(() => { }) } catch (e) { }
+}
+
+/* nhắc sao lưu Google Drive khi đến hạn (cài ở trang Sao lưu) */
+async function driveNudge(ctx) {
+  try { if (sessionStorage.getItem('gnudge')) return; sessionStorage.setItem('gnudge', '1') } catch (e) { return }
+  try {
+    const c = await loadState('gdrive_client', {}); if (!c.id) return;
+    const st = await loadState('gdrive-' + ctx.me.id, {}); const every = st.every || 7, days = st.last ? (Date.now() - st.last) / 864e5 : Infinity;
+    if (days < every) return;
+    setTimeout(() => toast(st.last ? `☁️ Đã ${Math.floor(days)} ngày chưa sao lưu lên Google Drive` : '☁️ Sao lưu kỷ niệm lên Google Drive lần đầu nhé', 'Sao lưu', () => location.href = 'backup.html?drive=1'), 2500);
+  } catch (e) { }
 }

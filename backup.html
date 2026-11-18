@@ -23,6 +23,30 @@
     <p class="note">Supabase gói miễn phí có giới hạn khoảng 1 GB cho ảnh/âm thanh. Khi gần đầy, nên tải về máy rồi xoá bớt ảnh cũ trong Album.</p>
     <div id="use">Đang tính…</div>
   </div>
+  <div class="card" id="gCard">
+    <h3>☁️ Tự sao lưu lên Google Drive</h3>
+    <div id="gSetup" class="hidden">
+      <p class="note">Làm một lần (khoảng 10 phút, trên máy tính cho dễ). Chỉ cần <b>một người</b> làm, người kia dùng chung.</p>
+      <ol class="note" style="padding-left:18px;line-height:1.6">
+        <li>Vào <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a>, đăng nhập Gmail, tạo dự án tên <b>Tomortle</b>.</li>
+        <li>Mở <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank" rel="noopener">Google Drive API</a> → bấm <b>Enable (Bật)</b>.</li>
+        <li>Vào <a href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a> → <b>Get started</b>: tên app <i>Tomortle</i>, email của bạn, chọn <b>External</b>, đồng ý điều khoản → Create.</li>
+        <li>Mục <b>Audience</b> → <b>Test users</b> → <b>Add users</b>: thêm <b>Gmail của cả hai bạn</b>.</li>
+        <li>Mục <b>Clients</b> → <b>Create client</b> → loại <b>Web application</b>. Ở <b>Authorized JavaScript origins</b> thêm đúng dòng: <code>https://hiull.github.io</code> → Create.</li>
+        <li>Copy <b>Client ID</b> (đuôi <code>.apps.googleusercontent.com</code>) và dán vào ô dưới.</li>
+      </ol>
+      <div class="row" style="gap:6px"><input id="gId" placeholder="123…-abc.apps.googleusercontent.com" style="text-transform:none"><button class="btn primary" id="gSaveId">Lưu</button></div>
+    </div>
+    <div id="gReady" class="hidden">
+      <p class="note">Mỗi lần sao lưu: thư, note, lịch… (file .json + bản đọc .html) và <b>chỉ những ảnh/ghi âm mới</b> được đưa vào thư mục <i>Tomortle × Molly – Sao lưu</i> trong Drive của bạn. App chỉ thấy file do nó tạo, không đọc được file khác trong Drive.</p>
+      <p class="note" id="gStat"></p>
+      <label class="note" style="display:flex;gap:8px;align-items:center;margin:6px 0">Nhắc mình sao lưu <select id="gEvery" class="input" style="margin:0;width:auto"><option value="1">mỗi ngày</option><option value="7">mỗi tuần</option><option value="30">mỗi tháng</option></select></label>
+      <button class="btn primary block" id="gRun">☁️ Sao lưu lên Google Drive ngay</button>
+      <div class="bar hidden" id="gbar"><i id="gfill" style="width:0"></i></div>
+      <p class="note" id="gMsg"></p>
+      <button class="btn small ghost" id="gReset">Đổi Client ID</button>
+    </div>
+  </div>
   <div class="card">
     <h3>💾 Tải kỷ niệm về máy</h3>
     <p class="note">Nên sao lưu mỗi tháng một lần. File chỉ nằm trên máy bạn.</p>
@@ -37,7 +61,7 @@
 <div id="toast"></div><div class="fx" id="fx"></div>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script type="module">
-import { sb, $, esc, toast, boot, header, joinMain, mediaUrl, todayStr } from './common.js';
+import { sb, $, esc, toast, boot, header, joinMain, mediaUrl, todayStr, loadState, saveState } from './common.js';
 header('Sao lưu');
 const ctx = await boot();
 joinMain(ctx, 'backup');
@@ -81,8 +105,7 @@ const save = async (blob, name) => {
   saveFile(blob, name) };
 const saveFile = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000) };
 $('#bJson').onclick = async () => { log('Đang gom dữ liệu…'); const d = await dump(); save(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }), `tomortle-${todayStr()}.json`); toast('Đã tải file sao lưu ♡') };
-$('#bHtml').onclick = async () => {
-  log('Đang tạo bản đọc…'); const d = await dump(); const T = d.tables; const who = id => id === ctx.me.id ? ctx.myName : ctx.partnerName; const dt = s => s ? new Date(s).toLocaleString('vi-VN') : '';
+function buildHtml(d) { const T = d.tables; const who = id => id === ctx.me.id ? ctx.myName : ctx.partnerName; const dt = s => s ? new Date(s).toLocaleString('vi-VN') : '';
   const sec = (title, rows) => rows.length ? `<h2>${title}</h2>${rows.join('')}` : '';
   const html = `<!doctype html><meta charset="utf-8"><title>Kỷ niệm Tomortle × Molly</title><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:auto;padding:20px;color:#4a2c3a;background:#fff7fa}h1{color:#ff7aa2}h2{border-bottom:2px solid #ffd6e5;padding-bottom:4px;margin-top:32px}.c{background:#fff;border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 2px 8px rgba(0,0,0,.05)}small{color:#999}</style>
 <h1>💗 Kỷ niệm của ${esc(ctx.myName)} & ${esc(ctx.partnerName)}</h1><p>Sao lưu ngày ${new Date().toLocaleDateString('vi-VN')}${ctx.couple.started_on ? ' · bên nhau từ ' + new Date(ctx.couple.started_on).toLocaleDateString('vi-VN') : ''}</p>
@@ -94,8 +117,8 @@ ${sec('🌟 Bucket list', T.bucket.map(b => `<div class="c">${b.done ? '✅' : '
 ${sec('📅 Lịch', T.events.map(e => `<div class="c">${esc(e.emoji)} ${esc(e.title)} <small>${e.day} ${esc(e.time || '')}</small></div>`))}
 ${sec('🗺️ Địa điểm', T.places.map(p => `<div class="c">${p.kind === 'been' ? '❤️' : '⭐'} ${esc(p.name)} <small>${p.lat.toFixed(3)}, ${p.lon.toFixed(3)}</small></div>`))}
 ${sec('📹 Cuộc gọi', [`<div class="c">${T.calls.length} cuộc · tổng ${Math.round(T.calls.reduce((s, c) => s + (c.duration_sec || 0), 0) / 60)} phút</div>`])}`;
-  save(new Blob([html], { type: 'text/html' }), `ky-niem-${todayStr()}.html`); toast('Đã tải bản đọc ♡');
-};
+  return html }
+$('#bHtml').onclick = async () => { log('Đang tạo bản đọc…'); const d = await dump(); save(new Blob([buildHtml(d)], { type: 'text/html' }), `ky-niem-${todayStr()}.html`); toast('Đã tải bản đọc ♡') };
 $('#bZip').onclick = async () => {
   if (!window.JSZip) { toast('Không tải được công cụ nén, thử lại nhé'); return }
   if (!FILES.length) await usage(); if (!FILES.length) { toast('Chưa có file nào'); return }
@@ -108,6 +131,62 @@ $('#bZip').onclick = async () => {
   log('Đang nén…'); const blob = await zip.generateAsync({ type: 'blob' }); save(blob, `tomortle-anh-${todayStr()}.zip`); bar.classList.add('hidden'); toast(`Xong! ${i - fail} file${fail ? ', lỗi ' + fail : ''}`);
 };
 usage();
+/* ================= Tự sao lưu lên Google Drive =================
+   Dùng Google Identity Services (token trong trình duyệt) + Drive API, quyền drive.file
+   (app chỉ thấy file do chính nó tạo, không đọc được file khác trong Drive). Mỗi người lưu vào Drive của mình. */
+const GKEY = 'gdrive-' + ctx.me.id, EVERY = { 1: 'mỗi ngày', 7: 'mỗi tuần', 30: 'mỗi tháng' };
+let GCLIENT = (await loadState('gdrive_client', {})).id || '', GST = Object.assign({ folder: null, media: null, mediaDone: {}, last: 0, every: 7, runs: 0 }, await loadState(GKEY, {}));
+const gsave = () => saveState(GKEY, GST);
+function loadGis() { return window.google?.accounts?.oauth2 ? Promise.resolve() : new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.onload = res; s.onerror = () => rej(new Error('Không tải được Google')); document.head.append(s) }) }
+let tokClient = null, tokWait = null;
+function cachedToken() { try { const t = JSON.parse(sessionStorage.getItem('gtok') || 'null'); return t && t.exp > Date.now() + 60e3 ? t.v : null } catch (e) { return null } }
+// phải gọi ngay trong lúc bấm nút (Safari chặn cửa sổ đăng nhập nếu không có cú bấm)
+function askToken() {
+  const c = cachedToken(); if (c) return Promise.resolve(c);
+  return new Promise((res, rej) => { tokWait = { res, rej }; tokClient.requestAccessToken({ prompt: GST.runs ? '' : 'consent' }) });
+}
+async function initGoogle() { await loadGis(); tokClient = google.accounts.oauth2.initTokenClient({ client_id: GCLIENT, scope: 'https://www.googleapis.com/auth/drive.file', callback: r => { if (r.error) { tokWait?.rej(new Error(r.error_description || r.error)); return } try { sessionStorage.setItem('gtok', JSON.stringify({ v: r.access_token, exp: Date.now() + (r.expires_in || 3600) * 1000 })) } catch (e) { } tokWait?.res(r.access_token) }, error_callback: e => tokWait?.rej(new Error(e.type === 'popup_closed' ? 'Bạn đã đóng cửa sổ Google' : (e.message || e.type))) }) }
+async function gfetch(tok, url, opt = {}) { const r = await fetch(url, Object.assign({}, opt, { headers: Object.assign({ Authorization: 'Bearer ' + tok }, opt.headers || {}) })); if (r.status === 401) { sessionStorage.removeItem('gtok'); throw new Error('Phiên Google hết hạn, bấm sao lưu lại nhé') } if (!r.ok) throw new Error('Google Drive lỗi ' + r.status + ': ' + (await r.text()).slice(0, 160)); return r.json() }
+async function gFolder(tok, name, parent, known) {
+  if (known) { try { const f = await gfetch(tok, `https://www.googleapis.com/drive/v3/files/${known}?fields=id,trashed`); if (!f.trashed) return known } catch (e) { if (/hết hạn/.test(e.message)) throw e } }
+  const q = encodeURIComponent(`name='${name.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false` + (parent ? ` and '${parent}' in parents` : ''));
+  const l = await gfetch(tok, `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`); if (l.files?.length) return l.files[0].id;
+  return (await gfetch(tok, 'https://www.googleapis.com/drive/v3/files?fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: parent ? [parent] : [] }) })).id;
+}
+async function gUpload(tok, blob, name, parent) { const fd = new FormData(); fd.append('metadata', new Blob([JSON.stringify({ name, parents: [parent] })], { type: 'application/json' })); fd.append('file', blob); return (await gfetch(tok, 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', body: fd })).id }
+let gBusy = false;
+async function driveBackup(tokP) {
+  if (gBusy) return; gBusy = true; const btn = $('#gRun'); btn.disabled = true; const bar = $('#gbar'); bar.classList.remove('hidden'); const step = (t, p) => { $('#gMsg').textContent = t; if (p != null) $('#gfill').style.width = p + '%' };
+  try {
+    step('Đang đăng nhập Google…', 2); const tok = await tokP;
+    step('Đang tìm thư mục sao lưu…', 5);
+    GST.folder = await gFolder(tok, 'Tomortle × Molly – Sao lưu', null, GST.folder); GST.media = await gFolder(tok, 'Ảnh & ghi âm', GST.folder, GST.media); await gsave();
+    step('Đang gom thư, note, lịch…', 10); const d = await dump(); const day = todayStr();
+    await gUpload(tok, new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }), `tomortle-${day}.json`, GST.folder);
+    await gUpload(tok, new Blob([buildHtml(d)], { type: 'text/html' }), `ky-niem-${day}.html`, GST.folder);
+    if (!FILES.length) await usage();
+    const todo = FILES.filter(f => !GST.mediaDone[f.path]); let i = 0, fail = 0;
+    for (const f of todo) {
+      step(`Đang đưa ảnh & ghi âm mới lên Drive ${i + 1}/${todo.length}…`, 20 + 78 * i / Math.max(1, todo.length));
+      try { const b = await (await fetch(await mediaUrl(f.path))).blob(); const parts = f.path.split('/'); await gUpload(tok, b, `${parts[1] || 'khac'}-${f.path.startsWith(ctx.me.id) ? ctx.myName : ctx.partnerName}-${parts.slice(2).join('-')}`, GST.media); GST.mediaDone[f.path] = 1 } catch (e) { if (/hết hạn/.test(e.message)) throw e; fail++ }
+      i++; if (i % 10 === 0) await gsave(); // giữ tiến độ, lần sau chỉ đưa tiếp phần còn lại
+    }
+    GST.last = Date.now(); GST.runs++; await gsave();
+    step(`✓ Xong! Đã lưu dữ liệu chữ + ${i - fail} ảnh/ghi âm mới${fail ? ` (lỗi ${fail}, lần sau thử lại)` : ''}.`, 100); toast('Đã sao lưu lên Google Drive ☁️💗');
+  } catch (e) { console.warn(e); step('⚠️ ' + e.message, null); toast('Sao lưu chưa xong: ' + e.message) }
+  finally { gBusy = false; btn.disabled = false; setTimeout(() => bar.classList.add('hidden'), 1500); drawDrive() }
+}
+function drawDrive() {
+  $('#gSetup').classList.toggle('hidden', !!GCLIENT); $('#gReady').classList.toggle('hidden', !GCLIENT);
+  const n = Object.keys(GST.mediaDone).length, ago = GST.last ? Math.floor((Date.now() - GST.last) / 864e5) : null;
+  $('#gStat').innerHTML = GST.last ? `Lần cuối: <b>${new Date(GST.last).toLocaleString('vi-VN')}</b> (${ago ? ago + ' ngày trước' : 'hôm nay'}) · đã có ${n} ảnh/ghi âm trên Drive${GST.folder ? ` · <a href="https://drive.google.com/drive/folders/${GST.folder}" target="_blank" rel="noopener">Mở thư mục ↗</a>` : ''}` : 'Chưa sao lưu lần nào.';
+  $('#gEvery').value = GST.every;
+}
+$('#gSaveId').onclick = async () => { const v = $('#gId').value.trim(); if (!/^[\w-]+\.apps\.googleusercontent\.com$/.test(v)) { toast('Client ID phải có dạng ….apps.googleusercontent.com'); return } GCLIENT = v; await saveState('gdrive_client', { id: v }); toast('Đã lưu, giờ bấm Sao lưu ngay nhé'); drawDrive(); initGoogle().catch(e => toast(e.message)) };
+$('#gEvery').onchange = e => { GST.every = +e.target.value; gsave() };
+$('#gReset').onclick = async () => { if (!confirm('Đổi Client ID khác? (ảnh đã sao lưu vẫn còn trên Drive)')) return; GCLIENT = ''; await saveState('gdrive_client', {}); drawDrive() };
+$('#gRun').onclick = () => { if (!tokClient) { toast('Đang chuẩn bị Google, bấm lại sau 1 giây nhé'); initGoogle().catch(e => toast(e.message)); return } driveBackup(askToken()) };
+drawDrive(); if (GCLIENT) initGoogle().then(() => { if (new URLSearchParams(location.search).has('drive')) { $('#gCard').scrollIntoView({ behavior: 'smooth' }); const t = cachedToken(); if (t) driveBackup(Promise.resolve(t)) } }).catch(e => toast(e.message));
 </script>
 </body>
 </html>
