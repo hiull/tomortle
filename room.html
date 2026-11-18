@@ -8,7 +8,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=15">
+<link rel="stylesheet" href="app.css?v=16">
 <style>
 .app{max-width:720px}
 .roomwrap{position:relative;border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#fff0f6,#ffe3ee 60%,#fbd5e4);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;border:1px solid var(--line);box-shadow:var(--shadow)}
@@ -47,11 +47,16 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .petpick button small{display:block;font-size:12px;font-weight:700}
 .petpick button.on{border-color:var(--accent);background:var(--card)}
 .hint2{font-size:12px;color:var(--muted);text-align:center;margin:6px 0 0}
+.rtabs,.ftabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 8px}.rtabs::-webkit-scrollbar,.ftabs::-webkit-scrollbar{display:none}
+.rtabs button,.ftabs button{flex:1 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;cursor:pointer;font-weight:700;font-size:14px;white-space:nowrap;color:var(--ink)}
+.rtabs button.on,.ftabs button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.rtabs{gap:5px}.rtabs button{padding:6px 7px;font-size:12.5px}@media(min-width:440px){.rtabs button{font-size:14px;padding:7px 12px}}
+.ftabs{align-items:center;margin-top:-2px}.ftabs>span{font-size:18px}.ftabs button{font-size:12.5px;padding:6px 10px}.ftabs button b{font-weight:900}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="chips" id="roomTabs" style="align-items:center"></div>
+  <div id="roomTabs"></div>
   <div class="roomwrap" id="wrap">
     <canvas id="room"></canvas>
     <div class="hud">
@@ -65,7 +70,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <div id="playUI">
     <div class="card" style="padding:10px 12px;margin-top:10px">
       <div class="emos" id="emos"></div>
-      <form class="row" id="sayForm" style="margin-top:6px"><input class="input" id="sayIn" placeholder="Nói gì đó… (hiện trên đầu nhân vật)" maxlength="80" style="margin:0" autocomplete="off"><button class="btn primary">Nói</button></form>
+      <form class="row" id="sayForm" style="margin-top:6px"><input class="input" id="sayIn" placeholder="Nói gì đó… 💬" maxlength="80" style="margin:0" autocomplete="off"><button class="btn primary">Nói</button></form>
     </div>
     <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap">
       <button class="btn small primary hidden" id="bCart">🛒 Giỏ chung</button><button class="btn small hidden" id="bList">📝 Danh sách đi chợ</button><button class="btn small hidden" id="bDeals">🔥 Giá sốc · Tìm món</button><button class="btn small" id="bAvatar">👗 Thay đồ</button>
@@ -1174,7 +1179,9 @@ $('#tttNew').onclick=()=>tttOpen(true);$('#tttClose').onclick=()=>$('#mTtt').cla
 let LOVE=0;
 async function calcLove(){if(DEMO){LOVE=42;renderRoomTabs();return}try{const cnt=async(t,f)=>{let q=C.sb.from(t).select('*',{count:'exact',head:true});if(f)q=f(q);const{count}=await q;return count||0};
  const[a,b,c2,d,e,f,g2]=await Promise.all([cnt('letters'),cnt('daily_answers'),cnt('album'),cnt('vgifts'),cnt('notes'),cnt('voices'),cnt('bucket',q=>q.eq('done',true))]);LOVE=a+Math.floor(b/2)+c2+d+e+f+g2*3+Math.floor(((R.plant&&R.plant.w)||0)/2)}catch(x){}renderRoomTabs()}
-function renderRoomTabs(){const el=$('#roomTabs');if(!el)return;const ok=LOVE>=UNLOCK;el.innerHTML=`<button class="${KIND==='room'?'on':''}" data-r="room">🛏️ Phòng ngủ</button><button class="${KIND==='balcony'?'on':''}" data-r="balcony">${ok?'🌙':'🔒'} Ban công${ok?'':` · ${LOVE}/${UNLOCK}`}</button><button class="${KIND==='kitchen'?'on':''}" data-r="kitchen">🍳 Bếp</button><button class="${IS_MK?'on':''}" data-r="market">🛒 Siêu thị</button>${IS_MK?`<span style="flex-basis:100%;height:0"></span>${Object.entries(MD.FLOORS).map(([k,f])=>`<button class="${KIND===k?'on':''}" data-r="${k}">🛗 ${f.n}</button>`).join('')}`:''}<span class="note" style="margin-left:auto">💗 ${LOVE} điểm yêu thương</span>`}
+function renderRoomTabs(){const el=$('#roomTabs');if(!el)return;
+ // 4 phòng trên một hàng (vuốt ngang nếu chật); trong siêu thị thêm một hàng tầng gọn T1·T2·T3
+ el.innerHTML=`<div class="rtabs"><button class="${KIND==='room'?'on':''}" data-r="room">🛏️ Phòng ngủ</button><button class="${KIND==='balcony'?'on':''}" data-r="balcony">🌙 Ban công</button><button class="${KIND==='kitchen'?'on':''}" data-r="kitchen">🍳 Bếp</button><button class="${IS_MK?'on':''}" data-r="market">🛒 Siêu thị</button></div>${IS_MK?`<div class="ftabs"><span>🛗</span>${Object.entries(MD.FLOORS).map(([k,f])=>`<button class="${KIND===k?'on':''}" data-r="${k}" title="${f.n}"><b>${f.s}</b> ${({market:'Tươi sống',market2:'Đồ khô · uống',market3:'Đặc sản'})[k]}</button>`).join('')}</div>`:''}`}
 document.addEventListener('click',e=>{const b=e.target.closest('#roomTabs button');if(!b)return;const r=b.dataset.r;if(r===KIND||(r==='market'&&IS_MK))return;if(r==='balcony'&&LOVE<UNLOCK){toast(`Cần ${UNLOCK} điểm yêu thương để mở ban công. Gửi thư, ảnh, trả lời câu hỏi mỗi ngày… để tích điểm nhé`);return}nav((r==='room'?'room.html':'room.html?r='+r)+(DEMO?(r==='room'?'?':'&')+'demo':''))});
 calcLove();
 /* ================= first run ================= */

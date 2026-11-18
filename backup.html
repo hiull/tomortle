@@ -8,7 +8,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=15">
+<link rel="stylesheet" href="app.css?v=16">
 <style>
 .bar{height:14px;background:var(--soft);border-radius:999px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
 .bar.warn i{background:#f39c12}.bar.bad i{background:#e74c3c}
@@ -35,7 +35,7 @@
         <li>Mục <b>Clients</b> → <b>Create client</b> → loại <b>Web application</b>. Ở <b>Authorized JavaScript origins</b> thêm đúng dòng: <code>https://hiull.github.io</code> → Create.</li>
         <li>Copy <b>Client ID</b> (đuôi <code>.apps.googleusercontent.com</code>) và dán vào ô dưới.</li>
       </ol>
-      <div class="row" style="gap:6px"><input id="gId" placeholder="123…-abc.apps.googleusercontent.com" style="text-transform:none"><button class="btn primary" id="gSaveId">Lưu</button></div>
+      <div class="row" style="gap:6px"><input class="input" id="gId" placeholder="Dán Client ID vào đây" style="text-transform:none;margin:0;flex:1;min-width:0"><button class="btn primary" id="gSaveId">Lưu</button></div>
     </div>
     <div id="gReady" class="hidden">
       <p class="note">Mỗi lần sao lưu: thư, note, lịch… (file .json + bản đọc .html) và <b>chỉ những ảnh/ghi âm mới</b> được đưa vào thư mục <i>Tomortle × Molly – Sao lưu</i> trong Drive của bạn. App chỉ thấy file do nó tạo, không đọc được file khác trong Drive.</p>

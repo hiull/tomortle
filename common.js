@@ -59,12 +59,14 @@ export async function boot() {
 // thoát một hoạt động thì về phòng chung; riêng phòng chung thì về trang Nhà
 export function header(title, back = 'room.html') {
   const h = document.createElement('header');
-  h.innerHTML = `<a class="btn small" href="${back}" style="text-decoration:none;color:inherit">${back === './' ? '← Nhà' : '← Phòng chung'}</a><div class="logo" style="font-size:20px">${esc(title)}</div><div class="sp"></div><span class="pchip" id="pchip"><i class="pdot"></i><span id="pchipName"></span></span>`;
+  const lbl = back === './' ? 'Về trang Nhà' : 'Về phòng chung';
+  h.innerHTML = `<a class="btn small hback" href="${back}" title="${lbl}" aria-label="${lbl}" style="text-decoration:none;color:inherit">‹ ${back === './' ? 'Nhà' : '🏠'}</a><div class="logo htitle" style="font-size:20px"><span>${esc(title)}</span></div><span class="pchip" id="pchip"><i class="pdot"></i><span id="pchipName"></span></span>`;
   document.querySelector('.app').prepend(h);
 }
 function renderChip(ctx) {
   const n = $('#pchipName'); if (!n) return;
-  n.textContent = ctx.partnerHere ? `${ctx.partnerName} đang ở đây` : (ctx.partnerOnline ? `${ctx.partnerName} online` : `${ctx.partnerName} offline`);
+  const full = ctx.partnerHere ? `${ctx.partnerName} đang ở đây` : (ctx.partnerOnline ? `${ctx.partnerName} online` : `${ctx.partnerName} offline`);
+  n.textContent = ctx.partnerName; $('#pchip').title = full; $('#pchip').setAttribute('aria-label', full); // chấm xanh/vàng/xám cho biết trạng thái
   $('#pchip').classList.toggle('here', ctx.partnerHere); $('#pchip').classList.toggle('on', ctx.partnerOnline);
 }
 
