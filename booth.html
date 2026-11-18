@@ -226,6 +226,7 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
 
   <!-- HOME -->
   <section id="home" class="screen active">
+    <div class="card hidden" id="callShots" style="padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;background:#fff0f6"><span style="font-size:26px">📹</span><span style="flex:1"><b>Có ảnh chụp trong cuộc gọi video</b><br><small class="note" id="callShotsN"></small></span><button class="btn small primary" id="callShotsGo">✨ Chỉnh ngay</button></div>
     <div class="hero card">
       <div class="inapp hidden" id="inappBox"><b>Bạn đang mở link trong <span id="inappName">ứng dụng</span></b>
         <p>Trình duyệt bên trong app này thường chặn camera. Bấm nút <b>⋯</b> hoặc <b>⋮</b> ở góc màn hình, chọn <b>Mở bằng trình duyệt</b> (Safari/Chrome). Hoặc copy link dưới đây rồi dán vào Safari/Chrome:</p>
@@ -639,7 +640,7 @@ function applyCallApp(){const on=callAppOn();store.set('callApp',on);if(on){micO
 // camera bị app khác giữ (iPhone chỉ cho 1 app dùng camera): track bị muted hoặc không có hình
 let camBadSince=0;function checkCamBusy(){const v=$('#vMe'),t=localStream&&localStream.getVideoTracks()[0];const bad=!!t&&(t.muted||t.readyState==='ended'||!v.videoWidth);if(!bad){camBadSince=0;$('#camWarn').classList.add('hidden');return}if(!camBadSince)camBadSince=Date.now();if(Date.now()-camBadSince>2500)$('#camWarn').classList.remove('hidden')}
 function replayVideos(){for(const id of['#vMe','#vThem']){const v=$(id);if(v&&v.srcObject&&v.paused)v.play().catch(()=>{})}}
-setInterval(()=>{healTracks();replayVideos()},4000);setInterval(()=>{if(localStream)checkCamBusy()},1000);
+setInterval(()=>{healTracks();replayVideos()},4000);setInterval(()=>{if(localStream)checkCamBusy()},2500);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){healTracks();replayVideos()}});
 function bindCall(call){
   hookUnmute();setTimeout(()=>tuneSenders(call.peerConnection),300);try{call.peerConnection&&call.peerConnection.addEventListener('connectionstatechange',()=>tuneSenders(call.peerConnection))}catch(e){}
@@ -666,7 +667,7 @@ function setStatus(k){
 }
 let clockOff=null,clockRtt=1e9;
 function clockPing(){send({t:'ping',a:Date.now()})}
-setInterval(()=>{if(connected())clockPing()},3000);
+setInterval(()=>{if(connected()&&!(SESS&&SESS.busy))clockPing()},clockRtt<1e9?15000:3000);
 setInterval(()=>{clockRtt*=1.5},30000); // cho phép cập nhật khi mạng đổi
 function onData(d){
   if(d.t==='ping'){send({t:'pong',a:d.a,b:Date.now()});return}
@@ -730,7 +731,7 @@ async function enterCouple(){
   CM=window.TMX.connect({onData,onPresence:here=>{const was=CM_HERE;CM_HERE=here;if(here){setStatus('ok');if(!was){toast(partnerName+' đã vào phòng ♡');tryDial(true)}}else{setStatus('wait');$('#waitText').textContent=partnerName+' chưa ở trong phòng chụp…';$('#waiting').classList.remove('hidden')}}});
   if(!new URLSearchParams(location.search).has('go'))CM.invite();
   startCouplePeer();
-  clearInterval(cmCheck);cmCheck=setInterval(cmWatch,800);
+  clearInterval(cmCheck);cmCheck=setInterval(cmWatch,1500);
 }
 function startCouplePeer(){
   if(peer){try{peer.destroy()}catch(e){}}
@@ -794,9 +795,10 @@ const CAM_DEF={bright:0,contrast:0,warm:0,pink:0,zoom:1};let CAM=Object.assign({
 const CAM_SL=[['bright','Độ sáng',-40,40,1],['contrast','Tương phản',-30,30,1],['warm','Ấm / lạnh',-40,40,1],['pink','Hồng da',0,60,1],['zoom','Phóng to',1,2,.05]];
 $('#camSliders').innerHTML=CAM_SL.map(([k,l,mn,mx,st])=>`<label class="srow"><span>${l}</span><input type="range" min="${mn}" max="${mx}" step="${st}" data-cam="${k}"><output></output></label>`).join('');
 function syncCam(){$$('[data-cam]').forEach(el=>{el.value=CAM[el.dataset.cam];el.nextElementSibling.textContent=el.dataset.cam==='zoom'?(+CAM.zoom).toFixed(2)+'×':CAM[el.dataset.cam]});applyCamPreview()}
-function applyCamPreview(){const v=$('#vMe');if(!v)return;v.style.filter=`brightness(${1+CAM.bright/100}) contrast(${1+CAM.contrast/100}) saturate(${1+CAM.pink/300})`;
-  v.style.transform=`${mirrorOn()?'scaleX(-1) ':''}scale(${CAM.zoom||1})`;
-  const w=$('#tintWarm'),p=$('#tintPink');if(w){w.style.background=CAM.warm>=0?'#ff9a3c':'#3c8dff';w.style.opacity=Math.abs(CAM.warm)/90}if(p){p.style.background='#ff6fa5';p.style.opacity=CAM.pink/110}}
+// Bộ lọc CSS & lớp hoà trộn màu trên video rất nặng với iPhone → chỉ bật khi thật sự chỉnh (mặc định để video "trần" như trang Gọi video)
+function applyCamPreview(){const v=$('#vMe');if(!v)return;const f=CAM.bright||CAM.contrast||CAM.pink;v.style.filter=f?`brightness(${1+CAM.bright/100}) contrast(${1+CAM.contrast/100}) saturate(${1+CAM.pink/300})`:'none';
+  const z=+(CAM.zoom||1);v.style.transform=mirrorOn()?(z>1?`scaleX(-1) scale(${z})`:'scaleX(-1)'):(z>1?`scale(${z})`:'none');
+  const w=$('#tintWarm'),p=$('#tintPink');if(w){w.style.background=CAM.warm>=0?'#ff9a3c':'#3c8dff';w.style.opacity=Math.abs(CAM.warm)/90;w.style.display=CAM.warm?'':'none'}if(p){p.style.background='#ff6fa5';p.style.opacity=CAM.pink/110;p.style.display=CAM.pink?'':'none'}}
 $('#camSliders').addEventListener('input',e=>{const el=e.target.closest('[data-cam]');if(!el)return;CAM[el.dataset.cam]=+el.value;store.set('cam',CAM);syncCam()});
 $('#btnCamAdj').onclick=()=>$('#camAdj').classList.toggle('on');
 $('#camReset').onclick=()=>{CAM=Object.assign({},CAM_DEF);store.set('cam',CAM);syncCam()};
@@ -1382,6 +1384,11 @@ function openEditor(shots,sid){
   show('editor');syncInputs();buildFilterThumbs();syncSel();ensureFont(S.font);invalidate();editedNow();
   $('#btnSend').classList.toggle('hidden',solo);
 }
+(async()=>{const cs=await idb('kv','readonly',s=>s.get('callShots'));if(!cs||!cs.shots||Date.now()-cs.at>3*864e5)return;
+  $('#callShots').classList.remove('hidden');$('#callShotsN').textContent=`${cs.shots.length} kiểu · ${new Date(cs.at).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})} · đổi khung, filter, sticker như ảnh Booth`;
+  $('#callShotsGo').onclick=async()=>{const toC=async b=>{if(!b)return null;const bm=await createImageBitmap(b);const c=document.createElement('canvas');c.width=bm.width;c.height=bm.height;c.getContext('2d').drawImage(bm,0,0);return c};
+   const shots=[];for(const x of cs.shots)shots.push({me:await toC(x.me),them:await toC(x.them)});if(shots.some(x=>x.them))S.people='two';
+   idb('kv','readwrite',s=>s.delete('callShots'));$('#callShots').classList.add('hidden');openEditor(shots,'call'+cs.at)}})();
 $('#btnLastEdit').onclick=()=>{if(lastED){ED=lastED;show('editor');syncInputs();buildFilterThumbs();buildPick();invalidate()}};
 function thumbOf(c){if(!c)return '';if(c._thumb)return c._thumb;try{const t=document.createElement('canvas');const k=120/Math.max(c.width,c.height);t.width=Math.round(c.width*k);t.height=Math.round(c.height*k);t.getContext('2d').drawImage(c,0,0,t.width,t.height);c._thumb=t.toDataURL('image/jpeg',.7)}catch(e){return ''}return c._thumb}
 function slotsWanted(){if(S.tpl==='img'&&typeof frameMeta==='function'){const f=frameMeta();if(f)return f.slots.length}if(S.tpl==='magazine')return 4;return 0}

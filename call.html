@@ -25,6 +25,9 @@
 .cbar .end{background:#e53935;border-color:#e53935;color:#fff}
 .cbar .start{background:#2ecc71;border-color:#2ecc71;color:#fff;width:auto;border-radius:999px;padding:0 22px;font-size:17px;font-weight:800}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.snapov{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6);pointer-events:none}.snapov b{font-size:110px;line-height:1;font-family:var(--head),serif}.snapov span{font-weight:700;margin-top:6px}
+.snapflash{position:absolute;inset:0;z-index:5;background:#fff;opacity:0;pointer-events:none}.snapflash.go{animation:sflash .45s}@keyframes sflash{0%{opacity:.95}100%{opacity:0}}
+.snapres{position:fixed;inset:0;z-index:60;background:rgba(20,10,20,.5);display:flex;align-items:center;justify-content:center;padding:14px}.snapres .card{max-width:440px;width:100%}
 .stats div{background:var(--soft);border-radius:14px;padding:10px 4px}
 .stats b{display:block;font-size:20px;font-family:var(--head),serif;color:var(--accent)}
 .stats span{font-size:12px;color:var(--muted)}
@@ -36,6 +39,7 @@
     <video id="vThem" autoplay playsinline></video>
     <video id="vMe" autoplay playsinline muted class="hidden"></video>
     <div class="ctimer hidden" id="timer">00:00</div>
+    <div class="snapov hidden" id="snapOv"><b id="snapNum"></b><span id="snapLbl"></span></div><div class="snapflash" id="snapFlash"></div>
     <div class="cstate" id="cstate"><div class="av" id="pav">🙂</div><b id="cmsg" style="font-size:18px"></b><span id="csub" class="note" style="color:#ddd"></span></div>
   </div>
   <div class="cbar" id="preBar">
@@ -47,8 +51,11 @@
     <button id="btnMic" title="Tắt/bật mic">🎤</button>
     <button id="btnCam" title="Tắt/bật camera">📷</button>
     <button id="btnFlip" title="Đổi camera">🔄</button>
+    <button id="btnSnap" title="Chụp photobooth cùng nhau" style="background:#ffd6e6">📸</button>
     <button class="end" id="btnEnd" title="Kết thúc">✆</button>
   </div>
+  <div class="snapres hidden" id="snapRes"><div class="card" style="padding:14px;text-align:center"><b>📸 Photobooth trong cuộc gọi</b><img id="snapImg" alt="" style="display:block;width:100%;max-height:60vh;object-fit:contain;margin:10px 0;border-radius:10px">
+    <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn primary" id="snapSave">💾 Lưu về máy</button><button class="btn" id="snapEdit">✨ Chỉnh trong Booth</button><button class="btn" id="snapClose">Đóng</button></div></div></div>
   <p class="note center" id="hint">Bấm gọi, máy người ấy sẽ nhận lời mời. Khi người ấy vào, cuộc gọi tự kết nối.</p>
 
   <div class="card">
@@ -74,7 +81,7 @@
 <style>#sleepOv .chips button{background:#16143a;color:#cfc9ff;border:1px solid #2c2870;border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer}#sleepOv .chips button.on{background:#6c63ff;color:#fff}</style>
 <div id="toast"></div><div class="fx" id="fx"></div>
 <script type="module">
-import { $, $$, esc, toast, vib, sb, boot, header, joinMain, invite, featureChannel , getIce } from './common.js';
+import { $, $$, esc, toast, vib, sb, boot, header, joinMain, invite, featureChannel , getIce, uploadMedia } from './common.js';
 const PAGE = 'call';
 header('Gọi video');
 const ctx = await boot();
@@ -98,7 +105,7 @@ function setState(s) {
   state = s;
   $('#preBar').classList.toggle('hidden', s !== 'idle'); $('#preBar2').classList.toggle('hidden', s !== 'idle'); $('#inBar').classList.toggle('hidden', s === 'idle');
   $('#hint').classList.toggle('hidden', s !== 'idle'); $('#timer').classList.toggle('hidden', s !== 'live');
-  $('#btnCam').classList.toggle('hidden', kind !== 'video'); $('#btnFlip').classList.toggle('hidden', kind !== 'video');
+  $('#btnCam').classList.toggle('hidden', kind !== 'video'); $('#btnFlip').classList.toggle('hidden', kind !== 'video'); $('#btnSnap').classList.toggle('hidden', kind !== 'video' || s !== 'live');
   if (s === 'idle') setMsg(ctx.partnerName, ctx.partnerHere ? `${ctx.partnerName} đang ở trang gọi` : (ctx.partnerOnline ? `${ctx.partnerName} đang online` : `${ctx.partnerName} đang offline`));
 }
 joinMain(ctx, PAGE, () => { if (state === 'idle') setState('idle'); if (ctx.partnerHere && state === 'waiting') announceReady() });
@@ -226,6 +233,72 @@ async function loadHistory() {
 sb.channel('calls-db').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls' }, () => loadHistory()).subscribe();
 setState('idle'); loadHistory();
 const auto = new URLSearchParams(location.search).get('k'); if (auto === 'video' || auto === 'audio') { setTimeout(() => { setMsg(`${ctx.partnerName} đang gọi bạn`, 'Bấm nút xanh để nghe'); incoming = true }, 300) }
+/* ===== 📸 Chụp photobooth ngay trong cuộc gọi video =====
+   Dùng luôn camera & kết nối của cuộc gọi nên mượt y như gọi video. Mỗi máy chụp camera của chính mình
+   đúng cùng một thời điểm (đồng bộ đồng hồ 2 máy), gửi ảnh nét cho nhau qua kho ảnh, rồi ghép thành dải ảnh. */
+const SNAP_N = 4, SNAP_CD = 3, SNAP_GAP = 3;
+let clockOff = null, clockRtt = 1e9, snap = null; const early = {};
+ch.on('broadcast', { event: 'cping' }, ({ payload }) => send('cpong', { a: payload.a, b: Date.now() }))
+  .on('broadcast', { event: 'cpong' }, ({ payload }) => { const rtt = Date.now() - payload.a; if (rtt <= clockRtt) { clockRtt = rtt; clockOff = payload.b - (payload.a + rtt / 2) } })
+  .on('broadcast', { event: 'snap' }, ({ payload }) => { if (state === 'live' && kind === 'video') runSnap(payload.sid, clockOff != null ? payload.at - clockOff : Date.now() + 300, false) })
+  .on('broadcast', { event: 'snapshot' }, ({ payload }) => gotShot(payload));
+setInterval(() => { if (state === 'live') send('cping', { a: Date.now() }) }, 4000);
+setInterval(() => { clockRtt *= 1.5 }, 30000);
+let SAC = null; function beep(f, d = .09, v = .07) { try { SAC = SAC || new (window.AudioContext || window.webkitAudioContext)(); if (SAC.state === 'suspended') SAC.resume(); const o = SAC.createOscillator(), g = SAC.createGain(); o.frequency.value = f; g.gain.value = v; o.connect(g); g.connect(SAC.destination); o.start(); g.gain.exponentialRampToValueAtTime(.0001, SAC.currentTime + d); o.stop(SAC.currentTime + d + .02) } catch (e) { } }
+$('#btnSnap').onclick = () => {
+  if (state !== 'live' || kind !== 'video' || snap) return; beep(1, .01, .0001);
+  const sid = Date.now().toString(36) + Math.random().toString(36).slice(2, 5), at = Date.now() + (clockOff == null ? 900 : Math.min(2500, Math.max(700, clockRtt * 2 + 400)));
+  send('snap', { sid, at }); runSnap(sid, at, true);
+};
+function countdownTo(target, label) {
+  return new Promise(res => { const ov = $('#snapOv'), num = $('#snapNum'); ov.classList.remove('hidden'); $('#snapLbl').textContent = label; let shown = null;
+    const tickf = () => { const left = target - Date.now(); if (left <= 0) { num.textContent = ''; res(); return } const n = Math.ceil(left / 1000); if (n !== shown) { shown = n; num.textContent = n; beep(n === 1 ? 1320 : 880) } setTimeout(tickf, Math.min(left, 50)) }; tickf() })
+}
+function grabMe() {
+  const v = $('#vMe'); if (!v.videoWidth) return null; const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; const x = c.getContext('2d');
+  if (facing === 'user') { x.translate(c.width, 0); x.scale(-1, 1) } x.drawImage(v, 0, 0); return c;
+}
+const toBlob = c => new Promise(r => c.toBlob(r, 'image/jpeg', .92));
+async function runSnap(sid, at, mine) {
+  if (snap) return; snap = { sid, me: [], them: early[sid] || [], mine }; delete early[sid]; $('#btnSnap').disabled = true;
+  try {
+    for (let i = 0; i < SNAP_N; i++) {
+      await countdownTo(at + (SNAP_CD + i * (SNAP_GAP + .6)) * 1000, `Kiểu ${i + 1} / ${SNAP_N} · nhìn vào camera nha`);
+      const f = $('#snapFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); beep(1800, .05, .05); vib(30);
+      const c = grabMe(); snap.me[i] = c;
+      if (c) toBlob(c).then(b => uploadMedia(ctx, b, 'booth')).then(({ path }) => send('snapshot', { sid, i, path })).catch(e => console.warn(e));
+    }
+    $('#snapNum').textContent = '♡'; $('#snapLbl').textContent = 'Đang nhận ảnh từ ' + ctx.partnerName + '…';
+    const t0 = Date.now(); while (snap.them.filter(Boolean).length < SNAP_N && Date.now() - t0 < 15000) await new Promise(r => setTimeout(r, 250));
+    $('#snapOv').classList.add('hidden'); await showSnap(snap);
+  } catch (e) { console.warn(e); toast('Chụp chưa được: ' + e.message) }
+  finally { $('#snapOv').classList.add('hidden'); snap = null; $('#btnSnap').disabled = false }
+}
+async function gotShot(p) {
+  try { const { data, error } = await sb.storage.from('media').download(p.path); if (error) throw error; const bm = await createImageBitmap(data); const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; c.getContext('2d').drawImage(bm, 0, 0);
+    if (snap && snap.sid === p.sid) snap.them[p.i] = c; else (early[p.sid] = early[p.sid] || [])[p.i] = c } catch (e) { console.warn(e) }
+}
+function cover(x, img, dx, dy, dw, dh) { if (!img) { x.fillStyle = '#f3e6ee'; x.fillRect(dx, dy, dw, dh); return } const s = Math.max(dw / img.width, dh / img.height), w = dw / s, h = dh / s; x.drawImage(img, (img.width - w) / 2, (img.height - h) / 2, w, h, dx, dy, dw, dh) }
+function compose(S) {
+  const cw = 330, chh = 248, pad = 28, gap = 12, foot = 130, W = pad * 2 + cw * 2 + gap, H = pad + SNAP_N * (chh + gap) - gap + foot; const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  x.fillStyle = '#ffd6e6'; x.fillRect(0, 0, W, H); x.fillStyle = 'rgba(255,255,255,.75)'; for (let y = 10, r = 0; y < H; y += 26, r++) for (let X = (r % 2) * 13 + 8; X < W; X += 26) { x.beginPath(); x.arc(X, y, 4, 0, 7); x.fill() }
+  for (let i = 0; i < SNAP_N; i++) { const y = pad + i * (chh + gap); x.fillStyle = '#fff'; x.fillRect(pad - 5, y - 5, cw * 2 + gap + 10, chh + 10); cover(x, S.me[i], pad, y, cw, chh); cover(x, S.them[i], pad + cw + gap, y, cw, chh) }
+  x.textAlign = 'center'; x.fillStyle = '#e0457b'; x.font = '700 40px "Dancing Script", "Baloo 2", cursive'; x.fillText(`${ctx.myName} ♡ ${ctx.partnerName}`, W / 2, H - foot + 62);
+  x.font = '600 18px "Be Vietnam Pro", sans-serif'; x.fillStyle = '#b24a72'; x.fillText('📹 chụp trong cuộc gọi · ' + new Date().toLocaleDateString('vi-VN'), W / 2, H - foot + 98); return c;
+}
+// lưu ảnh từng kiểu vào máy (IndexedDB) để mở Booth chỉnh khung/filter sau khi gọi xong
+function idbPut(key, val) { return new Promise(res => { try { const r = indexedDB.open('tomortle', 1); r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('album')) d.createObjectStore('album', { keyPath: 'id', autoIncrement: true }); if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv') }; r.onsuccess = () => { const t = r.result.transaction('kv', 'readwrite'); t.objectStore('kv').put(val, key); t.oncomplete = () => res(true); t.onerror = () => res(false) }; r.onerror = () => res(false) } catch (e) { res(false) } }) }
+async function showSnap(S) {
+  const strip = compose(S), blob = await toBlob(strip); const url = URL.createObjectURL(blob); $('#snapImg').src = url; $('#snapRes').classList.remove('hidden');
+  const shots = []; for (let i = 0; i < SNAP_N; i++)shots.push({ me: S.me[i] ? await toBlob(S.me[i]) : null, them: S.them[i] ? await toBlob(S.them[i]) : null });
+  await idbPut('callShots', { at: Date.now(), shots });
+  $('#snapSave').onclick = () => { const a = document.createElement('a'); a.href = url; a.download = `photobooth-goi-video-${Date.now()}.jpg`; a.click() };
+  $('#snapEdit').onclick = () => { $('#snapRes').classList.add('hidden'); toast('Ảnh đã chờ sẵn trong Booth ✨ Gọi xong mở Booth để đổi khung, filter, sticker nhé') };
+  $('#snapClose').onclick = () => $('#snapRes').classList.add('hidden');
+  // chỉ người bấm chụp lưu vào Album chung (tránh 2 bản trùng)
+  if (S.mine) try { const { path } = await uploadMedia(ctx, blob, 'album'); await sb.from('album').insert({ path, source: 'booth', taken_at: new Date().toISOString() }); toast('Đã lưu vào Album chung 💗') } catch (e) { console.warn(e) }
+}
+
 </script>
 </body>
 </html>
