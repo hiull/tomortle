@@ -106,6 +106,23 @@ header .sp{flex:1}
 .shutter:active::after{transform:scale(.85)}
 .shutter[disabled]{opacity:.5}
 .note{font-size:13px;color:var(--muted);text-align:center;margin:0}
+.print{position:fixed;inset:0;z-index:80;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:calc(18px + env(safe-area-inset-top)) 16px 20px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 0,rgba(255,220,160,.25),transparent 60%),repeating-linear-gradient(90deg,#7a0f1f 0 26px,#8e1426 26px 40px,#6a0c1a 40px 52px);color:#fff4e6}
+.print.on{display:flex;animation:fade .3s}
+.print::before,.print::after{content:"";position:absolute;top:0;bottom:0;width:22%;background:repeating-linear-gradient(90deg,#5c0915 0 10px,#7a0f1f 10px 22px);box-shadow:0 0 30px rgba(0,0,0,.5);z-index:0}
+.print::before{left:0;border-radius:0 0 60% 0}.print::after{right:0;border-radius:0 0 0 60%}
+.pmach{position:relative;z-index:1;width:min(300px,78vw);background:linear-gradient(#f4ead8,#e2d3b8);border-radius:22px 22px 10px 10px;padding:14px 16px 0;box-shadow:0 18px 40px rgba(0,0,0,.45),inset 0 -6px 0 rgba(0,0,0,.08);color:#5a2a1a;text-align:center}
+.pmach .sign{font-family:'Playfair Display',serif;font-weight:700;letter-spacing:6px;font-size:22px;padding:6px 0;border:3px double #b5462e;border-radius:10px;background:#fffaf0}
+.pmach .bulbs{display:flex;justify-content:space-between;margin:8px 4px}.pmach .bulbs i{width:10px;height:10px;border-radius:50%;background:#ffd166;box-shadow:0 0 8px #ffd166;animation:bulb 1s infinite}
+.pmach .bulbs i:nth-child(2n){animation-delay:.5s}@keyframes bulb{50%{background:#a8743a;box-shadow:none}}
+.pmach .meta{display:flex;justify-content:space-between;font:700 11px 'Be Vietnam Pro',sans-serif;opacity:.75;margin:2px 4px 10px}
+.pmach .slot{height:16px;margin:0 6px;background:#1c1210;border-radius:8px 8px 3px 3px;box-shadow:inset 0 4px 6px #000;position:relative;z-index:3}
+.pout{position:relative;z-index:2;width:min(240px,62vw);height:min(62vh,520px);overflow:hidden;margin-top:-8px}
+.pout img{display:block;width:88%;margin:0 auto;border:6px solid #fff;border-top-width:3px;box-shadow:0 10px 24px rgba(0,0,0,.4);transform:translateY(-102%);filter:brightness(1.9) saturate(0) contrast(.6) blur(1.5px)}
+.pout img.dev{transition:filter 2.2s ease-out}.pout img.dev.done{filter:none}
+.pmsg{position:relative;z-index:1;margin-top:14px;font:700 16px 'Be Vietnam Pro',sans-serif;text-shadow:0 2px 6px rgba(0,0,0,.5);min-height:22px}
+.pmsg small{display:block;font-weight:400;opacity:.8;margin-top:4px}
+.pskip{position:absolute;z-index:2;bottom:calc(16px + env(safe-area-inset-bottom));right:16px;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 12px;font:600 13px 'Be Vietnam Pro',sans-serif;cursor:pointer}
 /* editor */
 .edit-wrap{display:grid;gap:12px}
 @media(min-width:900px){.edit-wrap{grid-template-columns:minmax(0,1fr) 400px;align-items:start}.panel{position:sticky;top:12px;max-height:calc(100vh - 110px);overflow:auto}}
@@ -439,6 +456,8 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
   <button class="btn small ghost" id="uiReset">Về mặc định</button>
 </div></div>
 
+<div class="print" id="printer"><div class="pmach"><div class="sign">PHOTO</div><div class="bulbs"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="meta"><span id="pDate"></span><span>♡ TOMORTLE</span><span>4 KIỂU</span></div><div class="slot"></div></div>
+  <div class="pout"><img id="pImg" alt=""></div><div class="pmsg" id="pMsg"></div><button class="pskip" id="pSkip">Bỏ qua ›</button></div>
 <div class="modal" id="albumModal"><div class="sheet card">
   <h3>Album<span class="sp"></span><button class="btn small" data-close>Đóng</button></h3>
   <div class="album" id="albumGrid"></div>
@@ -1366,7 +1385,26 @@ $('#pickRow').onclick=e=>{const b=e.target.closest('button');if(!b||!ED)return;c
 $('#pickAll').onclick=()=>{if(!ED)return;ED.pick=ED.all.map((_,i)=>i);applyPick()};
 $('#btnRetake').onclick=()=>{if(ED&&ED.cloudVer!==editVer)cloudSave(null,true);ED&&(ED.sel=null);show('room');$('#btnLastEdit').classList.toggle('hidden',!lastED)};
 async function exportBlob(){if(dirty){renderBase(base);dirty=false}const c=document.createElement('canvas');c.width=base.width;c.height=base.height;const x=c.getContext('2d');x.drawImage(base,0,0);drawStickers(x,false);return new Promise(r=>c.toBlob(r,'image/png'))}
-$('#btnSave').onclick=async()=>{const b=await exportBlob();const it=addAlbum(b,'me');downloadBlob(b,fname());toast('Đã lưu ảnh ♡','Xem',()=>viewItem(it))};
+/* Màn hình "máy photobooth đang in": ảnh nhô dần ra khe máy, ban đầu trắng bệch rồi hiện màu như ảnh in thật */
+let printing=null;
+function printReveal(blob){if(printing)return printing;ensureAudio();
+  const P=$('#printer'),im=$('#pImg'),msg=$('#pMsg'),url=URL.createObjectURL(blob);let skip=false,timers=[];
+  const at=(ms,fn)=>timers.push(setTimeout(fn,ms));
+  $('#pDate').textContent=new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  if(ED)P.querySelector('.meta span:last-child').textContent=(ED.shots.length||1)+' KIỂU';
+  im.className='';im.style.transition='none';im.style.transform='translateY(-102%)';im.src=url;P.classList.add('on');
+  const say=(t,sub='')=>{msg.innerHTML=t+(sub?`<small>${sub}</small>`:'')};
+  say('📸 Đang xử lý ảnh…','Máy đang ghép các kiểu ảnh lại');
+  // in từng nấc, kèm tiếng máy in lạch cạch
+  const steps=[18,34,48,61,73,84,93,100];
+  at(900,()=>say('🖨️ Đang in ảnh…','Đừng giật ảnh ra nha'));
+  steps.forEach((pc,k)=>at(1100+k*330,()=>{im.style.transition='transform .32s ease-out';im.style.transform=`translateY(${pc-102}%)`;beep(140+k*6,.12,.05);beep(95,.18,.035)}));
+  at(1100+steps.length*330,()=>{im.style.transform='translateY(0)';im.classList.add('dev');say('🌬️ Chờ ảnh khô một chút…','Phẩy phẩy cho màu hiện lên');requestAnimationFrame(()=>im.classList.add('done'))});
+  at(1100+steps.length*330+2300,()=>{say('Xong rồi! ♡','Ảnh đẹp quá trời');beep(1320,.12,.06);setTimeout(()=>beep(1760,.16,.05),120)});
+  printing=new Promise(res=>{const end=()=>{timers.forEach(clearTimeout);P.classList.remove('on');setTimeout(()=>URL.revokeObjectURL(url),1000);printing=null;res()};
+    $('#pSkip').onclick=end;at(1100+steps.length*330+3400,end)});
+  return printing}
+$('#btnSave').onclick=async()=>{if(printing)return;const b=await exportBlob();downloadBlob(b,fname());const it=addAlbum(b,'me');await printReveal(b);viewItem(it);toast('Đã lưu ảnh ♡')};
 async function sendBlob(b){if(!connected()){toast('Người ấy chưa kết nối');return false}if(CM){try{const path=await CM.upload(b,'booth');send({t:'photo',path,type:b.type});toast('Đã gửi cho '+(partnerName||'người ấy')+' ♡');return true}catch(e){toast('Gửi không được, thử lại nhé');return false}}const buf=await b.arrayBuffer();if(send({t:'photo',buf,type:b.type})){toast('Đã gửi cho '+(partnerName||'người ấy')+' ♡');return true}toast('Gửi không được, thử lại nhé');return false}
 $('#btnShare').onclick=async()=>{const b=await exportBlob();addAlbum(b,'me');shareBlob(b)};
 $('#btnSend').onclick=async()=>{if(!connected()){toast('Người ấy chưa kết nối');return}const b=await exportBlob();if(await sendBlob(b))addAlbum(b,'me')};
