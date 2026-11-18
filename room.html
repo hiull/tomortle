@@ -129,6 +129,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .prods button u{position:absolute;top:4px;left:50%;transform:translateX(-50%);white-space:nowrap;text-decoration:none;background:#e63946;color:#fff;font-size:10px;font-weight:800;border-radius:6px;padding:1px 4px}.prods button.want{background:#fffbe6}.prods button.want::after{content:"📝";position:absolute;top:2px;right:26px;font-size:12px}.prods button small s,.cl s{opacity:.6}
 .tg{text-decoration:none;background:#e63946;color:#fff;font-size:10px;font-weight:800;border-radius:6px;padding:1px 4px}.cl.done span{text-decoration:line-through;opacity:.5}.cl button[data-t]{border-radius:6px}.cl a{color:var(--accent)}
 .rcp{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}.rcp>b{font-size:30px;width:40px;text-align:center}.rcp span{flex:1;font-size:14px}.rcp small{display:block;font-size:12px;color:var(--muted)}.rcp small i{font-style:normal}.rcp small i.no{color:#e63946;text-decoration:line-through}.rcp button{white-space:nowrap}
+.rc .scan{border-radius:4px}.rc .scan.hit{animation:scanhit .35s}@keyframes scanhit{0%{background:#b9f6ca}100%{background:transparent}}.rc .big b{font-size:17px}.rc #rcL,.rc #rcT{display:block}#rcL{max-height:40vh;overflow:auto}
 .rc{font-family:'Courier New',monospace;text-align:left;background:#fffdf6;color:#333;border-radius:8px;padding:12px;font-size:13px;line-height:1.6}.rc div{display:flex;justify-content:space-between;gap:8px}</style>
 <div class="modal" id="mShop"><div class="sheet">
   <h3 id="shopT"></h3><p class="note" id="shopSub" style="margin:0 0 8px"></p>
@@ -139,7 +140,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 <div class="modal" id="mCart"><div class="sheet">
   <h3>🛒 Giỏ hàng chung</h3>
   <div id="cartL"></div>
-  <label class="note" style="display:flex;align-items:center;gap:8px;margin-top:8px">Ví chung (ngân sách) <input class="input" id="mkBudget" type="number" step="10000" min="0" style="margin:0;flex:1"></label>
+  <label class="note" style="display:flex;align-items:center;gap:8px;margin-top:8px">Ví chung (ngân sách) <input class="input" id="mkBudget" type="number" step="10000" min="0" style="margin:0;flex:1"><button type="button" class="btn small" id="mkTop">💰 Nạp 500k</button></label>
   <div class="incart" id="mkCard" style="margin-top:8px"></div>
   <label class="note hidden" id="mkVoucherRow" style="display:flex;align-items:center;gap:6px;margin-top:6px"><input type="checkbox" id="mkVoucher"> Dùng 100 điểm để giảm 50.000đ</label>
   <p id="cartTot" style="font-weight:700;margin:8px 0"></p>
@@ -871,7 +872,7 @@ function itemMenu(it,sx,sy){const c=CAT[it.t];const B=[];let sub='';
  case'telescope':goUse('🔭 Ngắm sao',()=>{const ph=dayPhase();me.emo={e:ph==='night'?'🌟':'☁️',t:NOW+3000};send('emo',{e:'🔭'});if(ph==='night'){for(let i=0;i<6;i++)setTimeout(()=>spawn(OX+(Math.random()-.5)*200,60+Math.random()*60,'⭐',{vy:-4,life:2}),i*200);toast('Trăng đêm nay '+moonName()+' 🌙')}else toast('Trời còn sáng, tối quay lại ngắm sao nhé ✨')},1);break;
  case'flowerbed':goUse('🌷 Hái tặng một bông',()=>{burst(me,'🌷',3);send('emo',{e:'🌷',burst:'🌷'});if(livePa())toPartner('kiss')},1);break;
  case'grill':goUse('🍢 Nướng đồ ăn',()=>{burst(me,'🍢',4);send('emo',{e:'🍢',burst:'🍢'});toast('Thơm quá! Lần gặp nhau đi ăn đồ nướng nhé 😋')},1);break;
- case'checkout':goUse('🧾 Thanh toán',checkout,1);goUse('👀 Xem giỏ chung',openCart);break;
+ case'checkout':B.push(['🧾 Thanh toán',()=>{useItem(it);checkout()},1]);goUse('👀 Xem giỏ chung',openCart);break;
  case'cartrack':B.push(['🛒 Xem giỏ chung',openCart,1]);break;
  case'lantern':goUse(R.light?'🌙 Tắt đèn lồng':'🏮 Thắp đèn lồng',()=>{R.light=!R.light;saveRoom();syncHud()},1);break;
  case'vase':goUse('🌸 Ngửi hoa',()=>{me.emo={e:'🌸',t:NOW+2200};send('emo',{e:'🌸'})},1);break;
@@ -950,21 +951,37 @@ $('#shopG').onclick=e=>{const b=e.target.closest('button');if(!b)return;const pr
 $('#shopCart').onclick=()=>{$('#mShop').classList.remove('on');openCart()};
 $('#cartL').onclick=e=>{const b=e.target.closest('button[data-k]');if(!b)return;const i=MK.cart[+b.dataset.k];if(i)mkAdd(i,+b.dataset.d)};
 $('#mkBudget').onchange=e=>{MK.budget=Math.max(0,+e.target.value||0);mkSave()};
-$('#mkVoucher').onchange=drawMk;
+$('#mkVoucher').onchange=drawMk;$('#mkTop').onclick=()=>topUp(500000);
 $('#cartClear').onclick=()=>{if(!MK.cart.length||!confirm('Bỏ hết đồ trong giỏ?'))return;MK.cart=[];mkSave()};
-$('#cartPay').onclick=()=>{$('#mCart').classList.remove('on');const co=R.items.find(i=>i.t==='checkout');if(co)useItem(co,checkout);else checkout()};
+$('#cartPay').onclick=()=>{$('#mCart').classList.remove('on');const co=R.items.find(i=>i.t==='checkout');if(co)useItem(co);checkout()};
 $('#bCart').onclick=openCart;
-function checkout(){if(!MK.cart.length){toast('Giỏ trống trơn, đi nhặt đồ đã nào 🛒');return}const b=mkBill();
- if(b.total>MK.budget){toast(`Ví chung chỉ còn ${vnd(MK.budget)}, bỏ bớt đồ nhé 🥺`);openCart();return}
- const d=new Date(),earn=Math.floor(b.total/10000),free=MK.cart.reduce((a,i)=>a+(i.b2g1?Math.floor(i.q/3)*i.p:0),0),save=MK.cart.reduce((a,i)=>a+(i.o?(i.o-i.p)*i.q:0),0)+free+b.tierOff+b.vou;
- $('#infoT').textContent='🧾 Hoá đơn siêu thị hai đứa';
- $('#infoB').innerHTML=`<div class="rc"><div><b>TOMORTLE MART</b><span>${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span></div>${MK.cart.map(i=>`<div><span>${icoH(i.e,'ico s')} ${esc(i.n)} ×${i.q}${i.b2g1&&i.q>=3?` (tặng ${Math.floor(i.q/3)})`:''}</span><span>${vnd(lineTotal(i))}</span></div>`).join('')}
-  <div style="border-top:1px dashed #999;margin-top:4px;padding-top:4px"><span>Tạm tính</span><span>${vnd(b.sub)}</span></div>${b.tierOff?`<div><span>Thẻ ${b.t[1]} -${b.t[3]}%</span><span>-${vnd(b.tierOff)}</span></div>`:''}${b.vou?`<div><span>Voucher 100 điểm</span><span>-${vnd(b.vou)}</span></div>`:''}
-  <div><b>TỔNG</b><b>${vnd(b.total)}</b></div>${save>0?`<div><span>🎉 Tiết kiệm</span><span>${vnd(save)}</span></div>`:''}<div><span>Điểm thưởng</span><span>+${earn} điểm</span></div><div><span>Ví chung còn</span><span>${vnd(MK.budget-b.total)}</span></div><div style="justify-content:center">Cảm ơn hai bạn, hẹn gặp lại 💗</div></div>`;
- $('#mInfo').classList.add('on');stockPantry(MK.cart);
- MK.points=MK.points-(b.useV?100:0)+earn;MK.life+=earn;const before=tierOf(MK.life-earn);if($('#mkVoucher'))$('#mkVoucher').checked=false;
- MK.hist=[...(MK.hist||[]),{at:Date.now(),total:b.total,n:mkCount(),by:ME}].slice(-30);MK.budget-=b.total;MK.cart=[];MK.list=MK.list.filter(l=>!l.done);mkSave();burst(me,'🛍️',4);send('emo',{e:'🧾',burst:'💸'});sfx.heart();
- const after=tierOf(MK.life);if(after!==before)setTimeout(()=>toast(`Lên hạng thẻ ${after[2]} ${after[1]}! Từ giờ giảm ${after[3]}% mọi hoá đơn 🎉`),1500)}
+/* thanh toán: quét từng món kêu "tít", xong tất cả thì "cha-ching" như máy tính tiền */
+const sfxBeep=()=>{tone(2350,.09,'square',.05);tone(2350,.05,'sine',.04,.01)};
+const sfxChaching=()=>{noise(.12,.25,2500,'highpass');tone(1318,.12,'triangle',.09,.14);tone(1760,.5,'triangle',.1,.24);tone(2637,.6,'sine',.06,.24);for(let k=0;k<7;k++)tone(3200+Math.random()*1800,.07,'sine',.035,.3+k*.06)};
+let paying=false;
+async function checkout(){if(paying)return;ac();
+ try{
+ if(!MK.cart.length){toast('Giỏ trống trơn, đi nhặt đồ đã nào 🛒');return}const b=mkBill();
+ if(b.total>MK.budget){toast(`Ví chung còn ${vnd(MK.budget)}, chưa đủ ${vnd(b.total)} 🥺`,'💰 Nạp ví',()=>{topUp(Math.ceil((b.total-MK.budget)/100000)*100000+100000);checkout()});openCart();return}
+ paying=true;const cart=MK.cart.map(i=>Object.assign({},i)),d=new Date(),earn=Math.floor(b.total/10000),free=cart.reduce((a,i)=>a+(i.b2g1?Math.floor(i.q/3)*i.p:0),0),save=cart.reduce((a,i)=>a+(i.o?(i.o-i.p)*i.q:0),0)+free+b.tierOff+b.vou;
+ // cập nhật dữ liệu ngay (không phụ thuộc hiệu ứng), hiệu ứng chỉ để xem
+ const before=tierOf(MK.life);MK.points=MK.points-(b.useV?100:0)+earn;MK.life+=earn;if($('#mkVoucher'))$('#mkVoucher').checked=false;
+ MK.hist=[...(MK.hist||[]),{at:Date.now(),total:b.total,n:mkCount(),by:ME}].slice(-30);MK.budget-=b.total;MK.cart=[];MK.list=MK.list.filter(l=>!l.done);mkSave();stockPantry(cart);
+ $('#infoT').textContent='🧾 Đang tính tiền…';
+ $('#infoB').innerHTML=`<div class="rc"><div><b>TOMORTLE MART</b><span>${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span></div><div id="rcL"></div><div id="rcT"></div></div>`;
+ $('#mInfo').classList.add('on');
+ const units=cart.reduce((a,i)=>a+i.q,0),gap=units>14?190:units>7?280:380;let beeps=0;
+ for(const i of cart){const row=document.createElement('div');row.className='scan';row.innerHTML=`<span>${icoH(i.e,'ico s')} ${esc(i.n)} <b class="q">×0</b></span><span class="v">0đ</span>`;$('#rcL').append(row);row.scrollIntoView({block:'nearest'});
+  for(let k=1;k<=i.q;k++){if(beeps<30){sfxBeep();vib(12)}beeps++;row.querySelector('.q').textContent='×'+k+(i.b2g1&&k>=3&&k%3===0?' 🎁':'');row.querySelector('.v').textContent=vnd(i.p*(k-(i.b2g1?Math.floor(k/3):0)));row.classList.remove('hit');void row.offsetWidth;row.classList.add('hit');await new Promise(r=>setTimeout(r,beeps<30?gap:40))}}
+ await new Promise(r=>setTimeout(r,350));
+ $('#rcT').innerHTML=`<div style="border-top:1px dashed #999;margin-top:4px;padding-top:4px"><span>Tạm tính</span><span>${vnd(b.sub)}</span></div>${b.tierOff?`<div><span>Thẻ ${b.t[1]} -${b.t[3]}%</span><span>-${vnd(b.tierOff)}</span></div>`:''}${b.vou?`<div><span>Voucher 100 điểm</span><span>-${vnd(b.vou)}</span></div>`:''}
+  <div class="big"><b>TỔNG</b><b>${vnd(b.total)}</b></div>${save>0?`<div><span>🎉 Tiết kiệm</span><span>${vnd(save)}</span></div>`:''}<div><span>Điểm thưởng</span><span>+${earn} điểm</span></div><div><span>Ví chung còn</span><span>${vnd(MK.budget)}</span></div><div style="justify-content:center">Cảm ơn hai bạn, hẹn gặp lại 💗</div>`;
+ $('#infoT').textContent='🧾 Hoá đơn siêu thị hai đứa';sfxChaching();vib([30,40,80]);burst(me,'💰',4);setTimeout(()=>burst(me,'🛍️',3),250);send('emo',{e:'🧾',burst:'💸'});
+ const after=tierOf(MK.life);if(after!==before)setTimeout(()=>toast(`Lên hạng thẻ ${after[2]} ${after[1]}! Từ giờ giảm ${after[3]}% mọi hoá đơn 🎉`),1800);
+ }catch(e){console.error(e);toast('Thanh toán bị lỗi: '+(e.message||e)+' · chụp màn hình gửi mình nhé')}finally{paying=false}}
+/* ví chung: mỗi ngày tự nạp thêm 200.000đ, hết tiền thì nạp tay */
+function topUp(n){MK.budget+=n;mkSave();toast(`Đã nạp ${vnd(n)} vào ví chung 💰`);sfxChaching()}
+if(IS_MK){const today=new Date().toISOString().slice(0,10);if(MK.payday!==today){const first=!MK.payday;MK.payday=today;if(!first){MK.budget+=200000;setTimeout(()=>toast('Hôm nay ví chung được nạp thêm 200.000đ 💰'),1500)}mkSave()}}
 /* danh sách đi chợ (dùng chung) */
 function drawList(){const L=$('#listL');if(!L)return;L.innerHTML=MK.list.length?MK.list.map((l,k)=>`<div class="cl ${l.done?'done':''}"><button data-t="${k}">${l.done?'✓':''}</button><span>${esc(l.n)}</span><button data-f="${k}" title="Tìm">🔎</button><button data-x="${k}">✕</button></div>`).join(''):'<p class="note">Chưa có gì. Ghi món cần mua hoặc chọn món muốn nấu bên dưới nhé.</p>';
  const sel=$('#listRecipe');if(sel&&!sel.options.length&&MD)sel.innerHTML='<option value="">🍳 Muốn nấu món… (tự thêm nguyên liệu còn thiếu)</option>'+MD.RECIPES.map((r,k)=>`<option value="${k}">${esc(r[1])}</option>`).join('')}
