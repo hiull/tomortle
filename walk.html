@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css?v=15">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 .sv{position:relative;width:100%;aspect-ratio:3/4;max-height:66vh;border-radius:20px;overflow:hidden;background:#1d1a26;border:1px solid var(--line)}
 @media(min-width:700px){.sv{aspect-ratio:16/10}}
@@ -19,11 +20,19 @@
 .pl button{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:10px 8px;text-align:left;cursor:pointer;color:var(--ink);font-family:inherit;font-size:14px}
 .pl button b{display:block}.pl button small{color:var(--muted);font-size:12px}
 .pl button.on{border-color:var(--accent);background:var(--soft)}
+.where{display:flex;gap:10px;align-items:center}.where .dot{width:10px;height:10px;border-radius:50%;background:#bbb;flex:0 0 auto}.where .dot.on{background:#2ecc71;box-shadow:0 0 0 3px rgba(46,204,113,.25)}
+#mini{height:190px;border-radius:14px;margin-top:10px;z-index:1}
+.wpin{background:#fff;border-radius:50%;width:30px!important;height:30px!important;display:grid!important;place-items:center;border:3px solid var(--accent);font-size:16px}
 .togg{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}
 </style>
 </head>
 <body>
 <div class="app">
+  <div class="card" style="margin-bottom:10px">
+    <div class="where"><span class="dot" id="paDot"></span><div style="flex:1"><b id="paWhere">…</b><div class="note" style="text-align:left" id="paSub"></div></div><button class="btn small" id="goPa">Tới chỗ người ấy</button></div>
+    <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:8px;text-align:left"><input type="checkbox" id="follow" checked> Tự đi theo khi người ấy đổi chỗ</label>
+    <div id="mini"></div>
+  </div>
   <div class="sv" id="sv"><div class="tag hidden" id="tag"></div><div class="empty" id="empty"><div style="font-size:48px">🚶‍♀️🚶</div><b>Chọn một nơi để cùng dạo</b><span class="note" style="color:#ccc">Khi bạn chọn, màn hình người ấy cũng tới đúng chỗ đó.</span></div></div>
   <div class="togg">
     <a class="btn" id="openMaps" target="_blank" rel="noopener">🗺️ Mở trong Google Maps</a>
@@ -35,27 +44,46 @@
   <div class="card hidden" id="ourBox"><h3>⭐ Nơi hai đứa muốn đến (trên Bản đồ)</h3><div class="pl" id="our"></div></div>
 </div>
 <div id="toast"></div><div class="fx" id="fx"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
-import { sb, $, $$, esc, toast, boot, header, joinMain, featureChannel, hearts, notifyPush, loadState, saveState } from './common.js';
+import { sb, $, $$, esc, toast, boot, header, joinMain, featureChannel, hearts, notifyPush, loadState, saveState, ago } from './common.js';
 header('Dạo phố cùng nhau');
 const ctx = await boot();
-joinMain(ctx, 'walk');
+joinMain(ctx, 'walk', () => renderWhere());
 const P = [
   ['Hồ Gươm, Hà Nội', 21.0288, 105.8525, 0], ['Phố cổ Hội An', 15.8771, 108.3274, 90], ['Hồ Xuân Hương, Đà Lạt', 11.9403, 108.4419, 0], ['Nhà thờ Đức Bà, Sài Gòn', 10.7798, 106.6990, 120],
   ['Tháp Eiffel, Paris', 48.8566, 2.2950, 320], ['Tháp Namsan, Seoul', 37.5512, 126.9882, 0], ['Shibuya, Tokyo', 35.6595, 139.7005, 200], ['Fushimi Inari, Kyoto', 34.9671, 135.7727, 90],
   ['Venice, Ý', 45.4337, 12.3380, 60], ['Santorini, Hy Lạp', 36.4618, 25.3753, 250], ['Times Square, New York', 40.7580, -73.9855, 180], ['Marina Bay, Singapore', 1.2833, 103.8607, 70]
 ];
 const ch = featureChannel(ctx, 'walk');
-let cur = await loadState('walk', null);
+let cur = await loadState('walk-' + ctx.me.id, null), paSpot = await loadState('walk-' + ctx.partnerId, null);
+const LL = window.L; const mini = LL.map('mini', { zoomControl: false, attributionControl: false }).setView([20, 105], 2); LL.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(mini);
+const pinI = e => LL.divIcon({ className: '', html: `<div class="wpin">${e}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+let mMe = null, mPa = null, mLine = null;
+const hav = (a, b) => { const R = 6371, t = x => x * Math.PI / 180; const d1 = t(b.lat - a.lat), d2 = t(b.lon - a.lon); const h = Math.sin(d1 / 2) ** 2 + Math.cos(t(a.lat)) * Math.cos(t(b.lat)) * Math.sin(d2 / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)) };
+function renderWhere() {
+  const on = !!ctx.partnerHere; $('#paDot').classList.toggle('on', on);
+  $('#paWhere').textContent = paSpot ? `${ctx.partnerName} đang ở: ${paSpot.name}` : `${ctx.partnerName} chưa đi đâu`;
+  let sub = on ? '🟢 Đang dạo phố cùng bạn' : '⚪ Chưa vào Dạo phố' + (paSpot?.at ? ' · lần cuối ' + ago(paSpot.at) : '');
+  if (paSpot && cur) { const km = hav(cur, paSpot); sub += km < .05 ? ' · 💞 hai đứa đang đứng cùng một chỗ' : ` · cách bạn ${km < 10 ? km.toFixed(1) : Math.round(km).toLocaleString('vi-VN')} km` }
+  $('#paSub').textContent = sub; $('#goPa').classList.toggle('hidden', !paSpot || (cur && hav(cur, paSpot) < .05));
+  [mMe, mPa, mLine].forEach(m => m && mini.removeLayer(m)); mMe = mPa = mLine = null; const pts = [];
+  if (cur) { mMe = LL.marker([cur.lat, cur.lon], { icon: pinI(ctx.myProfile.emoji || '🙂') }).addTo(mini).bindTooltip(ctx.myName); pts.push([cur.lat, cur.lon]) }
+  if (paSpot) { mPa = LL.marker([paSpot.lat, paSpot.lon], { icon: pinI(ctx.partnerProfile.emoji || '💗') }).addTo(mini).bindTooltip(ctx.partnerName); pts.push([paSpot.lat, paSpot.lon]) }
+  if (pts.length === 2) { mLine = LL.polyline(pts, { color: '#ff7aa2', dashArray: '5 7' }).addTo(mini); if (hav(cur, paSpot) > .05) mini.fitBounds(pts, { padding: [25, 25], maxZoom: 14 }); else mini.setView(pts[0], 15) } else if (pts.length) mini.setView(pts[0], 12);
+}
+$('#goPa').onclick = () => { if (paSpot) go({ name: paSpot.name, lat: paSpot.lat, lon: paSpot.lon, h: paSpot.h }, true) };
 function svUrl(p) { return `https://maps.google.com/maps?layer=c&cbll=${p.lat},${p.lon}&cbp=11,${p.h || 0},0,0,0&source=embed&output=svembed` }
 function mapsUrl(p) { return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lon}&heading=${p.h || 0}` }
 function go(p, fromMe) {
   cur = p; $('#empty').classList.add('hidden'); let f = $('#sv iframe'); if (!f) { f = document.createElement('iframe'); f.allowFullscreen = true; f.referrerPolicy = 'no-referrer-when-downgrade'; $('#sv').appendChild(f) } f.src = svUrl(p);
   $('#tag').textContent = '📍 ' + p.name + (p.by && p.by !== ctx.me.id ? ` · ${ctx.partnerName} dẫn đi` : ''); $('#tag').classList.remove('hidden'); $('#openMaps').href = mapsUrl(p);
   $$('.pl button').forEach(b => b.classList.toggle('on', b.dataset.n === p.name)); window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (fromMe) { p.by = ctx.me.id; ch.send({ type: 'broadcast', event: 'go', payload: p }); saveState('walk', p); if (!ctx.partnerHere) notifyPush(ctx, `rủ bạn dạo phố ở ${p.name} 🚶‍♀️`, 'walk.html', 'walk') }
+  renderWhere();
+  if (!fromMe) saveState('walk-' + ctx.me.id, Object.assign({}, p, { by: ctx.me.id, at: new Date().toISOString() }));
+  if (fromMe) { p.by = ctx.me.id; p.at = new Date().toISOString(); ch.send({ type: 'broadcast', event: 'go', payload: p }); saveState('walk-' + ctx.me.id, p); if (!ctx.partnerHere) notifyPush(ctx, `rủ bạn dạo phố ở ${p.name} 🚶‍♀️`, 'walk.html', 'walk') }
 }
-ch.on('broadcast', { event: 'go' }, ({ payload }) => { go(payload, false); toast(`${ctx.partnerName} dẫn bạn tới ${payload.name} 🚶`) })
+ch.on('broadcast', { event: 'go' }, ({ payload }) => { paSpot = payload; if ($('#follow').checked) { go(payload, false); toast(`${ctx.partnerName} dẫn bạn tới ${payload.name} 🚶`) } else { renderWhere(); toast(`${ctx.partnerName} vừa tới ${payload.name}`, 'Tới đó', () => $('#goPa').click()) } })
   .on('broadcast', { event: 'heart' }, () => { hearts(10) }).subscribe();
 const btn = (p, sub) => `<button data-n="${esc(p.name)}" data-lat="${p.lat}" data-lon="${p.lon}" data-h="${p.h || 0}"><b>${esc(p.name)}</b><small>${sub || ''}</small></button>`;
 $('#pl').innerHTML = P.map(([name, lat, lon, h]) => btn({ name, lat, lon, h })).join('');
@@ -63,7 +91,7 @@ document.addEventListener('click', e => { const b = e.target.closest('.pl button
 $('#hrt').onclick = () => { hearts(8); ch.send({ type: 'broadcast', event: 'heart', payload: {} }) };
 const { data: pl } = await sb.from('places').select('*').eq('kind', 'want').limit(20);
 if (pl && pl.length) { $('#ourBox').classList.remove('hidden'); $('#our').innerHTML = pl.map(p => btn({ name: p.name, lat: p.lat, lon: p.lon, h: 0 }, p.note || '')).join('') }
-if (cur) go(cur, false);
+if (cur) go(cur, false); else if (paSpot) go(paSpot, false); renderWhere();
 </script>
 </body>
 </html>

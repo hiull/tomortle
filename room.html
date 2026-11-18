@@ -144,7 +144,7 @@ if(DEMO){ctx={me:{id:'me-demo'},partnerId:'pa-demo',myName:'hius',partnerName:'B
 else{C.header('Phòng chung');ctx=await C.boot()}
 const ME=ctx.me.id,PA=ctx.partnerId,IS_A=ctx.couple.user_a===ME;
 const loadS=async(k,d)=>DEMO?lsGet('demo-'+k,d):await C.loadState(k,d);
-const saveS=(k,v,delay)=>DEMO?lsSet('demo-'+k,v):C.saveState(k,v,delay);
+const saveS=(k,v,delay)=>{if(k===UK(ME))lsSet('roomU-'+ME,v);return DEMO?lsSet('demo-'+k,v):C.saveState(k,v,delay)};
 
 /* ================= catalog ================= */
 const WOOD='#d9a87c';
@@ -201,7 +201,7 @@ const UK=id=>'room-u-'+id;
 let [R,UM,UP]=await Promise.all([loadS(RK,null),loadS(UK(ME),{}),loadS(UK(PA),{})]);
 if(!R||!R.items)R=KIND==='balcony'?defBalcony():defRoom();R.kind=KIND;
 R.items=R.items.filter(i=>CAT[i.t]);R.walls=(R.walls||[]).filter(w=>WCAT[w.t]);R.plant=R.plant||{w:0,at:0};
-UM=UM||{};UP=UP||{};
+UM=UM||{};UP=UP||{};if(!UM.av){const bk=lsGet('roomU-'+ME,null);if(bk&&bk.av)UM=bk}
 
 /* ================= avatar defs ================= */
 const SKIN=['#ffe3cf','#f9d0b0','#eab48f','#c98c64','#8d5a3b'];

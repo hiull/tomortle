@@ -183,6 +183,14 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
 .packs{margin-bottom:8px}
 .modal h4{margin:14px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
 .btn.danger{color:#c0392b}
+.pick{background:var(--soft);border-radius:14px;padding:8px 10px;margin-bottom:10px}
+.pickh{display:flex;align-items:center;gap:8px;font-size:13px}.pickh b{flex:1}.pickh .mini{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:3px 9px;font-size:12px;cursor:pointer;color:var(--ink)}
+.pickrow{display:flex;gap:6px;overflow-x:auto;padding:6px 0 2px}
+.pickrow button{position:relative;flex:0 0 auto;width:58px;height:74px;border-radius:10px;border:2px solid transparent;padding:0;overflow:hidden;cursor:pointer;background:#000;opacity:.45}
+.pickrow button.on{border-color:var(--accent);opacity:1}
+.pickrow button img{width:100%;height:100%;object-fit:cover;display:block}
+.pickrow button span{position:absolute;top:3px;left:3px;background:var(--accent);color:var(--accent-ink);border-radius:50%;width:18px;height:18px;font-size:11px;font-weight:800;line-height:18px;text-align:center}
+.pickrow button.two img{width:50%;float:left}
 </style>
 </head>
 <body>
@@ -244,7 +252,7 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
     <div class="thumbs" id="thumbs"></div>
     <div class="controls card">
       <div class="setgrid">
-        <div><label class="t">Số kiểu ảnh</label><div class="seg" data-shoot="shots"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="6">6</button></div></div>
+        <div><label class="t">Số kiểu ảnh</label><div class="seg" data-shoot="shots"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="6">6</button><button data-v="8">8</button></div></div>
         <div><label class="t">Đếm ngược</label><div class="seg" data-shoot="cd"><button data-v="3">3s</button><button data-v="5">5s</button><button data-v="10">10s</button></div></div>
         <div><label class="t">Nghỉ giữa các kiểu</label><div class="seg" data-shoot="gap"><button data-v="2">2s</button><button data-v="3">3s</button><button data-v="5">5s</button></div></div>
       </div>
@@ -276,6 +284,7 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
         <p class="hint">Chạm sticker để chọn, kéo để di chuyển. Chụm hai ngón (hoặc kéo chấm tròn ở góc) để xoay và phóng to, chấm ✕ để xoá.</p>
       </div>
       <div class="panel card">
+        <div class="pick hidden" id="pickBox"><div class="pickh"><b>🎞️ Chọn ảnh cho vào khung</b><span id="pickN"></span><button class="mini" id="pickAll">Chọn hết</button></div><div class="pickrow" id="pickRow"></div><p class="hint" id="pickHint" style="text-align:left;margin:4px 0 0"></p></div>
         <div class="tabs" id="tabs">
           <button data-tab="frame" class="on">Khung</button>
           <button data-tab="bg">Nền</button>
@@ -580,8 +589,15 @@ function connectToHost(){
   mediaCall=peer.call(hid,localStream);
   if(mediaCall)bindCall(mediaCall);
 }
+function tuneSenders(pc){try{if(!pc)return;for(const snd of pc.getSenders()){if(!snd.track)continue;const p=snd.getParameters();if(!p.encodings||!p.encodings.length)p.encodings=[{}];
+  if(snd.track.kind==='video'){const st=snd.track.getSettings?snd.track.getSettings():{};const w=st.width||1280;p.encodings[0].scaleResolutionDownBy=Math.max(1,w/640);p.encodings[0].maxBitrate=650000;p.encodings[0].maxFramerate=24;p.encodings[0].priority='low';p.encodings[0].networkPriority='low';p.degradationPreference='maintain-framerate'}
+  else{p.encodings[0].priority='high';p.encodings[0].networkPriority='high';p.encodings[0].maxBitrate=48000}
+  snd.setParameters(p).catch(()=>{})}}catch(e){}}
+let unmuteHooked=false;function hookUnmute(){if(unmuteHooked)return;unmuteHooked=true;const f=()=>{const v=$('#vThem');if(v&&v.srcObject&&v.muted){v.muted=false;v.play().catch(()=>{});$('#btnAudio').classList.add('hidden')}};document.addEventListener('pointerdown',f,true)}
+setInterval(async()=>{let a;try{if(!localStream||!mediaCall||!micOn||window.__noMic)return;a=localStream.getAudioTracks()[0];if(a&&a.readyState==='live'&&!a.muted)return;const ns=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});const nt=ns.getAudioTracks()[0];if(a){localStream.removeTrack(a);try{a.stop()}catch(e){}}localStream.addTrack(nt);const pc=mediaCall.peerConnection;const snd=pc&&pc.getSenders().find(s=>s.track&&s.track.kind==='audio')||pc&&pc.getSenders().find(s=>!s.track);snd&&snd.replaceTrack(nt);tuneSenders(pc)}catch(e){if(!a)window.__noMic=true}},4000);
 function bindCall(call){
-  call.on('stream',s=>{remoteStream=s;const v=$('#vThem');v.srcObject=s;$('#waiting').classList.add('hidden');v.play().then(()=>$('#btnAudio').classList.add('hidden')).catch(()=>{v.muted=true;v.play().catch(()=>{});$('#btnAudio').classList.remove('hidden')})});
+  hookUnmute();setTimeout(()=>tuneSenders(call.peerConnection),300);try{call.peerConnection&&call.peerConnection.addEventListener('connectionstatechange',()=>tuneSenders(call.peerConnection))}catch(e){}
+  call.on('stream',s=>{remoteStream=s;const v=$('#vThem');v.srcObject=s;$('#waiting').classList.add('hidden');tuneSenders(call.peerConnection);v.play().then(()=>$('#btnAudio').classList.add('hidden')).catch(()=>{v.muted=true;v.play().catch(()=>{});$('#btnAudio').classList.remove('hidden')})});
   call.on('close',()=>{if(mediaCall===call){remoteStream=null}});
 }
 $('#btnAudio').onclick=()=>{const v=$('#vThem');v.muted=false;v.play().catch(()=>{});$('#btnAudio').classList.add('hidden')};
@@ -610,7 +626,7 @@ function onData(d){
     case 'start':if(!(SESS&&SESS.busy))runSession(d.cfg);break;
     case 'shot':(d.path?CM.download(d.path).then(b=>bufToCanvas(b)):bufToCanvas(d.buf)).then(c=>{
       if(SESS&&SESS.sid===d.sid){SESS.theirs[d.i]=c;renderThumbs()}else{(pending[d.sid]=pending[d.sid]||[])[d.i]=c}
-      if(ED&&ED.sid===d.sid&&ED.shots[d.i]){ED.shots[d.i].them=c;invalidate();buildFilterThumbs()}
+      if(ED&&ED.sid===d.sid&&(ED.all||ED.shots)[d.i]){(ED.all||ED.shots)[d.i].them=c;invalidate();buildFilterThumbs();buildPick()}
     }).catch(console.warn);break;
     case 'photo':(d.path?CM.download(d.path):Promise.resolve(new Blob([d.buf]))).then(raw=>{const b=new Blob([raw],{type:d.type==='image/gif'?'image/gif':'image/png'});const it=addAlbum(b,'them');toast((partnerName||'Người ấy')+(d.type==='image/gif'?' vừa gửi GIF cho bạn ♡':' vừa gửi ảnh cho bạn ♡'),'Xem',()=>viewItem(it))});break;
     case 'needframes':framesUntil=Date.now()+15000;startFrames();break;
@@ -628,7 +644,7 @@ $('#btnFlip').onclick=async()=>{
     const nt=ns.getVideoTracks()[0],old=localStream.getVideoTracks()[0];
     if(old){localStream.removeTrack(old);old.stop()}localStream.addTrack(nt);$('#vMe').srcObject=null;$('#vMe').srcObject=localStream;
     const pc=mediaCall&&mediaCall.peerConnection;if(pc){const snd=pc.getSenders().find(s=>s.track?s.track.kind==='video':false)||pc.getSenders().find(s=>!s.track);snd&&snd.replaceTrack(nt)}
-    applyMirror();
+    applyMirror();tuneSenders(pc);
   }catch(e){toast('Không đổi được camera');facing='user'}
 };
 function mirrorOn(){return $('#mirror').checked&&facing==='user'}
@@ -792,7 +808,7 @@ let mkT=null;$$('[data-k]').forEach(el=>{const k=el.dataset.k;el.addEventListene
 $$('[data-chip]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;const k=g.dataset.chip;let v=b.dataset.v;
   if(k==='bgType'&&v==='image'&&!S.bgImg){$('#bgFile').click();return}
   S[k]=isNaN(+v)?v:+v;syncInputs();frameChanged()}));
-function syncTplUI(){const t=S.tpl||'none';const a=$('#tplMag'),b=$('#tplBp'),cf=$('#customFrame');if(a)a.classList.toggle('hidden',t!=='magazine');if(b)b.classList.toggle('hidden',t!=='boarding');if(cf)cf.classList.toggle('hidden',t!=='none');syncImgFrames();if(S.bd&&S.bd!=='none'&&!SEG&&!segFailed)loadSeg().then(()=>{invalidate();buildFilterThumbs()}).catch(()=>{})}
+function syncTplUI(){const t=S.tpl||'none';const a=$('#tplMag'),b=$('#tplBp'),cf=$('#customFrame');if(a)a.classList.toggle('hidden',t!=='magazine');if(b)b.classList.toggle('hidden',t!=='boarding');if(cf)cf.classList.toggle('hidden',t!=='none');syncImgFrames();if(ED&&ED.all)buildPick();if(S.bd&&S.bd!=='none'&&!SEG&&!segFailed)loadSeg().then(()=>{invalidate();buildFilterThumbs()}).catch(()=>{})}
 function syncInputs(){syncTplUI();
   $$('[data-k]').forEach(el=>{const v=S[el.dataset.k];if(el.type==='checkbox')el.checked=!!v;else el.value=v;const o=el.nextElementSibling;if(o&&o.tagName==='OUTPUT')o.textContent=v});
   $$('[data-chip]').forEach(g=>{const k=g.dataset.chip;g.querySelectorAll('button[data-v]').forEach(b=>{const v=b.dataset.v;b.classList.toggle('on',isNaN(+v)?S[k]===v:Math.abs(+v-S[k])<.001)})});
@@ -1284,12 +1300,21 @@ $('#stFile').onchange=async e=>{for(const f of e.target.files){try{const c=await
 
 /* ============ Editor open & actions ============ */
 function openEditor(shots,sid){
-  ED={sid,shots,stickers:[],sel:null};lastED=ED;
+  ED={sid,all:shots,pick:shots.map((_,i)=>i),shots:shots.slice(),stickers:[],sel:null};lastED=ED;buildPick();
   if(!S.caption){S.caption=`${myName||'Mình'} ♡ ${partnerName||(solo?'':'Người ấy')}`.trim()}
   show('editor');syncInputs();buildFilterThumbs();syncSel();ensureFont(S.font);invalidate();
   $('#btnSend').classList.toggle('hidden',solo);
 }
-$('#btnLastEdit').onclick=()=>{if(lastED){ED=lastED;show('editor');syncInputs();buildFilterThumbs();invalidate()}};
+$('#btnLastEdit').onclick=()=>{if(lastED){ED=lastED;show('editor');syncInputs();buildFilterThumbs();buildPick();invalidate()}};
+function thumbOf(c){if(!c)return '';if(c._thumb)return c._thumb;try{const t=document.createElement('canvas');const k=120/Math.max(c.width,c.height);t.width=Math.round(c.width*k);t.height=Math.round(c.height*k);t.getContext('2d').drawImage(c,0,0,t.width,t.height);c._thumb=t.toDataURL('image/jpeg',.7)}catch(e){return ''}return c._thumb}
+function slotsWanted(){if(S.tpl==='img'&&typeof frameMeta==='function'){const f=frameMeta();if(f)return f.slots.length}if(S.tpl==='magazine')return 4;return 0}
+function buildPick(){const box=$('#pickBox');if(!ED||!ED.all||ED.all.length<2){box.classList.add('hidden');return}box.classList.remove('hidden');
+  $('#pickRow').innerHTML=ED.all.map((sh,i)=>{const k=ED.pick.indexOf(i);return `<button data-i="${i}" class="${k>=0?'on':''} ${sh.me&&sh.them?'two':''}">${sh.me?`<img src="${thumbOf(sh.me)}" alt="">`:''}${sh.them?`<img src="${thumbOf(sh.them)}" alt="">`:''}${k>=0?`<span>${k+1}</span>`:''}</button>`}).join('');
+  $('#pickN').textContent=`${ED.pick.length}/${ED.all.length}`;const w=slotsWanted();
+  $('#pickHint').textContent=w?(ED.pick.length===w?`Vừa khít ${w} ô ✨`:`Khung này có ${w} ô · đang chọn ${ED.pick.length} tấm`):'Chạm để bỏ/chọn ảnh. Thứ tự chạm là thứ tự trong khung.'}
+function applyPick(){ED.shots=ED.pick.map(i=>ED.all[i]);invalidate();buildFilterThumbs();buildPick();if(typeof syncImgFrames==='function')syncImgFrames()}
+$('#pickRow').onclick=e=>{const b=e.target.closest('button');if(!b||!ED)return;const i=+b.dataset.i,k=ED.pick.indexOf(i);if(k>=0){if(ED.pick.length<=1){toast('Phải giữ ít nhất 1 ảnh');return}ED.pick.splice(k,1)}else ED.pick.push(i);applyPick()};
+$('#pickAll').onclick=()=>{if(!ED)return;ED.pick=ED.all.map((_,i)=>i);applyPick()};
 $('#btnRetake').onclick=()=>{ED&&(ED.sel=null);show('room');$('#btnLastEdit').classList.toggle('hidden',!lastED)};
 async function exportBlob(){if(dirty){renderBase(base);dirty=false}const c=document.createElement('canvas');c.width=base.width;c.height=base.height;const x=c.getContext('2d');x.drawImage(base,0,0);drawStickers(x,false);return new Promise(r=>c.toBlob(r,'image/png'))}
 $('#btnSave').onclick=async()=>{const b=await exportBlob();const it=addAlbum(b,'me');downloadBlob(b,fname());toast('Đã lưu ảnh ♡','Xem',()=>viewItem(it))};
