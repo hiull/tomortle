@@ -559,7 +559,7 @@ function homeErr(msg){const e=$('#homeErr');e.innerHTML=msg;e.classList.remove('
 
 async function startCamera(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){throw new Error('nomedia')}
-  const v={facingMode:facing,width:{ideal:1920},height:{ideal:1440}};
+  const v={facingMode:facing,width:{ideal:1280},height:{ideal:960}};
   if(callAppOn()){localStream=await navigator.mediaDevices.getUserMedia({video:v});micOn=false;$('#vMe').srcObject=localStream;applyMirror();return}
   try{localStream=await navigator.mediaDevices.getUserMedia({video:v,audio:{echoCancellation:true,noiseSuppression:true}})}
   catch(e){if(e.name==='NotAllowedError')throw e;localStream=await navigator.mediaDevices.getUserMedia({video:v})}
@@ -618,17 +618,14 @@ function connectToHost(){
   mediaCall=peer.call(hid,localStream);
   if(mediaCall)bindCall(mediaCall);
 }
-function tuneSenders(pc){try{if(!pc)return;for(const snd of pc.getSenders()){if(!snd.track)continue;const p=snd.getParameters();if(!p.encodings||!p.encodings.length)p.encodings=[{}];
-  if(snd.track.kind==='video'){const st=snd.track.getSettings?snd.track.getSettings():{};const w=st.width||1280;const lite=typeof callAppOn==='function'&&callAppOn();p.encodings[0].scaleResolutionDownBy=Math.max(1,w/(lite?400:480));p.encodings[0].maxBitrate=lite?320000:520000;p.encodings[0].maxFramerate=20}
-  else{p.encodings[0].priority='high';p.encodings[0].networkPriority='high';p.encodings[0].maxBitrate=48000}
-  snd.setParameters(p).catch(()=>{});if(snd.track.kind==='video'){try{const q=snd.getParameters();q.degradationPreference='maintain-framerate';snd.setParameters(q).catch(()=>{})}catch(e){}}}}catch(e){}}
+function tuneSenders(){} // giống trang Gọi video: không ép bitrate/độ nét, để trình duyệt tự điều chỉnh theo mạng
 let unmuteHooked=false;function hookUnmute(){if(unmuteHooked)return;unmuteHooked=true;const f=()=>{const v=$('#vThem');if(v&&v.srcObject&&v.muted&&!callAppOn()){v.muted=false;v.play().catch(()=>{});$('#btnAudio').classList.add('hidden')}};document.addEventListener('pointerdown',f,true)}
 // Giữ mic & camera sống. Chỉ xin lại khi track đã CHẾT (ended): trên iPhone, gọi getUserMedia lúc track chỉ "muted" (bị hệ thống tạm ngắt) sẽ làm camera đang chạy tắt luôn → đen màn hình.
 let healing=false;
 async function healTracks(){if(healing||!localStream)return;healing=true;try{
   const pc=mediaCall&&mediaCall.peerConnection;
   const v=localStream.getVideoTracks()[0];
-  if(!v||v.readyState==='ended'){const ns=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1440}}});const nt=ns.getVideoTracks()[0];if(v){localStream.removeTrack(v)}localStream.addTrack(nt);const vm=$('#vMe');vm.srcObject=null;vm.srcObject=localStream;vm.play().catch(()=>{});
+  if(!v||v.readyState==='ended'){const ns=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:960}}});const nt=ns.getVideoTracks()[0];if(v){localStream.removeTrack(v)}localStream.addTrack(nt);const vm=$('#vMe');vm.srcObject=null;vm.srcObject=localStream;vm.play().catch(()=>{});
     if(pc){const snd=pc.getSenders().find(s=>s.track?s.track.kind==='video':false)||pc.getSenders().find(s=>!s.track);snd&&snd.replaceTrack(nt)}applyMirror()}
   const a=localStream.getAudioTracks()[0];
   if(micOn&&!window.__noMic&&a&&a.readyState==='ended'){const ns=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});const nt=ns.getAudioTracks()[0];localStream.removeTrack(a);localStream.addTrack(nt);
@@ -696,7 +693,7 @@ $('#btnLeave').onclick=()=>{try{peer&&peer.destroy()}catch(e){}localStream&&loca
 $('#btnMic').onclick=()=>{micOn=!micOn;localStream&&localStream.getAudioTracks().forEach(t=>t.enabled=micOn);$('#btnMic').classList.toggle('off',!micOn)};
 $('#btnFlip').onclick=async()=>{
   try{facing=facing==='user'?'environment':'user';
-    const ns=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1440}}});
+    const ns=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:960}}});
     const nt=ns.getVideoTracks()[0],old=localStream.getVideoTracks()[0];
     if(old){localStream.removeTrack(old);old.stop()}localStream.addTrack(nt);$('#vMe').srcObject=null;$('#vMe').srcObject=localStream;
     const pc=mediaCall&&mediaCall.peerConnection;if(pc){const snd=pc.getSenders().find(s=>s.track?s.track.kind==='video':false)||pc.getSenders().find(s=>!s.track);snd&&snd.replaceTrack(nt)}
@@ -754,16 +751,17 @@ function tryDial(force){
 let remoteOk=false,rvfcN=0,rvfcOn=false,cmLastN=-1,cmBadSince=0;
 function hookFrames(){const v=$('#vThem');if(rvfcOn||!v||!v.requestVideoFrameCallback)return;rvfcOn=true;const tick=()=>{rvfcN++;v.requestVideoFrameCallback(tick)};v.requestVideoFrameCallback(tick)}
 function remoteFrames(v){if(rvfcOn)return rvfcN;const q=v.getVideoPlaybackQuality&&v.getVideoPlaybackQuality();return q?q.totalVideoFrames:(v.webkitDecodedFrameCount||0)}
-function remoteHealthy(){const v=$('#vThem');hookFrames();if(!v.srcObject||!v.videoWidth)return false;const n=remoteFrames(v);if(n!==cmLastN){cmLastN=n;cmHealthyAt=Date.now()}return Date.now()-cmHealthyAt<1800}
+function remoteHealthy(){const v=$('#vThem');hookFrames();if(!v.srcObject||!v.videoWidth)return false;const n=remoteFrames(v);if(n!==cmLastN){cmLastN=n;cmHealthyAt=Date.now()}return Date.now()-cmHealthyAt<3000}
 function cmWatch(){
   if(!CM_HERE)return;
   const ok=remoteHealthy();
   remoteOk=ok;if(ok){if(cmBadSince)send({t:'stopframes'});cmBadSince=0;$('#themImg').classList.remove('on');$('#netNote').classList.add('hidden');return}
   if(!cmBadSince)cmBadSince=Date.now();
-  // hình đứng → xin ngay luồng ảnh nhẹ qua máy chủ để vẫn thấy nhau; đứng lâu (>8s) mới gọi lại từ đầu
-  send({t:'needframes'});
-  if(Date.now()-cmBadSince>8000)tryDial(false);
-  if(Date.now()-lastFrameAt<3000)$('#netNote').classList.remove('hidden');
+  const pc=mediaCall&&mediaCall.peerConnection,st=pc?pc.connectionState||pc.iceConnectionState:'none',dead=!remoteStream||st==='failed'||st==='closed'||st==='none';
+  // chưa nối được hoặc đứt hẳn thì mới gọi lại (giống trang Gọi video); chỉ chững thì để WebRTC tự hồi
+  if(dead||Date.now()-cmBadSince>20000)tryDial(false);
+  // hình đứng lâu (>6s) mới tạm gửi ảnh nhẹ qua máy chủ để vẫn thấy nhau
+  if(Date.now()-cmBadSince>6000){send({t:'needframes'});if(Date.now()-lastFrameAt<3000)$('#netNote').classList.remove('hidden')}
 }
 function startFrames(){
   if(framesTimer)return;
