@@ -26,6 +26,7 @@
   <div class="card">
     <h3>💾 Tải kỷ niệm về máy</h3>
     <p class="note">Nên sao lưu mỗi tháng một lần. File chỉ nằm trên máy bạn.</p>
+    <label class="switch" style="margin:4px 0 10px;display:flex;gap:8px;align-items:center;font-weight:600;font-size:14px"><input type="checkbox" id="viaDrive" style="width:20px;height:20px"> ☁️ Gửi lên Google Drive (mở bảng chia sẻ, chọn Drive) thay vì tải về máy</label>
     <button class="btn primary block" id="bJson">📝 Tải chữ (thư, note, câu trả lời, lịch…) – file .json</button>
     <button class="btn block" id="bHtml" style="margin-top:8px">📖 Tải bản đọc được (mở bằng trình duyệt) – file .html</button>
     <button class="btn block" id="bZip" style="margin-top:8px">🖼️ Tải tất cả ảnh & ghi âm – file .zip</button>
@@ -64,7 +65,21 @@ async function dump() {
   const { data: st } = await sb.from('shared_state').select('key,data,updated_at'); out.tables.shared_state = (st || []).filter(r => r.key !== 'turn');
   return out;
 }
-const save = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000) };
+const viaDrive = $('#viaDrive'); try { viaDrive.checked = localStorage.getItem('backupDrive') === '1' } catch (e) { }
+viaDrive.onchange = () => { try { localStorage.setItem('backupDrive', viaDrive.checked ? '1' : '0') } catch (e) { } };
+const save = async (blob, name) => {
+  if (viaDrive.checked) {
+    const file = new File([blob], name, { type: blob.type || 'application/octet-stream' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: name }); toast('Chọn Google Drive (hoặc Lưu vào Tệp → Drive) để cất file nhé ☁️'); return }
+      catch (e) { if (e.name === 'AbortError') return;
+        // Safari chặn chia sẻ nếu đã chờ gom dữ liệu quá lâu sau lúc bấm → cho bấm lại một lần
+        if (e.name === 'NotAllowedError') { toast('File sao lưu đã sẵn sàng ♡', '☁️ Gửi lên Drive', () => navigator.share({ files: [file], title: name }).catch(() => saveFile(blob, name))); return }
+        console.warn(e) }
+    } else toast('Máy này chưa cho chia sẻ file, mình tải về máy trước nhé');
+  }
+  saveFile(blob, name) };
+const saveFile = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000) };
 $('#bJson').onclick = async () => { log('Đang gom dữ liệu…'); const d = await dump(); save(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }), `tomortle-${todayStr()}.json`); toast('Đã tải file sao lưu ♡') };
 $('#bHtml').onclick = async () => {
   log('Đang tạo bản đọc…'); const d = await dump(); const T = d.tables; const who = id => id === ctx.me.id ? ctx.myName : ctx.partnerName; const dt = s => s ? new Date(s).toLocaleString('vi-VN') : '';
