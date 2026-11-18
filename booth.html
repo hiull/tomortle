@@ -599,9 +599,9 @@ function connectToHost(){
   if(mediaCall)bindCall(mediaCall);
 }
 function tuneSenders(pc){try{if(!pc)return;for(const snd of pc.getSenders()){if(!snd.track)continue;const p=snd.getParameters();if(!p.encodings||!p.encodings.length)p.encodings=[{}];
-  if(snd.track.kind==='video'){const st=snd.track.getSettings?snd.track.getSettings():{};const w=st.width||1280;p.encodings[0].scaleResolutionDownBy=Math.max(1,w/640);p.encodings[0].maxBitrate=900000;p.encodings[0].maxFramerate=24}
+  if(snd.track.kind==='video'){const st=snd.track.getSettings?snd.track.getSettings():{};const w=st.width||1280;const lite=typeof callAppOn==='function'&&callAppOn();p.encodings[0].scaleResolutionDownBy=Math.max(1,w/(lite?400:480));p.encodings[0].maxBitrate=lite?320000:520000;p.encodings[0].maxFramerate=20}
   else{p.encodings[0].priority='high';p.encodings[0].networkPriority='high';p.encodings[0].maxBitrate=48000}
-  snd.setParameters(p).catch(()=>{})}}catch(e){}}
+  snd.setParameters(p).catch(()=>{});if(snd.track.kind==='video'){try{const q=snd.getParameters();q.degradationPreference='maintain-framerate';snd.setParameters(q).catch(()=>{})}catch(e){}}}}catch(e){}}
 let unmuteHooked=false;function hookUnmute(){if(unmuteHooked)return;unmuteHooked=true;const f=()=>{const v=$('#vThem');if(v&&v.srcObject&&v.muted&&!callAppOn()){v.muted=false;v.play().catch(()=>{});$('#btnAudio').classList.add('hidden')}};document.addEventListener('pointerdown',f,true)}
 // Giữ mic & camera sống. Chỉ xin lại khi track đã CHẾT (ended): trên iPhone, gọi getUserMedia lúc track chỉ "muted" (bị hệ thống tạm ngắt) sẽ làm camera đang chạy tắt luôn → đen màn hình.
 let healing=false;
@@ -659,6 +659,7 @@ function onData(d){
     }).catch(console.warn);break;
     case 'photo':(d.path?CM.download(d.path):Promise.resolve(new Blob([d.buf]))).then(raw=>{const b=new Blob([raw],{type:d.type==='image/gif'?'image/gif':'image/png'});const it=addAlbum(b,'them');toast((partnerName||'Người ấy')+(d.type==='image/gif'?' vừa gửi GIF cho bạn ♡':' vừa gửi ảnh cho bạn ♡'),'Xem',()=>viewItem(it))});break;
     case 'needframes':framesUntil=Date.now()+15000;startFrames();break;
+    case 'stopframes':framesUntil=0;break;
     case 'frame':showFrame(d.d);break;
   }
 }
@@ -706,7 +707,7 @@ async function enterCouple(){
   CM=window.TMX.connect({onData,onPresence:here=>{const was=CM_HERE;CM_HERE=here;if(here){setStatus('ok');if(!was){toast(partnerName+' đã vào phòng ♡');tryDial(true)}}else{setStatus('wait');$('#waitText').textContent=partnerName+' chưa ở trong phòng chụp…';$('#waiting').classList.remove('hidden')}}});
   if(!new URLSearchParams(location.search).has('go'))CM.invite();
   startCouplePeer();
-  clearInterval(cmCheck);cmCheck=setInterval(cmWatch,2000);
+  clearInterval(cmCheck);cmCheck=setInterval(cmWatch,800);
 }
 function startCouplePeer(){
   if(peer){try{peer.destroy()}catch(e){}}
@@ -723,14 +724,19 @@ function tryDial(force){
   if(mediaCall){try{mediaCall.close()}catch(e){}}
   mediaCall=peer.call(cmPid(CMctx.partnerId),localStream);if(mediaCall)bindCall(mediaCall);
 }
-function remoteHealthy(){const v=$('#vThem');if(!v.srcObject||!v.videoWidth)return false;const t=v.currentTime;const ok=t!==cmLastT;cmLastT=t;if(ok)cmHealthyAt=Date.now();return Date.now()-cmHealthyAt<5000}
+// Đếm khung hình THẬT nhận được (currentTime vẫn chạy khi hình đứng, nên không dùng được để phát hiện khựng)
+let remoteOk=false,rvfcN=0,rvfcOn=false,cmLastN=-1,cmBadSince=0;
+function hookFrames(){const v=$('#vThem');if(rvfcOn||!v||!v.requestVideoFrameCallback)return;rvfcOn=true;const tick=()=>{rvfcN++;v.requestVideoFrameCallback(tick)};v.requestVideoFrameCallback(tick)}
+function remoteFrames(v){if(rvfcOn)return rvfcN;const q=v.getVideoPlaybackQuality&&v.getVideoPlaybackQuality();return q?q.totalVideoFrames:(v.webkitDecodedFrameCount||0)}
+function remoteHealthy(){const v=$('#vThem');hookFrames();if(!v.srcObject||!v.videoWidth)return false;const n=remoteFrames(v);if(n!==cmLastN){cmLastN=n;cmHealthyAt=Date.now()}return Date.now()-cmHealthyAt<1800}
 function cmWatch(){
   if(!CM_HERE)return;
   const ok=remoteHealthy();
-  if(ok){$('#themImg').classList.remove('on');$('#netNote').classList.add('hidden');return}
-  tryDial(false);
-  // live video not flowing (black screen): ask partner for a light picture stream through the server
+  remoteOk=ok;if(ok){if(cmBadSince)send({t:'stopframes'});cmBadSince=0;$('#themImg').classList.remove('on');$('#netNote').classList.add('hidden');return}
+  if(!cmBadSince)cmBadSince=Date.now();
+  // hình đứng → xin ngay luồng ảnh nhẹ qua máy chủ để vẫn thấy nhau; đứng lâu (>8s) mới gọi lại từ đầu
   send({t:'needframes'});
+  if(Date.now()-cmBadSince>8000)tryDial(false);
   if(Date.now()-lastFrameAt<3000)$('#netNote').classList.remove('hidden');
 }
 function startFrames(){
@@ -742,7 +748,7 @@ function startFrames(){
     send({t:'frame',d:c.toDataURL('image/jpeg',.6)});
   },280);
 }
-function showFrame(d){const im=$('#themImg');im.src=d;im.classList.add('on');$('#waiting').classList.add('hidden');lastFrameAt=Date.now()}
+function showFrame(d){lastFrameAt=Date.now();if(remoteOk)return;const im=$('#themImg');im.src=d;im.classList.add('on');$('#waiting').classList.add('hidden');lastFrameAt=Date.now()}
 
 /* ============ Shooting ============ */
 let SESS=null;const pending={};
@@ -798,7 +804,7 @@ async function runSession(cfg){
     await countdown(i===0?cfg.cd:cfg.gap,`Kiểu ${i+1} / ${cfg.shots}`);
     flash();
     const mine=grab(vMe,mirrorOn(),true);SESS.mine[i]=mine;
-    if(remoteStream&&vThem.videoWidth)SESS.backup[i]=grab(vThem,true);else if($('#themImg').classList.contains('on'))SESS.backup[i]=grab($('#themImg'),false);
+    if(remoteStream&&vThem.videoWidth&&(remoteOk||!CM))SESS.backup[i]=grab(vThem,true);else if($('#themImg').classList.contains('on'))SESS.backup[i]=grab($('#themImg'),false);
     renderThumbs();sendShot(SESS.sid,i,mine);
   }
   const box=$('#countdown');
