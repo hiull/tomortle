@@ -288,6 +288,7 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
     <div class="edit-wrap">
       <div class="preview card">
         <canvas id="cv" width="10" height="10"></canvas>
+        <p class="hint hidden" id="autoSaved" style="color:#2a9d8f;font-weight:700"></p>
         <p class="hint">Chạm sticker để chọn, kéo để di chuyển. Chụm hai ngón (hoặc kéo chấm tròn ở góc) để xoay và phóng to, chấm ✕ để xoá.</p>
       </div>
       <div class="panel card">
@@ -849,7 +850,7 @@ function syncInputs(){syncTplUI();
   $$('[data-k]').forEach(el=>{const v=S[el.dataset.k];if(el.type==='checkbox')el.checked=!!v;else el.value=v;const o=el.nextElementSibling;if(o&&o.tagName==='OUTPUT')o.textContent=v});
   $$('[data-chip]').forEach(g=>{const k=g.dataset.chip;g.querySelectorAll('button[data-v]').forEach(b=>{const v=b.dataset.v;b.classList.toggle('on',isNaN(+v)?S[k]===v:Math.abs(+v-S[k])<.001)})});
 }
-let saveT;function frameChanged(){ensureFont(S.font);invalidate();clearTimeout(saveT);saveT=setTimeout(()=>{const o=Object.assign({},S);delete o.bgImg;delete o.overlayImg;store.set('frame',o)},400)}
+let saveT;function frameChanged(){editedNow();ensureFont(S.font);invalidate();clearTimeout(saveT);saveT=setTimeout(()=>{const o=Object.assign({},S);delete o.bgImg;delete o.overlayImg;store.set('frame',o)},400)}
 const fontReady={};function ensureFont(f){if(fontReady[f]||!document.fonts)return;fontReady[f]=1;document.fonts.load(`40px "${f}"`).then(()=>{invalidate()}).catch(()=>{})}
 $('#btnBgImg').onclick=()=>$('#bgFile').click();
 $('#bgFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;S.bgImg=await fileToCanvas(f,2000);S.bgType='image';syncInputs();frameChanged();e.target.value='';canvasBlob(S.bgImg).then(b=>kvSet('bgImg',b))};
@@ -1234,6 +1235,7 @@ function drawStickers(x,handles){
 function pt(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*cv.width/r.width,y:(e.clientY-r.top)*cv.height/r.height}}
 let drag=null;const ptrs=new Map();
 function pinchStart(){const[a,b]=[...ptrs.values()];const st=ED.sel;drag={m:'pinch',d0:Math.max(1,dist(a,b)),a0:Math.atan2(b.y-a.y,b.x-a.x),s0:st.s,r0:st.r,c0:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},p0:{x:st.x,y:st.y}}}
+cv.addEventListener('pointerup',()=>{if(ED)editedNow()});
 cv.addEventListener('pointerdown',e=>{
   if(!ED)return;const p=pt(e);ptrs.set(e.pointerId,p);try{cv.setPointerCapture(e.pointerId)}catch(_){}
   if(ptrs.size>=2){if(ED.sel)pinchStart();return}
@@ -1349,7 +1351,7 @@ $('#stFile').onchange=async e=>{for(const f of e.target.files){try{const c=await
 function openEditor(shots,sid){
   ED={sid,all:shots,pick:shots.map((_,i)=>i),shots:shots.slice(),stickers:[],sel:null};lastED=ED;buildPick();
   if(!S.caption){S.caption=`${myName||'Mình'} ♡ ${partnerName||(solo?'':'Người ấy')}`.trim()}
-  show('editor');syncInputs();buildFilterThumbs();syncSel();ensureFont(S.font);invalidate();
+  show('editor');syncInputs();buildFilterThumbs();syncSel();ensureFont(S.font);invalidate();editedNow();
   $('#btnSend').classList.toggle('hidden',solo);
 }
 $('#btnLastEdit').onclick=()=>{if(lastED){ED=lastED;show('editor');syncInputs();buildFilterThumbs();buildPick();invalidate()}};
@@ -1359,10 +1361,10 @@ function buildPick(){const box=$('#pickBox');if(!ED||!ED.all||ED.all.length<2){b
   $('#pickRow').innerHTML=ED.all.map((sh,i)=>{const k=ED.pick.indexOf(i);return `<button data-i="${i}" class="${k>=0?'on':''} ${sh.me&&sh.them?'two':''}">${sh.me?`<img src="${thumbOf(sh.me)}" alt="">`:''}${sh.them?`<img src="${thumbOf(sh.them)}" alt="">`:''}${k>=0?`<span>${k+1}</span>`:''}</button>`}).join('');
   $('#pickN').textContent=`${ED.pick.length}/${ED.all.length}`;const w=slotsWanted();
   $('#pickHint').textContent=w?(ED.pick.length===w?`Vừa khít ${w} ô ✨`:`Khung này có ${w} ô · đang chọn ${ED.pick.length} tấm`):'Chạm để bỏ/chọn ảnh. Thứ tự chạm là thứ tự trong khung.'}
-function applyPick(){ED.shots=ED.pick.map(i=>ED.all[i]);invalidate();buildFilterThumbs();buildPick();if(typeof syncImgFrames==='function')syncImgFrames()}
+function applyPick(){editedNow();ED.shots=ED.pick.map(i=>ED.all[i]);invalidate();buildFilterThumbs();buildPick();if(typeof syncImgFrames==='function')syncImgFrames()}
 $('#pickRow').onclick=e=>{const b=e.target.closest('button');if(!b||!ED)return;const i=+b.dataset.i,k=ED.pick.indexOf(i);if(k>=0){if(ED.pick.length<=1){toast('Phải giữ ít nhất 1 ảnh');return}ED.pick.splice(k,1)}else ED.pick.push(i);applyPick()};
 $('#pickAll').onclick=()=>{if(!ED)return;ED.pick=ED.all.map((_,i)=>i);applyPick()};
-$('#btnRetake').onclick=()=>{ED&&(ED.sel=null);show('room');$('#btnLastEdit').classList.toggle('hidden',!lastED)};
+$('#btnRetake').onclick=()=>{if(ED&&ED.cloudVer!==editVer)cloudSave(null,true);ED&&(ED.sel=null);show('room');$('#btnLastEdit').classList.toggle('hidden',!lastED)};
 async function exportBlob(){if(dirty){renderBase(base);dirty=false}const c=document.createElement('canvas');c.width=base.width;c.height=base.height;const x=c.getContext('2d');x.drawImage(base,0,0);drawStickers(x,false);return new Promise(r=>c.toBlob(r,'image/png'))}
 $('#btnSave').onclick=async()=>{const b=await exportBlob();const it=addAlbum(b,'me');downloadBlob(b,fname());toast('Đã lưu ảnh ♡','Xem',()=>viewItem(it))};
 async function sendBlob(b){if(!connected()){toast('Người ấy chưa kết nối');return false}if(CM){try{const path=await CM.upload(b,'booth');send({t:'photo',path,type:b.type});toast('Đã gửi cho '+(partnerName||'người ấy')+' ♡');return true}catch(e){toast('Gửi không được, thử lại nhé');return false}}const buf=await b.arrayBuffer();if(send({t:'photo',buf,type:b.type})){toast('Đã gửi cho '+(partnerName||'người ấy')+' ♡');return true}toast('Gửi không được, thử lại nhé');return false}
@@ -1370,7 +1372,18 @@ $('#btnShare').onclick=async()=>{const b=await exportBlob();addAlbum(b,'me');sha
 $('#btnSend').onclick=async()=>{if(!connected()){toast('Người ấy chưa kết nối');return}const b=await exportBlob();if(await sendBlob(b))addAlbum(b,'me')};
 /* album */
 const album=[];
-let lastCloud=0;function addAlbum(blob,from){if(from==='me'&&window.TMX&&window.TMX.toAlbum&&Date.now()-lastCloud>8000){lastCloud=Date.now();window.TMX.toAlbum(blob).then(ok=>ok&&toast('Đã lưu vào Album chung ♡','Xem',()=>location.href='album.html'))}const it={blob,url:URL.createObjectURL(blob),from,t:new Date(),partner:partnerName};album.unshift(it);$('#albumCount').textContent=album.length;renderAlbum();
+/* Tự lưu vào Album chung: sau khi chụp, ảnh trong trình chỉnh được đưa lên album khi ngừng chỉnh 12 giây, khi bấm Chụp lại hoặc khi rời trang.
+   Mỗi lần chỉnh mới (đổi khung, filter, sticker…) thì bản đã lưu được thay bằng bản mới, không sinh ảnh trùng. */
+let editVer=0,cloudBusy=null,autoT=null;
+function cloudSave(blob,quiet){if(!window.TMX||!window.TMX.toAlbum||!ED)return Promise.resolve(false);const ed=ED,ver=editVer;
+  if(ed.cloudVer===ver&&ed.cloudId)return Promise.resolve(true);
+  const run=async()=>{const b=blob||await exportBlob();const r=await window.TMX.toAlbum(b,ed.cloudId);if(r){ed.cloudId=r.id;ed.cloudVer=ver;if(!quiet)toast('Đã lưu vào Album chung ♡','Xem',()=>location.href='album.html');else showSaved()}else toast('Chưa lưu được vào Album chung, kiểm tra mạng nhé','Thử lại',()=>cloudSave(null,false));return !!r};
+  cloudBusy=(cloudBusy||Promise.resolve()).then(run,run);return cloudBusy}
+function showSaved(){const h=$('#autoSaved');if(h){h.textContent='✓ Đã tự lưu vào Album chung';h.classList.remove('hidden')}}
+function editedNow(){editVer++;const h=$('#autoSaved');if(h)h.classList.add('hidden');clearTimeout(autoT);autoT=setTimeout(()=>{if($('#editor').classList.contains('active'))cloudSave(null,true)},12000)}
+addEventListener('pagehide',()=>{if(ED&&ED.cloudVer!==editVer)cloudSave(null,true)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&ED&&ED.cloudVer!==editVer)cloudSave(null,true)});
+function addAlbum(blob,from){if(from==='me'&&blob.type!=='image/gif')cloudSave(blob,false);const it={blob,url:URL.createObjectURL(blob),from,t:new Date(),partner:partnerName};album.unshift(it);$('#albumCount').textContent=album.length;renderAlbum();
   idb('album','readwrite',s=>s.add({blob,from,t:+it.t,partner:partnerName})).then(id=>{if(id!=null)it.id=id});return it}
 (async()=>{const rows=await idb('album','readonly',s=>s.getAll());if(!rows||!rows.length)return;rows.sort((a,b)=>b.t-a.t).forEach(r=>album.push({id:r.id,blob:r.blob,url:URL.createObjectURL(r.blob),from:r.from,t:new Date(r.t),partner:r.partner||''}));$('#albumCount').textContent=album.length;renderAlbum()})();
 function renderAlbum(){const g=$('#albumGrid');g.innerHTML='';$('#albumEmpty').classList.toggle('hidden',album.length>0);
@@ -1397,7 +1410,7 @@ $('#gifMake').onclick=async()=>{const btn=$('#gifMake');btn.disabled=true;btn.te
     const gif=GIFEncoder();
     for(const i of order){const f=frames[i];const d=f.getContext('2d').getImageData(0,0,f.width,f.height).data;const pal=quantize(d,256);const idx=applyPalette(d,pal);gif.writeFrame(idx,f.width,f.height,{palette:pal,delay:gifDelay});await new Promise(r=>setTimeout(r,0))}
     gif.finish();gifBlob=new Blob([gif.bytes()],{type:'image/gif'});
-    $('#gifImg').src=URL.createObjectURL(gifBlob);$('#gifOut').classList.remove('hidden');addAlbum(gifBlob,'me');
+    $('#gifImg').src=URL.createObjectURL(gifBlob);$('#gifOut').classList.remove('hidden');addAlbum(gifBlob,'me');window.TMX&&window.TMX.toAlbum&&window.TMX.toAlbum(gifBlob);
   }catch(e){console.warn(e);toast('Không tạo được GIF, kiểm tra mạng rồi thử lại')}
   btn.disabled=false;btn.textContent='Tạo lại GIF'};
 $('#gifSave').onclick=()=>gifBlob&&downloadBlob(gifBlob,fname('gif'));
@@ -1425,7 +1438,11 @@ try {
       send: o => ch.send({ type: 'broadcast', event: 'm', payload: o }),
       upload: async (blob, folder) => (await uploadMedia(ctx, blob, folder)).path,
       download: async path => { const { data, error } = await sb.storage.from('media').download(path); if (error) throw error; return data },
-      toAlbum: async blob => { try { const b2 = await compressImage(blob, 2400, .92); const { path } = await uploadMedia(ctx, b2, 'album'); const { error } = await sb.from('album').insert({ path, source: 'booth' }); if (error) throw error; ctx.main && ctx.main.send({ type: 'broadcast', event: 'hey', payload: { page: 'booth', text: 'vừa thêm ảnh photobooth vào Album chung 📸', url: 'album.html' } }); return true } catch (e) { console.warn(e); return false } },
+      // replaceId: thay ảnh của dòng album cũ (bản chỉnh mới hơn) thay vì thêm ảnh trùng
+      toAlbum: async (blob, replaceId) => { try { const b2 = await compressImage(blob, 2400, .92); const { path } = await uploadMedia(ctx, b2, 'album');
+        if (replaceId) { const { data: old } = await sb.from('album').select('path').eq('id', replaceId).maybeSingle(); const { error } = await sb.from('album').update({ path }).eq('id', replaceId); if (!error) { if (old && old.path) sb.storage.from('media').remove([old.path]).catch(() => { }); return { id: replaceId } } }
+        const { data, error } = await sb.from('album').insert({ path, source: 'booth', taken_at: new Date().toISOString() }).select('id').single(); if (error) throw error;
+        ctx.main && ctx.main.send({ type: 'broadcast', event: 'hey', payload: { page: 'booth', text: 'vừa thêm ảnh photobooth vào Album chung 📸', url: 'album.html' } }); return { id: data.id } } catch (e) { console.warn('toAlbum', e); return null } },
       invite: () => { const url = location.origin + location.pathname + '?go=1'; ctx.main && ctx.main.send({ type: 'broadcast', event: 'booth', payload: { url } }); }
     };
   } };
