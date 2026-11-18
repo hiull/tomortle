@@ -128,6 +128,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .cl{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}.cl b{font-size:22px}.cl span{flex:1}.cl button{border:1px solid var(--line);background:var(--card);border-radius:50%;width:28px;height:28px;cursor:pointer;color:var(--ink)}
 .prods button u{position:absolute;top:4px;left:50%;transform:translateX(-50%);white-space:nowrap;text-decoration:none;background:#e63946;color:#fff;font-size:10px;font-weight:800;border-radius:6px;padding:1px 4px}.prods button.want{background:#fffbe6}.prods button.want::after{content:"📝";position:absolute;top:2px;right:26px;font-size:12px}.prods button small s,.cl s{opacity:.6}
 .tg{text-decoration:none;background:#e63946;color:#fff;font-size:10px;font-weight:800;border-radius:6px;padding:1px 4px}.cl.done span{text-decoration:line-through;opacity:.5}.cl button[data-t]{border-radius:6px}.cl a{color:var(--accent)}
+.ctabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.ctabs::-webkit-scrollbar{display:none}.ctabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--ink);white-space:nowrap}.ctabs button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .rcp{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}.rcp>b{font-size:30px;width:40px;text-align:center}.rcp span{flex:1;font-size:14px}.rcp small{display:block;font-size:12px;color:var(--muted)}.rcp small i{font-style:normal}.rcp small i.no{color:#e63946;text-decoration:line-through}.rcp button{white-space:nowrap}
 .rc .scan{border-radius:4px}.rc .scan.hit{animation:scanhit .35s}@keyframes scanhit{0%{background:#b9f6ca}100%{background:transparent}}.rc .big b{font-size:17px}.rc #rcL,.rc #rcT{display:block}#rcL{max-height:40vh;overflow:auto}
 .rc{font-family:'Courier New',monospace;text-align:left;background:#fffdf6;color:#333;border-radius:8px;padding:12px;font-size:13px;line-height:1.6}.rc div{display:flex;justify-content:space-between;gap:8px}</style>
@@ -162,8 +163,10 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <button class="btn block" style="margin-top:8px" onclick="this.closest('.modal').classList.remove('on')">Đóng</button>
 </div></div>
 <div class="modal" id="mCook"><div class="sheet">
-  <h3>🍳 Nấu món gì đây?</h3><p class="note" id="cookSub" style="margin:0 0 8px"></p>
-  <div id="cookL" style="max-height:58vh;overflow:auto"></div>
+  <h3>🍳 Nấu món gì đây?</h3><p class="note" id="cookSub" style="margin:0 0 6px"></p>
+  <div class="row" style="gap:6px;margin-bottom:6px"><input class="input" id="cookQ" placeholder="🔎 Tìm món: phở, lẩu, chè…" style="margin:0;flex:1" autocomplete="off"><label class="note" style="display:flex;align-items:center;gap:4px;white-space:nowrap"><input type="checkbox" id="cookOk"> Nấu được</label></div>
+  <div class="ctabs" id="cookC"></div>
+  <div id="cookL" style="max-height:48vh;overflow:auto"></div>
   <div class="row" style="gap:8px;margin-top:10px"><button class="btn" id="cookPantry">🧊 Tủ lạnh</button><button class="btn primary" style="flex:1" onclick="this.closest('.modal').classList.remove('on')">Đóng</button></div>
 </div></div>
 <div class="modal" id="mPantry"><div class="sheet">
@@ -929,10 +932,11 @@ function openCart(){drawMk();$('#mCart').classList.add('on')}
 function mkApply(o,d){let it=MK.cart.find(i=>i.n===o.n);if(!it){if(d<0)return;it={e:o.e,n:o.n,p:o.p,o:o.o,b2g1:o.b2g1,tag:o.tag,by:o.by,q:0};MK.cart.push(it)}it.q+=d;if(it.q<=0)MK.cart=MK.cart.filter(i=>i!==it)}
 function mkAdd(o,d=1){o=Object.assign({},o,{by:ME});mkApply(o,d);sendMk('mkop',{o,d});if(d>0){me.emo={e:o.e,t:NOW+1500};send('emo',{e:o.e});sfx.pop();vib(15);if(tickList(o))return}saveS('market',MK,800);drawMk()}
 /* danh sách đi chợ: mua món nào thì tự gạch món đó */
-const listHit=(o,w)=>{w=norm(w);if(!w)return false;return norm(o.n)===w||norm(o.tag)===w||(w.length>=3&&norm(o.n).includes(w))};
+const tagsOf=t=>String(t||'').split(',').map(norm).filter(Boolean);
+const listHit=(o,w)=>{w=norm(w);if(!w)return false;return norm(o.n)===w||tagsOf(o.tag).includes(w)||(w.length>=3&&norm(o.n).includes(w))};
 function tickList(o){let hit=false;for(const l of MK.list)if(!l.done&&listHit(o,l.n)){l.done=true;hit=true;toast(`Đã có ${l.n} trong giỏ ✓`)}if(hit)mkSave();return hit}
 const wanted=p=>MK.list.some(l=>!l.done&&listHit({n:p[1],tag:p[3]},l.n));
-function findProd(w){w=norm(w);return MD?MD.ALL.filter(a=>norm(a.n).includes(w)||norm(a.tag)===w):[]}
+function findProd(w){w=norm(w);return MD?MD.ALL.filter(a=>norm(a.n).includes(w)||tagsOf(a.tag).includes(w)):[]}
 function goCounter(k){const f=floorOf(k);if(f===KIND){const it=R.items.find(i=>i.t===k);if(it)useItem(it);$('#mFind').classList.remove('on');$('#mList').classList.remove('on');openShop(k)}else toast(`${CAT[k].e} ${CAT[k].n} ở ${MD.FLOORS[f].s}`,'Đi thang máy',()=>nav('room.html?r='+f+(DEMO?'&demo':'')))}
 function drawMk(){if(!IS_MK)return;window.MKC=MK.cart;const b=mkBill(),cnt=mkCount();$('#bCart').textContent=`🛒 Giỏ chung${cnt?` (${cnt} món · ${vnd(b.total)})`:''}`;
  const left=MK.list.filter(l=>!l.done).length;$('#bList').textContent=`📝 Danh sách đi chợ${MK.list.length?` (${MK.list.length-left}/${MK.list.length})`:''}`;
@@ -984,7 +988,7 @@ function topUp(n){MK.budget+=n;mkSave();toast(`Đã nạp ${vnd(n)} vào ví chu
 if(IS_MK){const today=new Date().toISOString().slice(0,10);if(MK.payday!==today){const first=!MK.payday;MK.payday=today;if(!first){MK.budget+=200000;setTimeout(()=>toast('Hôm nay ví chung được nạp thêm 200.000đ 💰'),1500)}mkSave()}}
 /* danh sách đi chợ (dùng chung) */
 function drawList(){const L=$('#listL');if(!L)return;L.innerHTML=MK.list.length?MK.list.map((l,k)=>`<div class="cl ${l.done?'done':''}"><button data-t="${k}">${l.done?'✓':''}</button><span>${esc(l.n)}</span><button data-f="${k}" title="Tìm">🔎</button><button data-x="${k}">✕</button></div>`).join(''):'<p class="note">Chưa có gì. Ghi món cần mua hoặc chọn món muốn nấu bên dưới nhé.</p>';
- const sel=$('#listRecipe');if(sel&&!sel.options.length&&MD)sel.innerHTML='<option value="">🍳 Muốn nấu món… (tự thêm nguyên liệu còn thiếu)</option>'+MD.RECIPES.map((r,k)=>`<option value="${k}">${esc(r[1])}</option>`).join('')}
+ const sel=$('#listRecipe');if(sel&&!sel.options.length&&MD)sel.innerHTML='<option value="">🍳 Muốn nấu món… (tự thêm nguyên liệu còn thiếu)</option>'+MD.RECIPE_CATS.map((c,i)=>`<optgroup label="${esc(c)}">${MD.RECIPES.map((r,k)=>r[3]===i?`<option value="${k}">${esc(r[1])}</option>`:'').join('')}</optgroup>`).join('')}
 function listAdd(n){n=String(n||'').trim().slice(0,40);if(!n||MK.list.some(l=>norm(l.n)===norm(n)&&!l.done))return;MK.list.push({n,done:false,by:ME});mkSave()}
 $('#bList').onclick=()=>{drawList();$('#mList').classList.add('on')};
 $('#listForm').onsubmit=e=>{e.preventDefault();listAdd($('#listIn').value);$('#listIn').value=''};
@@ -1016,13 +1020,24 @@ if(KIND==='kitchen')$('#hint').textContent='Chạm bếp để nấu · tủ l�
 function ptSave(){saveS('pantry',PT,500);send('pt',{PT});window.DISHES=PT.dishes;drawCook()}
 async function stockPantry(cart){try{const pt=Object.assign({items:{},dishes:[]},await loadS('pantry',{}));pt.items=pt.items||{};for(const i of cart){const o=pt.items[i.n]||{e:i.e,q:0,tag:i.tag||''};o.q+=i.q;pt.items[i.n]=o}await saveS('pantry',pt);PT=pt;toast('Đồ đã cất vào tủ lạnh trong Bếp 🍳','Vào bếp',()=>nav('room.html?r=kitchen'+(DEMO?'&demo':'')))}catch(e){console.warn(e)}}
 // nguyên liệu khớp theo nhãn (tag) hoặc đúng tên món
-const ingHit=(alt,n,o)=>alt.split('|').map(norm).some(t=>t===norm(o.tag)||t===norm(n));
+const ingHit=(alt,n,o)=>{const tg=tagsOf(o.tag);return alt.split('|').map(norm).some(t=>tg.includes(t)||t===norm(n))};
 const haveOf=alt=>Object.entries(PT.items).reduce((a,[n,o])=>a+(ingHit(alt,n,o)?o.q:0),0);
 const canCook=r=>r[2].every(([alt,q])=>haveOf(alt)>=q);
+let cookCat=-1;
 function drawCook(){if(KIND!=='kitchen')return;const ready=RECIPES.filter(canCook).length;$('#cookSub').textContent=ready?`Đủ nguyên liệu cho ${ready}/${RECIPES.length} món ✨`:`Tủ lạnh chưa đủ đồ cho món nào, ra Siêu thị mua thêm nhé 🛒 (${RECIPES.length} công thức)`;
- const order=RECIPES.map((r,k)=>[r,k]).sort((a,b)=>canCook(b[0])-canCook(a[0]));
- $('#cookL').innerHTML=order.map(([r,k])=>{const ok=canCook(r);return`<div class="rcp"><b>${icoH(r[0])}</b><span><b>${esc(r[1])}</b><small>${r[2].map(([alt,q])=>`<i class="${haveOf(alt)>=q?'':'no'}">${esc(alt.split('|').join(' / '))}${q>1?' ×'+q:''}</i>`).join(' + ')}</small></span><button class="btn small ${ok?'primary':''}" data-k="${k}" ${ok?'':'disabled'}>Nấu</button></div>`}).join('');
- const it=Object.entries(PT.items).filter(([,o])=>o.q>0);$('#pantryL').innerHTML=it.length?it.map(([n,o])=>`${icoH(o.e,'ico s')} ${esc(n)} ×${o.q}`).join(' · '):'Tủ lạnh trống trơn 🥲'}
+ const C2=MD.RECIPE_CATS;$('#cookC').innerHTML=`<button data-c="-1" class="${cookCat<0?'on':''}">Tất cả</button>`+C2.map((c,i)=>{const n=RECIPES.filter(r=>r[3]===i&&canCook(r)).length;return`<button data-c="${i}" class="${cookCat===i?'on':''}">${esc(c)}${n?` · ${n}✓`:''}</button>`}).join('');
+ const q=norm($('#cookQ').value),only=$('#cookOk').checked;
+ const order=RECIPES.map((r,k)=>[r,k]).filter(([r])=>(cookCat<0||r[3]===cookCat)&&(!q||norm(r[1]).includes(q))&&(!only||canCook(r))).sort((a,b)=>canCook(b[0])-canCook(a[0]));
+ $('#cookL').innerHTML=order.length?order.map(([r,k])=>{const ok=canCook(r);return`<div class="rcp"><b>${icoH(r[0])}</b><span><b>${esc(r[1])}</b><small>${r[2].map(([alt,q])=>`<i class="${haveOf(alt)>=q?'':'no'}">${esc(alt.split('|').join(' / '))}${q>1?' ×'+q:''}</i>`).join(' + ')}</small></span>${ok?`<button class="btn small primary" data-k="${k}">Nấu</button>`:`<button class="btn small" data-buy="${k}" title="Thêm nguyên liệu thiếu vào danh sách đi chợ">📝</button>`}</div>`}).join(''):'<p class="note">Không có món nào khớp 🥲</p>';
+ const it=Object.entries(PT.items).filter(([,o])=>o.q>0);$('#pantryL').innerHTML=it.length?it.map(([n,o])=>`<div class="cl"><b>${icoH(o.e)}</b><span>${esc(n)} ×${o.q}</span><button class="btn small" data-serve="${esc(n)}">🍽️ Bày ra bàn</button></div>`).join(''):'Tủ lạnh trống trơn 🥲'}
+$('#cookC').onclick=e=>{const b=e.target.closest('button');if(!b)return;cookCat=+b.dataset.c;drawCook();$('#cookL').scrollTop=0};
+$('#cookQ').oninput=drawCook;$('#cookOk').onchange=drawCook;
+// món chưa đủ đồ → thêm phần còn thiếu vào danh sách đi chợ chung
+$('#cookL').addEventListener('click',async e=>{const b=e.target.closest('[data-buy]');if(!b)return;const r=RECIPES[+b.dataset.buy];const mk=Object.assign({cart:[],list:[]},await loadS('market',{}));mk.list=mk.list||[];let n=0;
+ for(const[alt,q]of r[2])if(haveOf(alt)<q){const w=alt.split('|')[0];if(!mk.list.some(l=>!l.done&&norm(l.n)===norm(w))){mk.list.push({n:w,done:false,by:ME});n++}}
+ await saveS('market',mk);toast(n?`Đã ghi ${n} nguyên liệu cho ${r[1]} vào danh sách đi chợ 📝`:'Đã có trong danh sách đi chợ rồi','🛒 Đi chợ',()=>nav('room.html?r=market'+(DEMO?'&demo':'')))});
+// đồ mua sẵn (gà rán, bánh, trái cây…) bày thẳng ra bàn ăn
+$('#pantryL').onclick=e=>{const b=e.target.closest('[data-serve]');if(!b)return;const n=b.dataset.serve,o=PT.items[n];if(!o)return;o.q--;if(o.q<=0)delete PT.items[n];PT.dishes.push({id:nid(),e:o.e,n,b:2,by:ME});ptSave();burst(me,'🍽️',3);toast(`Đã bày ${n} ra bàn ăn 🍽️`)};
 function openCook(){drawCook();$('#mPantry').classList.remove('on');$('#mCook').classList.add('on')}
 function openPantry(){drawCook();$('#mPantry').classList.add('on')}
 $('#cookPantry').onclick=()=>{$('#mCook').classList.remove('on');openPantry()};
