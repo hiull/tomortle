@@ -667,12 +667,18 @@ function setStatus(k){
   if(k==='wait')$('#waitText').textContent='Gửi link mời cho người ấy để vào phòng nhé';
   if(k==='nohost')$('#waitText').textContent='Chưa thấy phòng. Nhờ người ấy mở phòng trước hoặc kiểm tra lại mã.';
 }
+let clockOff=null,clockRtt=1e9;
+function clockPing(){send({t:'ping',a:Date.now()})}
+setInterval(()=>{if(connected())clockPing()},3000);
+setInterval(()=>{clockRtt*=1.5},30000); // cho phép cập nhật khi mạng đổi
 function onData(d){
+  if(d.t==='ping'){send({t:'pong',a:d.a,b:Date.now()});return}
+  if(d.t==='pong'){const rtt=Date.now()-d.a;if(rtt<=clockRtt){clockRtt=rtt;clockOff=d.b-(d.a+rtt/2)}return}
   if(!d||typeof d!=='object')return;
   switch(d.t){
     case 'hello':partnerName=(d.name||'').slice(0,20);$('#tagThem').textContent=partnerName||'Người ấy';setStatus('ok');break;
     case 'cfg':shootCfg=Object.assign({},shootCfg,d.cfg);store.set('shootCfg',shootCfg);syncSeg();break;
-    case 'start':if(!(SESS&&SESS.busy))runSession(d.cfg);break;
+    case 'start':if(!(SESS&&SESS.busy)){const c=Object.assign({},d.cfg);c.atLocal=c.at&&clockOff!=null?c.at-clockOff:Date.now();runSession(c)}break;
     case 'shot':(d.path?CM.download(d.path).then(b=>bufToCanvas(b)):bufToCanvas(d.buf)).then(c=>{
       if(SESS&&SESS.sid===d.sid){SESS.theirs[d.i]=c;renderThumbs()}else{(pending[d.sid]=pending[d.sid]||[])[d.i]=c}
       if(ED&&ED.sid===d.sid&&(ED.all||ED.shots)[d.i]){(ED.all||ED.shots)[d.i].them=c;invalidate();buildFilterThumbs();buildPick()}
@@ -775,6 +781,7 @@ let SESS=null;const pending={};
 $('#btnShoot').onclick=()=>{
   if(SESS&&SESS.busy)return;ensureAudio();
   const cfg=Object.assign({},shootCfg,{sid:Date.now().toString(36)+Math.random().toString(36).slice(2,6)});
+  cfg.at=Date.now()+(clockOff==null?900:Math.min(2500,Math.max(700,clockRtt*2+400)));cfg.atLocal=cfg.at;
   send({t:'start',cfg});runSession(cfg);
 };
 function grab(video,mirror,adj){
@@ -809,6 +816,9 @@ function applyCam(c){
 }
 function countdown(sec,label){return new Promise(res=>{const box=$('#countdown'),num=box.querySelector('.num');box.classList.remove('hidden');box.querySelector('.sub').textContent=label;let n=Math.max(1,sec);
   const tick=()=>{if(n<=0){num.textContent='';res();return}num.textContent=n;num.classList.remove('pop');void num.offsetWidth;num.classList.add('pop');beep(n===1?1320:880);n--;setTimeout(tick,1000)};tick()})}
+const SHOT_PAUSE=.6; // nghỉ giữa 2 kiểu (giây) để kịp đổi dáng sau tiếng chụp
+function countdownTo(target,label){return new Promise(res=>{const box=$('#countdown'),num=box.querySelector('.num');box.classList.remove('hidden');box.querySelector('.sub').textContent=label;let shown=null;
+  const tick=()=>{const left=target-Date.now();if(left<=0){num.textContent='';res();return}const n=Math.ceil(left/1000);if(n!==shown){shown=n;num.textContent=n;num.classList.remove('pop');void num.offsetWidth;num.classList.add('pop');beep(n===1?1320:880)}setTimeout(tick,Math.min(left,left%1000||1000,50))};tick()})}
 function flash(){const f=$('#flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');beep(1800,.05,.05);setTimeout(()=>beep(600,.12,.04),60)}
 function sendShot(sid,i,c){if(!c||!connected())return;c.toBlob(async b=>{if(!b)return;if(CM){try{const path=await CM.upload(b,'booth');send({t:'shot',sid,i,path})}catch(e){console.warn(e);toast('Gửi ảnh cho người ấy bị lỗi')}}else b.arrayBuffer().then(buf=>send({t:'shot',sid,i,buf}))},'image/jpeg',.95)}
 function renderThumbs(){const box=$('#thumbs');box.innerHTML='';if(!SESS)return;
@@ -821,7 +831,8 @@ async function runSession(cfg){
   $('#btnShoot').disabled=true;$$('[data-shoot] button').forEach(b=>b.disabled=true);renderThumbs();
   const vMe=$('#vMe'),vThem=$('#vThem');
   for(let i=0;i<cfg.shots;i++){
-    await countdown(i===0?cfg.cd:cfg.gap,`Kiểu ${i+1} / ${cfg.shots}`);
+    const target=(cfg.atLocal||Date.now())+(cfg.cd+i*(cfg.gap+SHOT_PAUSE))*1000;
+    await countdownTo(target,`Kiểu ${i+1} / ${cfg.shots}`);
     flash();
     const mine=grab(vMe,mirrorOn(),true);SESS.mine[i]=mine;
     if(remoteStream&&vThem.videoWidth&&(remoteOk||!CM))SESS.backup[i]=grab(vThem,true);else if($('#themImg').classList.contains('on'))SESS.backup[i]=grab($('#themImg'),false);
