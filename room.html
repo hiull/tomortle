@@ -123,12 +123,14 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 
 <style>.prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;max-height:55vh;overflow:auto}
 .prods button{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:var(--ink)}
-.prods button b{font-size:28px;line-height:1.1}.prods button small{color:var(--muted)}.prods button.in{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.prods button{position:relative;touch-action:manipulation;-webkit-user-select:none;user-select:none}.prods button:active{transform:scale(.94)}.prods button b{font-size:28px;line-height:1.1}.prods button i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--soft);font-style:normal;font-weight:800;line-height:24px}.prods button em{position:absolute;top:3px;right:3px;min-width:20px;height:20px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-style:normal;font-weight:800;font-size:12px;line-height:20px;padding:0 5px}
+.incart{margin-top:10px;padding:8px 10px;border-radius:12px;background:var(--soft);font-size:14px;line-height:1.7;max-height:20vh;overflow:auto}.prods button small{color:var(--muted)}.prods button.in{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 .cl{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}.cl b{font-size:22px}.cl span{flex:1}.cl button{border:1px solid var(--line);background:var(--card);border-radius:50%;width:28px;height:28px;cursor:pointer;color:var(--ink)}
 .rc{font-family:'Courier New',monospace;text-align:left;background:#fffdf6;color:#333;border-radius:8px;padding:12px;font-size:13px;line-height:1.6}.rc div{display:flex;justify-content:space-between;gap:8px}</style>
 <div class="modal" id="mShop"><div class="sheet">
   <h3 id="shopT"></h3><p class="note" id="shopSub" style="margin:0 0 8px"></p>
   <div class="prods" id="shopG"></div>
+  <div class="incart" id="shopIn"></div>
   <div class="row" style="gap:8px;margin-top:10px"><button class="btn" id="shopCart">👀 Xem giỏ</button><button class="btn primary" style="flex:1" onclick="this.closest('.modal').classList.remove('on')">Xong</button></div>
 </div></div>
 <div class="modal" id="mCart"><div class="sheet">
@@ -297,7 +299,7 @@ function drawShop(it,c){const G=GOODS[it.t]||[];
  if(it.t==='snacks'){parts(it,[[.03,.97,.35,.95,0,62,c]]);if(frontVis(it)){fquad(it,.06,.94,.35,4,58,shade(c,-.3),null);let k=0;for(const z of[6,25,44]){fquad(it,.06,.94,.35,z-2,z,shade(c,.15),null);for(const a of[.17,.39,.61,.83]){const p=lp3(it,a,.3,z+8);emj(G[k++%G.length],p[0],p[1],11)}}}return}
  if(it.t==='drinks'){parts(it,[[.08,.92,.1,.9,0,66,c]]);if(frontVis(it)){fquad(it,.14,.86,.1,6,60,'rgba(235,248,255,.85)',null);let k=0;for(const z of[12,30,48])for(const a of[.32,.68]){const p=lp3(it,a,.08,z);emj(G[k++%G.length],p[0],p[1],10)}}return}
  if(it.t==='checkout'){parts(it,[[0,1,.2,.9,0,34,c],[.62,.92,.3,.7,34,12,'#6d6875']]);const p=lp3(it,.3,.55,38);emj('🧾',p[0],p[1],12);const q=lp3(it,.77,.5,52);emj('💳',q[0],q[1],10);return}
- if(it.t==='cartrack'){const p=lp3(it,.5,.5,14);emj('🛒',p[0],p[1],28);return}
+ if(it.t==='cartrack'){const p=lp3(it,.5,.5,14);const G2=(window.MKC||[]).flatMap(i=>Array(Math.min(i.q,3)).fill(i.e)).slice(0,8);G2.forEach((e,k)=>emj(e,p[0]-8+(k%4)*5,p[1]-12-Math.floor(k/4)*6,10));emj('🛒',p[0],p[1],28);return}
  parts(it,[[.05,.95,.1,.9,0,CAT[it.t].h,c]]);const n=G.length;for(let i=0;i<n;i++){const a=(i+.5)/n,p=lp3(it,.1+a*.8,.5+(i%2?.12:-.12),CAT[it.t].h+5);emj(G[i],p[0],p[1],it.t==='produce'?13:12)}}
 
 /* ================= time / env ================= */
@@ -715,7 +717,7 @@ let saveUT;function saveU(){UM.pos={x:me.x,y:me.y};clearTimeout(saveUT);saveUT=s
 let roomT;function saveRoom(bcast=true){BM=blockedMap();petCache.k=-1;clearTimeout(roomT);roomT=setTimeout(()=>{saveS(RK,R);if(bcast)send('room',{R})},300)}
 function onMsg(m){
  switch(m.t){
- case'hello':sendSnap();break;
+ case'hello':sendSnap();if(KIND==='market')send('mk',{MK});break;
  case'snap':pa.path=[];if(m.seat){applySeat(pa,m.seat)}else{pa.seat=null;pa.pose='stand';pa.x=m.x;pa.y=m.y;pa.face=m.face;pa.flip=m.flip;if(m.path)walkTo(pa,Math.floor(m.path[0]),Math.floor(m.path[1]))}break;
  case'go':{if(Math.hypot(m.x-pa.x,m.y-pa.y)>1.6||pa.seat){pa.seat=null;pa.pose='stand';pa.x=m.x;pa.y=m.y}const then=m.then;walkTo(pa,m.tx,m.ty,()=>{if(then?.seat)applySeat(pa,then.seat);if(then?.face){faceToward(pa,then.face[0],then.face[1])}});break}
  case'seat':pa.path=[];if(m.seat)applySeat(pa,m.seat);else{standUp(pa);pa.x=m.x;pa.y=m.y}break;
@@ -727,6 +729,7 @@ function onMsg(m){
  case'ball':pet.ball=m.p;pet.ballT=Date.now()+4000;break;
  case'ttt':tttRecv(m);break;
  case'mk':MK=m.MK;drawMk();break;
+ case'mkop':mkApply(m.e,m.n,m.p,m.d,m.by);if(m.d>0)pa.emo={e:m.e,t:NOW+1500};drawMk();break;
  }
 }
 function fixMe(){if(me.seat&&!itemById(me.seat.id)){me.seat=null;me.pose='stand'}if(!me.seat){const tx=Math.floor(me.x),ty=Math.floor(me.y);if(!inB(tx,ty)||BM[tx][ty]){const[a,b]=nearestFree(me.x,me.y);me.x=a+.5;me.y=b+.5;me.path=[]}}else applySeat(me,me.seat)}
@@ -801,9 +804,9 @@ function itemMenu(it,sx,sy){const c=CAT[it.t];const B=[];let sub='';
  case'telescope':goUse('🔭 Ngắm sao',()=>{const ph=dayPhase();me.emo={e:ph==='night'?'🌟':'☁️',t:NOW+3000};send('emo',{e:'🔭'});if(ph==='night'){for(let i=0;i<6;i++)setTimeout(()=>spawn(OX+(Math.random()-.5)*200,60+Math.random()*60,'⭐',{vy:-4,life:2}),i*200);toast('Trăng đêm nay '+moonName()+' 🌙')}else toast('Trời còn sáng, tối quay lại ngắm sao nhé ✨')},1);break;
  case'flowerbed':goUse('🌷 Hái tặng một bông',()=>{burst(me,'🌷',3);send('emo',{e:'🌷',burst:'🌷'});if(livePa())toPartner('kiss')},1);break;
  case'grill':goUse('🍢 Nướng đồ ăn',()=>{burst(me,'🍢',4);send('emo',{e:'🍢',burst:'🍢'});toast('Thơm quá! Lần gặp nhau đi ăn đồ nướng nhé 😋')},1);break;
- case'produce':case'snacks':case'drinks':case'frozen':case'bakery':case'florist':goUse('🛒 Chọn đồ bỏ giỏ',()=>openShop(it.t),1);goUse('👀 Xem giỏ chung',openCart);break;
+ case'produce':case'snacks':case'drinks':case'frozen':case'bakery':case'florist':B.push(['🛒 Chọn đồ bỏ giỏ',()=>{useItem(it);openShop(it.t)},1]);B.push(['👀 Xem giỏ chung',openCart]);break;
  case'checkout':goUse('🧾 Thanh toán',checkout,1);goUse('👀 Xem giỏ chung',openCart);break;
- case'cartrack':goUse('🛒 Xem giỏ chung',openCart,1);break;
+ case'cartrack':B.push(['🛒 Xem giỏ chung',openCart,1]);break;
  case'lantern':goUse(R.light?'🌙 Tắt đèn lồng':'🏮 Thắp đèn lồng',()=>{R.light=!R.light;saveRoom();syncHud()},1);break;
  case'vase':goUse('🌸 Ngửi hoa',()=>{me.emo={e:'🌸',t:NOW+2200};send('emo',{e:'🌸'})},1);break;
  }
@@ -848,14 +851,16 @@ function mkSave(){saveS('market',MK,600);send('mk',{MK});drawMk()}
 let shopKind=null;
 function openShop(t){shopKind=t;$('#shopT').textContent=CAT[t].e+' '+CAT[t].n;drawMk();$('#mShop').classList.add('on')}
 function openCart(){drawMk();$('#mCart').classList.add('on')}
-function mkAdd(e,n,p,d=1){let it=MK.cart.find(i=>i.n===n);if(!it){if(d<0)return;it={e,n,p,q:0,by:ME};MK.cart.push(it)}it.q+=d;if(it.q<=0)MK.cart=MK.cart.filter(i=>i!==it);if(d>0){me.emo={e,t:NOW+1800};send('emo',{e});sfx.pop()}mkSave()}
-function drawMk(){if(KIND!=='market')return;const tot=mkTotal(),cnt=mkCount();$('#bCart').textContent=`🛒 Giỏ chung${cnt?` (${cnt} món · ${vnd(tot)})`:''}`;
- if(shopKind){$('#shopSub').textContent=`Giỏ: ${cnt} món · ${vnd(tot)} / ví ${vnd(MK.budget)}`;$('#shopG').innerHTML=PROD[shopKind].map(([e,n,p])=>{const q=MK.cart.find(i=>i.n===n)?.q||0;return`<button data-n="${esc(n)}" class="${q?'in':''}"><b>${e}</b>${esc(n)}<small>${vnd(p)}${q?` · ×${q}`:''}</small></button>`}).join('')}
+function mkApply(e,n,p,d,by){let it=MK.cart.find(i=>i.n===n);if(!it){if(d<0)return;it={e,n,p,q:0,by};MK.cart.push(it)}it.q+=d;if(it.q<=0)MK.cart=MK.cart.filter(i=>i!==it)}
+function mkAdd(e,n,p,d=1){mkApply(e,n,p,d,ME);send('mkop',{e,n,p,d,by:ME});if(d>0){me.emo={e,t:NOW+1500};sfx.pop();vib(15)}saveS('market',MK,800);drawMk()}
+function drawMk(){if(KIND!=='market')return;window.MKC=MK.cart;const tot=mkTotal(),cnt=mkCount();$('#bCart').textContent=`🛒 Giỏ chung${cnt?` (${cnt} món · ${vnd(tot)})`:''}`;
+ if(shopKind){$('#shopSub').textContent=`Giỏ: ${cnt} món · ${vnd(tot)} / ví ${vnd(MK.budget)}`;$('#shopG').innerHTML=PROD[shopKind].map(([e,n,p])=>{const q=MK.cart.find(i=>i.n===n)?.q||0;return`<button data-n="${esc(n)}" class="${q?'in':''}">${q?`<i data-m="1">−</i><em>${q}</em>`:''}<b>${e}</b>${esc(n)}<small>${vnd(p)}</small></button>`}).join('');
+  $('#shopIn').innerHTML=MK.cart.length?'🛒 <b>Trong giỏ:</b> '+MK.cart.map(i=>`${i.e}×${i.q}`).join(' · '):'🛒 Giỏ đang trống, chạm món hàng để bỏ vào giỏ'}
  $('#cartL').innerHTML=MK.cart.length?MK.cart.map((i,k)=>`<div class="cl"><b>${i.e}</b><span>${esc(i.n)}<br><small class="note">${vnd(i.p)} · ${i.by===ME?'bạn chọn':esc(ctx.partnerName)+' chọn'}</small></span><button data-k="${k}" data-d="-1">−</button>${i.q}<button data-k="${k}" data-d="1">+</button></div>`).join(''):'<p class="note">Giỏ đang trống. Ra quầy hàng nhặt đồ nhé 🛒</p>';
  if(document.activeElement!==$('#mkBudget'))$('#mkBudget').value=MK.budget;
  const left=MK.budget-tot;$('#cartTot').innerHTML=`Tổng: ${vnd(tot)} · ${left>=0?`còn ${vnd(left)}`:`<span style="color:#e63946">vượt ${vnd(-left)} 😱</span>`}`;
  const h=MK.hist||[];$('#cartHist').textContent=h.length?`Đã đi chợ ${h.length} lần · tổng chi ${vnd(h.reduce((a,x)=>a+x.total,0))}`:''}
-$('#shopG').onclick=e=>{const b=e.target.closest('button');if(!b)return;const pr=PROD[shopKind].find(x=>x[1]===b.dataset.n);if(pr)mkAdd(...pr)};
+$('#shopG').onclick=e=>{const b=e.target.closest('button');if(!b)return;const pr=PROD[shopKind].find(x=>x[1]===b.dataset.n);if(pr)mkAdd(...pr,e.target.closest('[data-m]')?-1:1)};
 $('#shopCart').onclick=()=>{$('#mShop').classList.remove('on');openCart()};
 $('#cartL').onclick=e=>{const b=e.target.closest('button[data-k]');if(!b)return;const i=MK.cart[+b.dataset.k];if(i)mkAdd(i.e,i.n,i.p,+b.dataset.d)};
 $('#mkBudget').onchange=e=>{MK.budget=Math.max(0,+e.target.value||0);mkSave()};

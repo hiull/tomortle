@@ -262,6 +262,8 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
         <div><label class="t">Nghỉ giữa các kiểu</label><div class="seg" data-shoot="gap"><button data-v="2">2s</button><button data-v="3">3s</button><button data-v="5">5s</button></div></div>
       </div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
+        <p class="note hidden" id="camWarn" style="background:#fff3cd;color:#7a5a00;border-radius:12px;padding:8px 10px;text-align:left">📵 Camera của bạn đang bị app khác chiếm. Nếu đang gọi Messenger/Insta: <b>tắt camera trong cuộc gọi</b> (vẫn giữ tiếng), rồi quay lại đây.</p>
+        <label class="switch"><input type="checkbox" id="callApp"> 📞 Đang gọi Messenger/Insta (nói chuyện bên đó, web chỉ dùng camera)</label>
         <label class="switch"><input type="checkbox" id="mirror" checked> Lật ảnh như soi gương</label>
         <label class="switch"><input type="checkbox" id="oneCam"> Chụp 1 mình (strip 1 người)</label>
         <button class="btn small" id="btnCamAdj">🎛️ Chỉnh camera</button>
@@ -538,6 +540,7 @@ function homeErr(msg){const e=$('#homeErr');e.innerHTML=msg;e.classList.remove('
 async function startCamera(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){throw new Error('nomedia')}
   const v={facingMode:facing,width:{ideal:1920},height:{ideal:1440}};
+  if(callAppOn()){localStream=await navigator.mediaDevices.getUserMedia({video:v});micOn=false;$('#vMe').srcObject=localStream;applyMirror();return}
   try{localStream=await navigator.mediaDevices.getUserMedia({video:v,audio:{echoCancellation:true,noiseSuppression:true}})}
   catch(e){if(e.name==='NotAllowedError')throw e;localStream=await navigator.mediaDevices.getUserMedia({video:v})}
   $('#vMe').srcObject=localStream;applyMirror();
@@ -599,7 +602,7 @@ function tuneSenders(pc){try{if(!pc)return;for(const snd of pc.getSenders()){if(
   if(snd.track.kind==='video'){const st=snd.track.getSettings?snd.track.getSettings():{};const w=st.width||1280;p.encodings[0].scaleResolutionDownBy=Math.max(1,w/640);p.encodings[0].maxBitrate=900000;p.encodings[0].maxFramerate=24}
   else{p.encodings[0].priority='high';p.encodings[0].networkPriority='high';p.encodings[0].maxBitrate=48000}
   snd.setParameters(p).catch(()=>{})}}catch(e){}}
-let unmuteHooked=false;function hookUnmute(){if(unmuteHooked)return;unmuteHooked=true;const f=()=>{const v=$('#vThem');if(v&&v.srcObject&&v.muted){v.muted=false;v.play().catch(()=>{});$('#btnAudio').classList.add('hidden')}};document.addEventListener('pointerdown',f,true)}
+let unmuteHooked=false;function hookUnmute(){if(unmuteHooked)return;unmuteHooked=true;const f=()=>{const v=$('#vThem');if(v&&v.srcObject&&v.muted&&!callAppOn()){v.muted=false;v.play().catch(()=>{});$('#btnAudio').classList.add('hidden')}};document.addEventListener('pointerdown',f,true)}
 // Giữ mic & camera sống. Chỉ xin lại khi track đã CHẾT (ended): trên iPhone, gọi getUserMedia lúc track chỉ "muted" (bị hệ thống tạm ngắt) sẽ làm camera đang chạy tắt luôn → đen màn hình.
 let healing=false;
 async function healTracks(){if(healing||!localStream)return;healing=true;try{
@@ -612,12 +615,18 @@ async function healTracks(){if(healing||!localStream)return;healing=true;try{
     if(pc){const snd=pc.getSenders().find(s=>s.track&&s.track.kind==='audio')||pc.getSenders().find(s=>!s.track);snd&&snd.replaceTrack(nt)}}
   if(pc)tuneSenders(pc);
 }catch(e){console.warn('healTracks',e)}finally{healing=false}}
+// Gọi Messenger/Insta song song: tiếng đi qua app đó → web tắt mic & tiếng người ấy (đỡ vọng, đỡ tranh mic)
+function callAppOn(){const c=$('#callApp');return !!(c&&c.checked)}
+function applyCallApp(){const on=callAppOn();store.set('callApp',on);if(on){micOn=false;$('#btnAudio').classList.add('hidden')}else micOn=true;
+  localStream&&localStream.getAudioTracks().forEach(t=>t.enabled=micOn);$('#btnMic').classList.toggle('off',!micOn);const v=$('#vThem');if(v){v.muted=on;if(!on)v.play().catch(()=>{})}}
+// camera bị app khác giữ (iPhone chỉ cho 1 app dùng camera): track bị muted hoặc không có hình
+let camBadSince=0;function checkCamBusy(){const v=$('#vMe'),t=localStream&&localStream.getVideoTracks()[0];const bad=!!t&&(t.muted||t.readyState==='ended'||!v.videoWidth);if(!bad){camBadSince=0;$('#camWarn').classList.add('hidden');return}if(!camBadSince)camBadSince=Date.now();if(Date.now()-camBadSince>2500)$('#camWarn').classList.remove('hidden')}
 function replayVideos(){for(const id of['#vMe','#vThem']){const v=$(id);if(v&&v.srcObject&&v.paused)v.play().catch(()=>{})}}
-setInterval(()=>{healTracks();replayVideos()},4000);
+setInterval(()=>{healTracks();replayVideos()},4000);setInterval(()=>{if(localStream)checkCamBusy()},1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){healTracks();replayVideos()}});
 function bindCall(call){
   hookUnmute();setTimeout(()=>tuneSenders(call.peerConnection),300);try{call.peerConnection&&call.peerConnection.addEventListener('connectionstatechange',()=>tuneSenders(call.peerConnection))}catch(e){}
-  call.on('stream',s=>{remoteStream=s;const v=$('#vThem');v.srcObject=s;$('#waiting').classList.add('hidden');tuneSenders(call.peerConnection);v.play().then(()=>$('#btnAudio').classList.add('hidden')).catch(()=>{v.muted=true;v.play().catch(()=>{});$('#btnAudio').classList.remove('hidden')})});
+  call.on('stream',s=>{remoteStream=s;const v=$('#vThem');v.srcObject=s;if(callAppOn())v.muted=true;$('#waiting').classList.add('hidden');tuneSenders(call.peerConnection);v.play().then(()=>$('#btnAudio').classList.add('hidden')).catch(()=>{v.muted=true;v.play().catch(()=>{});$('#btnAudio').classList.remove('hidden')})});
   call.on('close',()=>{if(mediaCall===call){remoteStream=null}});
 }
 $('#btnAudio').onclick=()=>{const v=$('#vThem');v.muted=false;v.play().catch(()=>{});$('#btnAudio').classList.add('hidden')};
@@ -669,6 +678,7 @@ $('#btnFlip').onclick=async()=>{
 };
 function mirrorOn(){return $('#mirror').checked&&facing==='user'}
 function applyMirror(){$('#vMe').classList.remove('mirror');applyCamPreview()}
+$('#callApp').checked=store.get('callApp',false);$('#callApp').onchange=applyCallApp;
 $('#mirror').onchange=()=>{store.set('mirror',$('#mirror').checked);applyMirror()};
 $('#mirror').checked=store.get('mirror',true);
 function syncSeg(){$$('[data-shoot]').forEach(g=>{const k=g.dataset.shoot;g.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.v===+shootCfg[k]))})}
