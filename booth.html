@@ -113,7 +113,7 @@ header .sp{flex:1}
 #cv{display:block;margin:0 auto;max-width:100%;max-height:62vh;touch-action:none;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.15);cursor:grab;background:#fff}
 @media(min-width:900px){#cv{max-height:calc(100vh - 170px)}}
 .hint{font-size:12px;color:var(--muted);text-align:center;margin:8px 0 0}
-.panel{padding:0;overflow:hidden}
+.panel{padding:0;overflow:hidden}@media(min-width:900px){.panel{overflow-y:auto;overscroll-behavior:contain}}
 .tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:2}
 .tabs button{flex:1 0 auto;border:0;background:none;padding:12px 14px;cursor:pointer;font-weight:700;color:var(--muted);border-bottom:3px solid transparent}
 .tabs button.on{color:var(--ink);border-color:var(--accent)}
@@ -125,6 +125,11 @@ header .sp{flex:1}
 .chips button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-bottom:6px}
 .fgrid button{position:relative;border:2px solid transparent;border-radius:10px;padding:0;overflow:hidden;cursor:pointer;background:var(--card);aspect-ratio:9/16}
+.fcol{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.fcol::-webkit-scrollbar{display:none}
+.fcol button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 11px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap}
+.fcol button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+#imgFrames{max-height:min(52vh,460px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:2px}
+.fgrid button i{position:absolute;left:3px;top:3px;font-style:normal;font-size:13px;line-height:1;background:rgba(255,255,255,.85);border-radius:50%;width:20px;height:20px;display:grid;place-items:center}
 .fgrid button img{width:100%;height:100%;object-fit:cover;display:block}
 .fgrid button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
 .fgrid button span{position:absolute;right:3px;bottom:3px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:1px 5px}
@@ -196,7 +201,7 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
 <body>
 <div class="app">
   <header>
-    <a class="btn small" href="./" style="text-decoration:none;color:inherit">← Nhà</a><div class="logo"><i>♡</i>Booth</div>
+    <a class="btn small" href="room.html" style="text-decoration:none;color:inherit">← Phòng chung</a><div class="logo"><i>♡</i>Booth</div>
     <div class="sp"></div>
     <button class="btn small" id="btnAlbum">Album <span class="badge" id="albumCount">0</span></button>
     <button class="btn small" id="btnTheme">Giao diện</button>
@@ -298,6 +303,7 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
           <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:6px"><button class="btn small primary" id="likeMoodit">📰 Giống ảnh Moodit</button><button class="btn small primary" id="likeBoarding">✈️ Giống vé máy bay</button></div>
           <div class="chips" data-chip="tpl"><button data-v="none">Khung tự chỉnh</button><button data-v="magazine">📰 Tạp chí</button><button data-v="boarding">✈️ Vé máy bay</button><button data-v="img">🖼️ Khung ảnh</button></div>
           <h4>🖼️ Khung ảnh xinh <span class="hint" style="font-weight:400">(chạm để dùng)</span></h4>
+          <div class="fcol" id="frCol"></div><div class="fcol" id="frSlots"></div>
           <div id="imgFrames" class="fgrid"></div>
           <p class="hint" id="imgFrameHint" style="text-align:left;display:none"></p>
           <div id="tplMag" class="hidden"><label class="crow" style="display:block">Tiêu đề trên cùng<input class="txt" data-k="tplTitle" maxlength="24" style="margin-top:4px"></label></div>
@@ -590,11 +596,25 @@ function connectToHost(){
   if(mediaCall)bindCall(mediaCall);
 }
 function tuneSenders(pc){try{if(!pc)return;for(const snd of pc.getSenders()){if(!snd.track)continue;const p=snd.getParameters();if(!p.encodings||!p.encodings.length)p.encodings=[{}];
-  if(snd.track.kind==='video'){const st=snd.track.getSettings?snd.track.getSettings():{};const w=st.width||1280;p.encodings[0].scaleResolutionDownBy=Math.max(1,w/640);p.encodings[0].maxBitrate=650000;p.encodings[0].maxFramerate=24;p.encodings[0].priority='low';p.encodings[0].networkPriority='low';p.degradationPreference='maintain-framerate'}
+  if(snd.track.kind==='video'){const st=snd.track.getSettings?snd.track.getSettings():{};const w=st.width||1280;p.encodings[0].scaleResolutionDownBy=Math.max(1,w/640);p.encodings[0].maxBitrate=900000;p.encodings[0].maxFramerate=24}
   else{p.encodings[0].priority='high';p.encodings[0].networkPriority='high';p.encodings[0].maxBitrate=48000}
   snd.setParameters(p).catch(()=>{})}}catch(e){}}
 let unmuteHooked=false;function hookUnmute(){if(unmuteHooked)return;unmuteHooked=true;const f=()=>{const v=$('#vThem');if(v&&v.srcObject&&v.muted){v.muted=false;v.play().catch(()=>{});$('#btnAudio').classList.add('hidden')}};document.addEventListener('pointerdown',f,true)}
-setInterval(async()=>{let a;try{if(!localStream||!mediaCall||!micOn||window.__noMic)return;a=localStream.getAudioTracks()[0];if(a&&a.readyState==='live'&&!a.muted)return;const ns=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});const nt=ns.getAudioTracks()[0];if(a){localStream.removeTrack(a);try{a.stop()}catch(e){}}localStream.addTrack(nt);const pc=mediaCall.peerConnection;const snd=pc&&pc.getSenders().find(s=>s.track&&s.track.kind==='audio')||pc&&pc.getSenders().find(s=>!s.track);snd&&snd.replaceTrack(nt);tuneSenders(pc)}catch(e){if(!a)window.__noMic=true}},4000);
+// Giữ mic & camera sống. Chỉ xin lại khi track đã CHẾT (ended): trên iPhone, gọi getUserMedia lúc track chỉ "muted" (bị hệ thống tạm ngắt) sẽ làm camera đang chạy tắt luôn → đen màn hình.
+let healing=false;
+async function healTracks(){if(healing||!localStream)return;healing=true;try{
+  const pc=mediaCall&&mediaCall.peerConnection;
+  const v=localStream.getVideoTracks()[0];
+  if(!v||v.readyState==='ended'){const ns=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1440}}});const nt=ns.getVideoTracks()[0];if(v){localStream.removeTrack(v)}localStream.addTrack(nt);const vm=$('#vMe');vm.srcObject=null;vm.srcObject=localStream;vm.play().catch(()=>{});
+    if(pc){const snd=pc.getSenders().find(s=>s.track?s.track.kind==='video':false)||pc.getSenders().find(s=>!s.track);snd&&snd.replaceTrack(nt)}applyMirror()}
+  const a=localStream.getAudioTracks()[0];
+  if(micOn&&!window.__noMic&&a&&a.readyState==='ended'){const ns=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});const nt=ns.getAudioTracks()[0];localStream.removeTrack(a);localStream.addTrack(nt);
+    if(pc){const snd=pc.getSenders().find(s=>s.track&&s.track.kind==='audio')||pc.getSenders().find(s=>!s.track);snd&&snd.replaceTrack(nt)}}
+  if(pc)tuneSenders(pc);
+}catch(e){console.warn('healTracks',e)}finally{healing=false}}
+function replayVideos(){for(const id of['#vMe','#vThem']){const v=$(id);if(v&&v.srcObject&&v.paused)v.play().catch(()=>{})}}
+setInterval(()=>{healTracks();replayVideos()},4000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){healTracks();replayVideos()}});
 function bindCall(call){
   hookUnmute();setTimeout(()=>tuneSenders(call.peerConnection),300);try{call.peerConnection&&call.peerConnection.addEventListener('connectionstatechange',()=>tuneSenders(call.peerConnection))}catch(e){}
   call.on('stream',s=>{remoteStream=s;const v=$('#vThem');v.srcObject=s;$('#waiting').classList.add('hidden');tuneSenders(call.peerConnection);v.play().then(()=>$('#btnAudio').classList.add('hidden')).catch(()=>{v.muted=true;v.play().catch(()=>{});$('#btnAudio').classList.remove('hidden')})});
@@ -636,7 +656,7 @@ function onData(d){
 $('#btnInvite').onclick=async()=>{if(CM){CM.invite();return}const url=roomLink();if(navigator.share){try{await navigator.share({title:'Tomortle × Molly',text:'Vào chụp ảnh với mình nè ♡ Mã phòng: '+roomCode,url});return}catch(e){if(e.name==='AbortError')return}}copyLink()};
 $('#btnCopy').onclick=copyLink;
 async function copyLink(){const url=roomLink();try{await navigator.clipboard.writeText(url);toast('Đã copy link mời')}catch(e){toast('Link: '+url)}}
-$('#btnLeave').onclick=()=>{try{peer&&peer.destroy()}catch(e){}localStream&&localStream.getTracks().forEach(t=>t.stop());location.href=CM?'./':location.pathname};
+$('#btnLeave').onclick=()=>{try{peer&&peer.destroy()}catch(e){}localStream&&localStream.getTracks().forEach(t=>t.stop());location.href=CM?'room.html':location.pathname};
 $('#btnMic').onclick=()=>{micOn=!micOn;localStream&&localStream.getAudioTracks().forEach(t=>t.enabled=micOn);$('#btnMic').classList.toggle('off',!micOn)};
 $('#btnFlip').onclick=async()=>{
   try{facing=facing==='user'?'environment':'user';
@@ -1103,10 +1123,21 @@ function loadFrameImg(id){if(frImg[id])return frImg[id];const im=new Image();im.
 function syncImgFrames(){const box=$('#imgFrames');if(!box)return;box.querySelectorAll('button').forEach(b=>b.classList.toggle('on',S.tpl==='img'&&b.dataset.fid===(S.tplImg||'f01')));
   const h=$('#imgFrameHint');if(!h)return;const f=S.tpl==='img'&&frameMeta();if(!f||!ED){h.style.display='none';return}
   const n=ED.shots.length,k=f.slots.length;h.style.display='';h.textContent=`Khung "${f.name}" có ${k} ô · bạn có ${n} kiểu`+(n<k?' → ảnh sẽ lặp lại cho đủ ô':n>k?` → chỉ dùng ${k} kiểu đầu`:' → vừa khít ✨')+(isSingle()?'':'. Hai người: mỗi ô chia đôi bạn | người ấy.')}
+const FCOL=[['all','Tất cả'],['fav','♡ Yêu thích'],['moi','🆕 Mới thêm'],['hong','🌸 Hồng mộng mơ'],['cham','🔵 Chấm bi & sao'],['phim','🎞️ Film & retro'],['do','🍒 Đỏ & tối'],['ren','🎀 Ren & vintage'],['xanh','🌿 Thiên nhiên']];
+let frFav=store.get('frFav',[]),frCol=store.get('frCol','all'),frN=0;
+function drawFrameGrid(){const box=$('#imgFrames');if(!box)return;
+  $('#frCol').innerHTML=FCOL.map(([k,n])=>`<button data-c="${k}" class="${k===frCol?'on':''}">${n}</button>`).join('');
+  const ns=[...new Set(FRAMES.map(f=>f.slots.length))].sort((a,b)=>a-b);
+  $('#frSlots').innerHTML=[0,...ns].map(n=>`<button data-n="${n}" class="${n===frN?'on':''}">${n?n+' ô':'Mọi số ô'}</button>`).join('');
+  const list=FRAMES.filter(f=>(frCol==='all'||(frCol==='fav'?frFav.includes(f.id):(f.c||[]).includes(frCol)))&&(!frN||f.slots.length===frN));
+  box.innerHTML=list.length?list.map(f=>`<button data-fid="${f.id}" title="${f.name}"><img loading="lazy" src="frames/t${f.id.slice(1)}.jpg" alt="${f.name}"><i data-fav="${f.id}">${frFav.includes(f.id)?'💗':'🤍'}</i><span>${f.slots.length}</span></button>`).join(''):`<p class="hint" style="grid-column:1/-1">${frCol==='fav'?'Chạm 🤍 ở góc khung để lưu vào Yêu thích nhé':'Không có khung nào khớp'}</p>`;
+  syncImgFrames()}
 fetch('frames/frames.json').then(r=>r.json()).then(list=>{FRAMES=list;const box=$('#imgFrames');if(!box)return;
-  box.innerHTML=list.map(f=>`<button data-fid="${f.id}" title="${f.name}"><img loading="lazy" src="frames/t${f.id.slice(1)}.jpg" alt="${f.name}"><span>${f.slots.length}</span></button>`).join('');
-  box.onclick=e=>{const b=e.target.closest('button[data-fid]');if(!b)return;S.tpl='img';S.tplImg=b.dataset.fid;loadFrameImg(S.tplImg);syncInputs();frameChanged()};
-  if(S.tpl==='img')loadFrameImg((frameMeta()||{}).id);syncImgFrames();invalidate()}).catch(()=>{});
+  $('#frCol').onclick=e=>{const b=e.target.closest('button');if(!b)return;frCol=b.dataset.c;store.set('frCol',frCol);drawFrameGrid();box.scrollTop=0};
+  $('#frSlots').onclick=e=>{const b=e.target.closest('button');if(!b)return;frN=+b.dataset.n;drawFrameGrid();box.scrollTop=0};
+  box.onclick=e=>{const h=e.target.closest('[data-fav]');if(h){e.stopPropagation();const id=h.dataset.fav;frFav=frFav.includes(id)?frFav.filter(x=>x!==id):[...frFav,id];store.set('frFav',frFav);h.textContent=frFav.includes(id)?'💗':'🤍';if(frCol==='fav')drawFrameGrid();return}
+    const b=e.target.closest('button[data-fid]');if(!b)return;S.tpl='img';S.tplImg=b.dataset.fid;loadFrameImg(S.tplImg);syncInputs();frameChanged()};
+  drawFrameGrid();if(S.tpl==='img')loadFrameImg((frameMeta()||{}).id);invalidate()}).catch(()=>{});
 function slotPhoto(x,i,who,w,h){const src=photoFor(i,who);if(src)drawCover(x,filtered(src,i),-w/2,-h/2,w,h,.42);else{x.fillStyle='#e9e3dc';x.fillRect(-w/2,-h/2,w,h)}}
 function renderImgFrame(c){
   const f=frameMeta();

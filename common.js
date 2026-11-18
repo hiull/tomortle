@@ -56,9 +56,10 @@ export async function boot() {
 }
 
 /* header with back button + partner presence */
-export function header(title) {
+// thoát một hoạt động thì về phòng chung; riêng phòng chung thì về trang Nhà
+export function header(title, back = 'room.html') {
   const h = document.createElement('header');
-  h.innerHTML = `<a class="btn small" href="./" style="text-decoration:none;color:inherit">← Nhà</a><div class="logo" style="font-size:20px">${esc(title)}</div><div class="sp"></div><span class="pchip" id="pchip"><i class="pdot"></i><span id="pchipName"></span></span>`;
+  h.innerHTML = `<a class="btn small" href="${back}" style="text-decoration:none;color:inherit">${back === './' ? '← Nhà' : '← Phòng chung'}</a><div class="logo" style="font-size:20px">${esc(title)}</div><div class="sp"></div><span class="pchip" id="pchip"><i class="pdot"></i><span id="pchipName"></span></span>`;
   document.querySelector('.app').prepend(h);
 }
 function renderChip(ctx) {
@@ -73,7 +74,7 @@ export function joinMain(ctx, page, onPresence) {
   ch.on('presence', { event: 'sync' }, () => {
     const st = ch.presenceState(); const metas = st[ctx.partnerId] || [];
     const wasHere = ctx.partnerHere;
-    ctx.partnerOnline = metas.length > 0; ctx.partnerHere = metas.some(m => m.page === page);
+    ctx.partnerOnline = metas.length > 0; ctx.partnerHere = metas.some(m => m.page === page); ctx.partnerPage = metas.length ? metas[metas.length - 1].page : null;
     renderChip(ctx); onPresence && onPresence(ctx);
     if (ctx.partnerHere && !wasHere) { toast(`${ctx.partnerName} đã vào ♡`); vib(40) }
   })
