@@ -4,7 +4,7 @@
   "description": "Không gian riêng cho hai người yêu xa",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#fff3f6",
   "theme_color": "#ff7aa2",
   "lang": "vi",
@@ -69,5 +69,9 @@
         }
       ]
     }
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone"
   ]
 }
