@@ -176,6 +176,13 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <div id="findL" style="max-height:56vh;overflow:auto"></div>
   <button class="btn block" style="margin-top:8px" onclick="this.closest('.modal').classList.remove('on')">Đóng</button>
 </div></div>
+<div class="modal" id="mTable"><div class="sheet">
+  <h3>🍽️ Bàn ăn</h3><p class="note" id="tblSub" style="margin:0 0 6px"></p>
+  <div id="tblL" style="max-height:34vh;overflow:auto"></div>
+  <div class="dirf" style="margin-top:12px">🧊 Bày thêm từ tủ lạnh</div>
+  <div id="tblP" style="max-height:24vh;overflow:auto"></div>
+  <div class="row" style="gap:8px;margin-top:10px"><button class="btn" id="tblCook">🍳 Nấu thêm</button><button class="btn primary" style="flex:1" onclick="this.closest('.modal').classList.remove('on')">Xong</button></div>
+</div></div>
 <div class="modal" id="mCook"><div class="sheet">
   <h3>🍳 Nấu món gì đây?</h3><p class="note" id="cookSub" style="margin:0 0 6px"></p>
   <div class="row" style="gap:6px;margin-bottom:6px"><input class="input" id="cookQ" placeholder="🔎 Tìm món: phở, lẩu, chè…" style="margin:0;flex:1" autocomplete="off"><label class="note" style="display:flex;align-items:center;gap:4px;white-space:nowrap"><input type="checkbox" id="cookOk"> Nấu được</label></div>
@@ -803,9 +810,9 @@ function onMsg(m){
  case'ball':pet.ball=m.p;pet.ballT=Date.now()+4000;break;
  case'ttt':tttRecv(m);break;
  case'mk':MK=m.MK;drawMk();break;
- case'pt':PT=m.PT;window.DISHES=PT.dishes;drawCook();break;
+ case'pt':PT=m.PT;window.DISHES=PT.dishes;drawCook();if($('#mTable').classList.contains('on'))drawTable();break;
  case'cook':window.COOKING={until:NOW+COOK_MS};pa.emo={e:m.e,t:NOW+COOK_MS};sfx.whoosh();break;
- case'eat':burst(pa,'😋',3);pa.emo={e:m.e,t:NOW+1800};break;
+ case'eat':burst(pa,m.drink?'💦':'😋',3);pa.emo={e:m.e,t:NOW+1800};if(m.drink)sfxSlurp();else sfxChew();break;
  case'mkop':if(m.o){mkApply(m.o,m.d);drawMk()}break;
  case'mkhello':if(IS_MK)sendMk('mk',{MK});break;
  }
@@ -869,7 +876,7 @@ function itemMenu(it,sx,sy){const c=CAT[it.t];const B=[];let sub='';
  case'fridge':if(KIND==='kitchen'){B.push(['🧊 Mở tủ lạnh (nguyên liệu)',()=>{useItem(it);openPantry()},1]);goUse('📝 Xem note dán tủ',()=>nav('fridge.html'))}else goUse('📝 Xem note dán tủ',()=>nav('fridge.html'),1);break;
  case'stove':B.push(['🍳 Nấu ăn',()=>{useItem(it);openCook()},1]);break;
  case'counter':goUse('🧽 Rửa bát',()=>{me.emo={e:'🫧',t:NOW+2500};send('emo',{e:'🫧'});burst(me,'🫧',4)},1);B.push(['🧊 Xem nguyên liệu',openPantry]);break;
- case'ktable':{const D=PT.dishes||[];sub=D.length?D.map(d=>`${d.n} (${d.b} miếng)`).join(' · '):'Bàn trống, vào bếp nấu món gì đi 🍳';D.slice(-4).forEach(d=>goUse(`😋 Ăn ${d.n}`,()=>eatDish(d.id)));if(!D.length)B.push(['🍳 Đi nấu ăn',()=>{const st=R.items.find(i=>i.t==='stove');if(st)useItem(st);openCook()},1]);break}
+ case'ktable':{const D=PT.dishes||[];sub=D.length?`${D.length} món đang bày · bấm để chọn ăn`:'Bàn trống, bày món từ tủ lạnh hoặc nấu đi 🍳';B.push(['🍽️ Mở bàn ăn',()=>{useItem(it);openTable()},1]);const ch2=R.items.filter(i=>i.t==='chair');if(ch2.length)B.push(['🪑 Ngồi vào bàn',()=>{const c=ch2.find(c=>!seatTaken(c,0,'sit',ME))||ch2[0];sitOn(c,'sit')}]);break}
  case'mailbox':goUse('💌 Mở hòm thư',()=>nav('letters.html'),1);goUse('✍️ Viết thư',()=>nav('letters.html?t=write'));break;
  case'camera':goUse('📸 Rủ chụp photobooth',boothInvite,1);break;
  case'phone':goUse('📹 Gọi video',()=>nav('call.html'),1);break;
@@ -1084,6 +1091,14 @@ $('#cookL').addEventListener('click',async e=>{const b=e.target.closest('[data-b
  await saveS('market',mk);toast(n?`Đã ghi ${n} nguyên liệu cho ${r[1]} vào danh sách đi chợ 📝`:'Đã có trong danh sách đi chợ rồi','🛒 Đi chợ',()=>nav('room.html?r=market'+(DEMO?'&demo':'')))});
 // đồ mua sẵn (gà rán, bánh, trái cây…) bày thẳng ra bàn ăn
 $('#pantryL').onclick=e=>{const b=e.target.closest('[data-serve]');if(!b)return;const n=b.dataset.serve,o=PT.items[n];if(!o)return;o.q--;if(o.q<=0)delete PT.items[n];PT.dishes.push({id:nid(),e:o.e,n,b:2,by:ME});ptSave();burst(me,'🍽️',3);toast(`Đã bày ${n} ra bàn ăn 🍽️`)};
+function drawTable(){if(!$('#tblL'))return;const D=PT.dishes||[],atT=c=>c.seat&&itemById(c.seat.id)?.t==='chair';
+ $('#tblSub').textContent=D.length?`${D.length} món đang bày`+(atT(me)&&atT(pa)&&livePa()?' · hai đứa đang ngồi cùng bàn 💗':''):'Bàn đang trống';
+ $('#tblL').innerHTML=D.length?D.map(d=>{const dr=isDrink(d);return`<div class="cl"><b>${icoH(d.e)}</b><span>${esc(d.n)}<br><small class="note">${'●'.repeat(Math.max(0,d.b))}${'○'.repeat(Math.max(0,4-d.b))} còn ${d.b} ${dr?'ngụm':'miếng'}</small></span><button class="btn small primary" data-eat="${d.id}">${dr?'🥤 Uống':'😋 Ăn'}</button><button class="btn small" data-back="${d.id}" title="Cất lại tủ lạnh">↩️</button></div>`}).join(''):'<p class="note">Chưa có món nào. Bày từ tủ lạnh bên dưới hoặc nấu món mới nhé.</p>';
+ const it=Object.entries(PT.items).filter(([,o])=>o.q>0);$('#tblP').innerHTML=it.length?it.map(([n,o])=>`<div class="cl"><b>${icoH(o.e)}</b><span>${esc(n)} ×${o.q}</span><button class="btn small" data-serve="${esc(n)}">🍽️ Bày</button></div>`).join(''):'<p class="note">Tủ lạnh trống, ra Siêu thị mua đồ nhé 🛒</p>'}
+function openTable(){drawTable();$('#mTable').classList.add('on')}
+$('#tblCook').onclick=()=>{$('#mTable').classList.remove('on');openCook()};
+$('#tblL').onclick=e=>{const a=e.target.closest('[data-eat]');if(a){eatDish(a.dataset.eat);return}const b=e.target.closest('[data-back]');if(!b)return;const d=PT.dishes.find(x=>x.id===b.dataset.back);if(!d)return;PT.dishes=PT.dishes.filter(x=>x!==d);const o=PT.items[d.n]||{e:d.e,q:0,tag:''};o.q++;PT.items[d.n]=o;ptSave();drawTable();toast(`Đã cất ${d.n} vào tủ lạnh`)};
+$('#tblP').onclick=e=>{const b=e.target.closest('[data-serve]');if(!b)return;const n=b.dataset.serve,o=PT.items[n];if(!o)return;o.q--;if(o.q<=0)delete PT.items[n];const dr=isDrink({e:o.e,n});PT.dishes.push({id:nid(),e:o.e,n,b:dr?3:2,by:ME});ptSave();drawTable();noise(.05,.15,900,'bandpass');toast(`Đã bày ${n} ra bàn 🍽️`)};
 function openCook(){drawCook();$('#mPantry').classList.remove('on');$('#mCook').classList.add('on')}
 function openPantry(){drawCook();$('#mPantry').classList.add('on')}
 $('#cookPantry').onclick=()=>{$('#mCook').classList.remove('on');openPantry()};
@@ -1092,7 +1107,13 @@ $('#cookL').onclick=e=>{const b=e.target.closest('button[data-k]');if(!b)return;
  for(const[alt,q]of r[2]){let need=q;for(const[n,o]of Object.entries(PT.items)){if(!need)break;if(!ingHit(alt,n,o))continue;const t=Math.min(need,o.q);o.q-=t;need-=t;if(o.q<=0)delete PT.items[n]}}
  $('#mCook').classList.remove('on');window.COOKING={until:NOW+COOK_MS};me.emo={e:r[0],t:NOW+COOK_MS};send('cook',{e:r[0]});sfx.whoosh();toast(`Đang nấu ${r[1]}… 🔥`);ptSave();
  setTimeout(()=>{PT.dishes.push({id:nid(),e:r[0],n:r[1],b:4,by:ME});ptSave();burst(me,'✨',5);sfx.heart();toast(`${r[1]} xong rồi! Ra bàn ăn thôi 🍽️`)},COOK_MS)};
-function eatDish(id){const d=PT.dishes.find(x=>x.id===id);if(!d)return;d.b--;if(d.b<=0)PT.dishes=PT.dishes.filter(x=>x!==d);ptSave();me.emo={e:d.e,t:NOW+1800};burst(me,'😋',3);send('eat',{e:d.e});sfx.pop();
+const DRINK_RX=/(trà|cà phê|cafe|sinh tố|nước|sữa|bia|rượu|vang|soju|coca|pepsi|sting|7up|fanta|sprite|red bull|milo|yakult|probi|nutri|revive|pocari|mirinda|number 1|chè)/i;
+const isDrink=d=>/^@(glass|can|pet|bottle|milk)\//.test(d.e)||/[🥤🧋☕🍵🥛🧃🍺🍷🍶🧉🍹🍸]/u.test(d.e)||DRINK_RX.test(d.n);
+// chọp chẹp: tiếng nhai (ồn trầm) + tiếng chép miệng; cuối cùng "ừm~"
+const sfxChew=()=>{for(let k=0;k<5;k++){const w=k*.17+Math.random()*.03;noise(.07,.28,420,'lowpass',w);noise(.025,.22,2600,'bandpass',w+.07)}tone(240,.28,'sine',.035,.95);tone(300,.22,'sine',.025,1.05)};
+// hút nước: rột rột lên cao dần + ực
+const sfxSlurp=()=>{for(let k=0;k<11;k++)noise(.055,.16,650+k*140+Math.random()*80,'bandpass',k*.045);noise(.12,.12,400,'lowpass',.5);tone(170,.1,'sine',.09,.62);tone(130,.1,'sine',.07,.74);tone(520,.25,'sine',.025,.9)};
+function eatDish(id){const d=PT.dishes.find(x=>x.id===id);if(!d)return;d.b--;if(d.b<=0)PT.dishes=PT.dishes.filter(x=>x!==d);ptSave();const dr=isDrink(d);me.emo={e:d.e,t:NOW+1800};burst(me,dr?'💦':'😋',3);send('eat',{e:d.e,drink:dr});if(dr)sfxSlurp();else sfxChew();vib(dr?[20,30,20]:[15,40,15,40,15]);drawTable();
  const atTable=c=>c.seat&&itemById(c.seat.id)?.t==='chair';
  if(atTable(me)&&atTable(pa)&&livePa()){burst(me,'💗',5);burst(pa,'💗',4);toast('Ăn cùng nhau ngon gấp đôi 💗')}else if(d.b<=0)toast(`Hết sạch ${d.n} rồi, ngon quá 😋`)}
 function say(text){me.say={text,t:NOW+6500};UM.msg={text,at:Date.now()};saveS(UK(ME),UM);send('say',{text})}
