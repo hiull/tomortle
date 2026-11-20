@@ -23,6 +23,25 @@
   document.addEventListener('wheel', function (e) { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
   document.addEventListener('keydown', function (e) { if ((e.ctrlKey || e.metaKey) && /^(\+|=|-|_|0)$/.test(e.key)) e.preventDefault(); });
 
+  // 📳 Rung phản hồi: Android dùng bộ rung thật; iPhone (iOS 18+) dùng công tắc hệ thống ẩn để tạo tiếng "tách" rung nhẹ
+  var hsw = null, hlb = null;
+  function iosTick() {
+    try {
+      if (!hlb) { hlb = document.createElement('label'); hlb.setAttribute('aria-hidden', 'true'); hlb.style.cssText = 'position:fixed;left:-99px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden';
+        hsw = document.createElement('input'); hsw.type = 'checkbox'; hsw.setAttribute('switch', ''); hsw.tabIndex = -1; hlb.appendChild(hsw); (document.body || document.documentElement).appendChild(hlb); }
+      hlb.click();
+    } catch (e) {}
+  }
+  window.haptic = function (p) {
+    try { if (localStorage.getItem('haptic') === 'off') return; } catch (e) {}
+    if (p == null) p = 10;
+    try { if (navigator.vibrate) { navigator.vibrate(p); return; } } catch (e) {}
+    // iPhone: một "tách" cho mỗi nhịp rung trong mẫu
+    var arr = Array.isArray(p) ? p : [p], t = 0;
+    for (var i = 0; i < arr.length; i += 2) { (function (d) { if (d <= 0) iosTick(); else setTimeout(iosTick, d); })(t); t += (arr[i] || 0) + (arr[i + 1] || 0); if (i >= 6) break; }
+  };
+  // bấm nút nào cũng có rung nhẹ như app thật
+  document.addEventListener('click', function (e) { var b = e.target && e.target.closest && e.target.closest('button,.btn,[role=button],.chips button,label.switch'); if (b && !b.disabled) window.haptic(6); }, true);
   // toàn màn hình
   var standalone = (window.matchMedia && (matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches)) || navigator.standalone;
   if (standalone) return;

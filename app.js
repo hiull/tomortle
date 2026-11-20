@@ -16,7 +16,7 @@ function openM(id) { $('#' + id).classList.add('on') }
 $$('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) m.classList.remove('on') }));
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function ago(t) { if (!t) return ''; const s = (Date.now() - new Date(t)) / 1000; if (s < 60) return 'vừa xong'; if (s < 3600) return Math.floor(s / 60) + ' phút trước'; if (s < 86400) return Math.floor(s / 3600) + ' giờ trước'; return Math.floor(s / 86400) + ' ngày trước' }
-function vib(p) { try { navigator.vibrate && navigator.vibrate(p) } catch (e) { } }
+function vib(p) { try { window.haptic ? window.haptic(p) : navigator.vibrate && navigator.vibrate(p) } catch (e) { } }
 const canVibrate = 'vibrate' in navigator;
 function errMsg(e) {
   const m = (e && (e.message || e.error_description || e)) + '';

@@ -353,7 +353,7 @@ const MD=(IS_MK||KIND==='kitchen'||KIND==='spa'||IS_RT)?await import('./market.j
 const TM=await import('./tiers.js');
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
+const vib=p=>{try{window.haptic?window.haptic(p):navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 let toastT;function toast(msg,label,act){const t=$('#toast');t.innerHTML='';t.append(document.createTextNode(msg));if(label){const b=document.createElement('button');b.textContent=label;b.onclick=()=>{t.classList.remove('on');act()};t.append(b)}t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),label?7000:2800)}
 const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 
@@ -1247,7 +1247,7 @@ function onHit(p){const T=THROWS[p.k],o=p.to;T.snd&&T.snd();
  if(T.love&&Math.random()<.5)burst(o,T.e||'💗',2);
  if(T.boom){for(let i=0;i<10;i++){const[sx,sy]=charScreen(o);spawn(sx+(Math.random()-.5)*40,sy-40-Math.random()*20,['🎊','✨','🎉','💫'][i%4],{vy:-30-Math.random()*30,life:1.2,size:10})}}
  else burst(o,T.hit,1);
- if(o===me)vib(T.dz?[30]:[12]);
+ if(o===me)vib(T.dz?[35]:[14]);else if(p.from===me&&T.dz)vib(5);
  // combo nổi trên đầu
  const c=p.from===me?COMBO:(p.combo||null);if(c&&c.n>=3){const[sx,sy]=charScreen(o);spawn(sx+14,sy-70,`x${c.n}${c.n>=20?' 🔥🔥':c.n>=10?' 🔥':''}`,{vy:-20,life:.9,size:Math.min(22,12+c.n*.4)})}
  if(p.from===me&&COMBO.n===10)toast('🔥 Combo x10! Người ấy chịu sao nổi 😆');if(p.from===me&&COMBO.n===30)toast('💀 x30… tha cho người ta đi 🤣')}
@@ -1397,7 +1397,7 @@ function toPartner(a){
 /* ================= menus ================= */
 const wrap=$('#wrap');let menuEl=null;
 function closeMenu(){if(menuEl){menuEl.remove();menuEl=null}}
-function menu(sx,sy,title,sub,btns){closeMenu();const born=Date.now();const r=cv.getBoundingClientRect(),k=r.width/W;const el=document.createElement('div');el.className='ctxm';
+function menu(sx,sy,title,sub,btns){closeMenu();const born=Date.now();vib(8);const r=cv.getBoundingClientRect(),k=r.width/W;const el=document.createElement('div');el.className='ctxm';
  el.innerHTML=`<b>${esc(title)}</b>${sub?`<i>${esc(sub)}</i>`:''}`;for(const[label,fn,pri]of btns){const b=document.createElement('button');b.textContent=label;if(pri)b.className='pri';b.onclick=e=>{e.stopPropagation();if(Date.now()-born<380)return;closeMenu();ac();fn()};el.append(b)}
  wrap.append(el);menuEl=el;const wr=wrap.getBoundingClientRect(),w=el.offsetWidth,hh=el.offsetHeight;let x=r.left-wr.left+sx*k,y=r.top-wr.top+sy*k;x=Math.max(w/2+6,Math.min(wr.width-w/2-6,x));y=Math.max(hh+6,Math.min(wr.height-6,y));el.style.left=x+'px';el.style.top=y+'px'}
 function nav(url){UM.pos={x:me.x,y:me.y};saveS(UK(ME),UM);setTimeout(()=>location.href=url,DEMO?0:150)}
@@ -1682,7 +1682,7 @@ function gulp(w){if(!soundOn||!AC)return;const t=AC.currentTime+w,o=AC.createOsc
 const sfxSlurp=()=>{for(let k=0;k<6;k++)gulp(k*.23+Math.random()*.02);tone(880,.06,'sine',.02,6*.23+.05)};
 // vụn thức ăn bắn ra từ miệng (ăn) hoặc giọt nước (uống), đúng nhịp nhai
 function foodCol(e){const m=/^@\w+\/([0-9a-f]{3,8})/i.exec(e||'');if(m)return'#'+m[1];const M={'🍕':'#f4a261','🍔':'#a0522d','🍟':'#f6c453','🍜':'#f2cc8f','🍣':'#ff8a65','🍰':'#fff3e0','🎂':'#ffcdd2','🍫':'#6d4c41','🍪':'#c68642','🥐':'#e0a458','🍞':'#d9a066','🍎':'#e53935','🍉':'#ef5350','🍌':'#ffe082','🥗':'#81c784','🍗':'#c47a3a','🥩':'#b23a48','🍦':'#fff8e1','🍩':'#f48fb1','🍙':'#fafafa','🥟':'#f5deb3','🍤':'#ffb74d'};return M[e]||['#d9a066','#f4a261','#e9c46a','#c68642'][Math.floor(Math.random()*4)]}
-function eatFx(c,e,drink){const col=drink?'#8fd3ff':foodCol(e),n=drink?6:EAT_N;for(let k=0;k<n;k++)setTimeout(()=>{if(!c)return;const[sx,sy]=charScreen(c);const my=sy-30-(c.pose==='sit'?4:0);for(let i=0;i<(drink?2:4);i++)CRUMBS.push({x:sx+(c.flip?-3:3)+(Math.random()-.5)*4,y:my,vx:(Math.random()-.5)*40,vy:-30-Math.random()*30,c:drink&&Math.random()<.5?'#cdeeff':col,t:NOW,life:500+Math.random()*300,sz:1.6+Math.random()*1.4})},k*(drink?230:EAT_GAP*1000))}
+function eatFx(c,e,drink){const col=drink?'#8fd3ff':foodCol(e),n=drink?6:EAT_N;for(let k=0;k<n;k++)setTimeout(()=>{if(!c)return;const[sx,sy]=charScreen(c);const my=sy-30-(c.pose==='sit'?4:0);if(c===me)vib(drink?14:9);for(let i=0;i<(drink?2:4);i++)CRUMBS.push({x:sx+(c.flip?-3:3)+(Math.random()-.5)*4,y:my,vx:(Math.random()-.5)*40,vy:-30-Math.random()*30,c:drink&&Math.random()<.5?'#cdeeff':col,t:NOW,life:500+Math.random()*300,sz:1.6+Math.random()*1.4})},k*(drink?230:EAT_GAP*1000))}
 function drawCrumbs(){for(let i=CRUMBS.length-1;i>=0;i--){const p=CRUMBS[i],a=(NOW-p.t)/1000;if(NOW-p.t>p.life){CRUMBS.splice(i,1);continue}const x=p.x+p.vx*a,y=p.y+p.vy*a+160*a*a;g.globalAlpha=1-(NOW-p.t)/p.life;g.fillStyle=p.c;g.fillRect(x-p.sz/2,y-p.sz/2,p.sz,p.sz);g.strokeStyle='rgba(0,0,0,.25)';g.lineWidth=.4;g.strokeRect(x-p.sz/2,y-p.sz/2,p.sz,p.sz)}g.globalAlpha=1}
 function eatDish(id){const d=PT.dishes.find(x=>x.id===id);if(!d)return;d.b--;if(d.b<=0)PT.dishes=PT.dishes.filter(x=>x!==d);ptSave();const dr=isDrink(d);me.emo={e:d.e,t:NOW+1800};burst(me,dr?'💦':'😋',3);send('eat',{e:d.e,drink:dr});if(dr)sfxSlurp();else sfxChew();vib(dr?[20,30,20]:[15,40,15,40,15]);drawTable();
  const atTable=c=>c.seat&&itemById(c.seat.id)?.t==='chair';
@@ -1869,7 +1869,7 @@ function drawPhone(){const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_W
  if(PHAPP==='weather'){const[e,n]=WXT[WX.k],now=Date.now();B.innerHTML=head('🌦️ Thời tiết')+`<div class="ph-center"><div style="font-size:58px">${e}</div><div class="ph-money">${WX.t}°</div><b>${n}</b><p class="ph-note">${WX_AUTO?'Thời tiết tự đổi mỗi 25 phút · hai đứa thấy giống nhau':'Đang chỉnh tay'}</p>
   <div class="ph-list" style="width:100%">${[1,2,3,4,5,6].map(i=>{const ts=now+i*WX_SLOT,k=wxAt(ts);return`<button>${new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})} · ${WXT[k][0]} ${WXT[k][1]} · ${wxTemp(ts,k)}°</button>`}).join('')}</div>
   <div style="display:flex;gap:6px;width:100%"><button class="ph-big ${WX_AUTO?'':'g'}" data-act="wxauto">🔄 Tự chạy</button><button class="ph-big g" data-act="rain">🌧️ Mưa</button><button class="ph-big g" data-act="wxsun">☀️ Nắng</button></div></div>`;return}
- if(PHAPP==='set'){const cur=phLS('wall',0);B.innerHTML=head('⚙️ Cài đặt')+`<p class="ph-note">Hình nền</p><div class="ph-walls">${PH_WALL.map(([n,bg],i)=>`<button data-wall="${i}" class="${i===cur?'on':''}" style="background:${bg}"><span>${n}</span></button>`).join('')}</div><p class="ph-note">Máy: ${esc(av.phoneN||'')}</p><button class="ph-big g" data-act="unequip">📴 Cất điện thoại vào túi</button>`;return}}
+ if(PHAPP==='set'){const cur=phLS('wall',0);B.innerHTML=head('⚙️ Cài đặt')+`<p class="ph-note">Hình nền</p><div class="ph-walls">${PH_WALL.map(([n,bg],i)=>`<button data-wall="${i}" class="${i===cur?'on':''}" style="background:${bg}"><span>${n}</span></button>`).join('')}</div><p class="ph-note">Máy: ${esc(av.phoneN||'')}</p><button class="ph-big g" data-act="haptic" style="margin-bottom:8px">📳 Rung phản hồi: ${(()=>{try{return localStorage.getItem('haptic')==='off'?'Tắt':'Bật'}catch(e){return'Bật'}})()}</button><button class="ph-big g" data-act="unequip">📴 Cất điện thoại vào túi</button>`;return}}
 /* --- TikTok: video ngắn tự tạo + clip hai đứa tự đăng --- */
 const TT_GEN=[['🐱','Mèo nhà ai mà dễ thương vậy 😭','#ffb703,#fb8500','bounce','#meow #cute'],['💃','Trend nhảy mới nè, học liền!','#7209b7,#f72585','dance','#dance #trend'],['🍜','Phở 3h sáng ở Hà Nội ✨','#e76f51,#f4a261','zoom','#food #hanoi'],['🌊','Biển Nha Trang hôm nay xanh quá','#00b4d8,#90e0ef','float','#travel'],
  ['💄','Test son Dior 999 trên môi hồng','#c9184a,#ff758f','zoom','#makeup #review'],['🐶','Chó nhà tui khi thấy tui về','#8d6e63,#d7ccc8','bounce','#dog'],['🎂','Bánh kem tự làm, xấu nhưng ngon','#ffafcc,#ffc8dd','spin','#baking'],['🌸','Đà Lạt mùa hoa mai anh đào','#ff8fab,#fbb1bd','float','#dalat'],
@@ -1922,6 +1922,7 @@ $('#phBody').onclick=async e=>{const t=e.target.closest('[data-app],[data-act],[
  else if(a==='lnext'){lofiSet(LOFI_I+1);setTimeout(drawPhone,100)}
  else if(a==='lprev'){lofiSet(LOFI_I-1);setTimeout(drawPhone,100)}
  else if(a==='tiers'){phClose();openTiers()}
+ else if(a==='haptic'){const off=localStorage.getItem('haptic')==='off';try{localStorage.setItem('haptic',off?'on':'off')}catch(e){}if(off)window.haptic&&window.haptic([20,40,20]);drawPhone();toast(off?'📳 Đã bật rung phản hồi':'🔕 Đã tắt rung phản hồi')}
  else if(a==='unequip'){AVD=Object.assign({},UM.av);AVD.phone='';AVD.phoneN='';setAv(AVD);phClose();toast('📴 Đã cất điện thoại vào túi')}
  else if(a==='like'){const c=TT.list[TT.i%TT.list.length];TT.liked[c.id]=!TT.liked[c.id];phSet('liked',TT.liked);if(TT.liked[c.id]){burst(me,'❤️',3);if(c.own&&c.who!==ME)send('emo',{e:'❤️',burst:'💗'})}ttDraw()}
  else if(a==='next'){TT.i=(TT.i+1)%TT.list.length;ttDraw()}
@@ -2016,7 +2017,7 @@ function tap([px,py]){
  const[gx,gy]=unIso(px,py);const tx=Math.floor(gx),ty=Math.floor(gy);
  if(!inB(tx,ty))return;
  if(BM[tx][ty]){const it=BM[tx][ty];itemMenu(it,px,py);return}
- goTile(tx,ty,null);const s=iso(tx+.5,ty+.5);spawn(s[0],s[1]-4,'✨',{vy:-8,life:.6,size:10});
+ vib(4);goTile(tx,ty,null);const s=iso(tx+.5,ty+.5);spawn(s[0],s[1]-4,'✨',{vy:-8,life:.6,size:10});
 }
 document.addEventListener('keydown',e=>{if(editing||e.target.tagName==='INPUT')return;const k={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]}[e.key];if(!k)return;e.preventDefault();
  // map screen arrows to iso: up = -x-y? use: up→(0,-1)… pick diagonal-friendly mapping

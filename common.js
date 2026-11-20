@@ -15,7 +15,7 @@ export const $ = s => document.querySelector(s), $$ = s => [...document.querySel
 export const store = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v) } catch (e) { return d } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch (e) { } } };
 export const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 export const canVibrate = 'vibrate' in navigator;
-export function vib(p) { try { navigator.vibrate && navigator.vibrate(p) } catch (e) { } }
+export function vib(p) { try { window.haptic ? window.haptic(p) : navigator.vibrate && navigator.vibrate(p) } catch (e) { } }
 
 let toastT;
 export function toast(msg, label, act) {
