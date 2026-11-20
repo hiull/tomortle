@@ -479,6 +479,21 @@ function queueSign(it,c,h){const p=lp3(it,.5,.5,h+20),b=lp3(it,.5,.5,h);SIGNQ.pu
 function drawSigns(){const placed=[];SIGNQ.sort((a,b)=>b.y-a.y);
  for(const q of SIGNQ){const S=signImg(q.it.t,q.c);q.x=Math.max(S.w/2+4,Math.min(W-S.w/2-4,q.x));let y=q.y;for(let k=0;k<6;k++){const hit=placed.find(r=>Math.abs(r.x-q.x)<(r.w+S.w)/2+2&&Math.abs(r.y-y)<S.h+2);if(!hit)break;y=hit.y-S.h-3}
   placed.push({x:q.x,y,w:S.w});g.strokeStyle='rgba(120,100,90,.45)';g.lineWidth=.8;g.beginPath();g.moveTo(q.x-S.w*.3,y);g.lineTo(q.b[0]-S.w*.3,q.b[1]);g.moveTo(q.x+S.w*.3,y);g.lineTo(q.b[0]+S.w*.3,q.b[1]);g.stroke();g.drawImage(S.m,q.x-S.w/2,y-S.h/2,S.w,S.h)}}
+/* logo thật dán lên mặt tủ quầy: ghép logo các hãng của quầy thành một tấm bảng, rồi vẽ theo phối cảnh lên mặt trước */
+const BRANDS={dior:['dior'],chanel:['chanel'],ysl:['ysl'],lancome:['lancome','esteelauder'],jpk:['shiseido'],drug:['loreal'],skin:['bioderma'],body:['nivea'],
+ luxury:['gucci','louisvuitton','prada'],fast:['zara','hm','uniqlo'],sport:['nike','adidas','converse'],acc:['swarovski'],jbeauty:['shiseido'],euskin:['kiehls','esteelauder'],pharma:['bioderma'],hairbody:['loreal'],
+ outer:['burberry'],drinks:['cocacola','pepsi','redbull'],beer:['heineken'],coffee:['starbucks'],dairy:['vinamilk'],junk:['lays']};
+const LIMG={};function limg(b){if(!(b in LIMG)){const im=new Image();im.onload=()=>{for(const k in PLATE)delete PLATE[k]};im.onerror=()=>{LIMG[b]=null};im.src='logos/'+b+'.png';LIMG[b]=im}return LIMG[b]}
+const PLATE={};
+function plateOf(t,lux){const L=(BRANDS[t]||[]).map(limg).filter(im=>im&&im.complete&&im.naturalWidth);if(!L.length)return null;const key=t;if(PLATE[key])return PLATE[key];
+ const W2=240,H2=64,m=document.createElement('canvas');m.width=W2;m.height=H2;const x=m.getContext('2d');
+ x.fillStyle=lux?'#fffdf7':'#ffffff';x.beginPath();x.roundRect?x.roundRect(2,2,W2-4,H2-4,10):x.rect(2,2,W2-4,H2-4);x.fill();x.lineWidth=3;x.strokeStyle=lux?'#d4af37':'rgba(0,0,0,.15)';x.stroke();
+ const n=L.length,cw=(W2-16)/n;L.forEach((im,i)=>{const r=Math.min((cw-10)/im.naturalWidth,(H2-18)/im.naturalHeight),w=im.naturalWidth*r,h=im.naturalHeight*r;x.drawImage(im,8+i*cw+(cw-w)/2,(H2-h)/2,w,h);
+  if(i)(x.fillStyle='rgba(0,0,0,.12)',x.fillRect(8+i*cw-.5,12,1,H2-24))});
+ return PLATE[key]=m}
+function drawPlate(it,a0,a1,b,z0,z1){if(!frontVis(it))return;const P=plateOf(it.t,IS_MALL);if(!P)return;let TL=lp3(it,a0,b,z1),TR=lp3(it,a1,b,z1),BL=lp3(it,a0,b,z0);
+ if(TR[0]<TL[0]){TL=lp3(it,a1,b,z1);TR=lp3(it,a0,b,z1);BL=lp3(it,a1,b,z0)}
+ g.save();g.transform((TR[0]-TL[0])/P.width,(TR[1]-TL[1])/P.width,(BL[0]-TL[0])/P.height,(BL[1]-TL[1])/P.height,TL[0],TL[1]);g.drawImage(P,0,0);g.restore()}
 function drawShop(it,c){const t=it.t,C2=MD&&MD.COUNTERS[t],h=CAT[t].h;if(C2)queueSign(it,c,h);
  if(t==='checkout'){parts(it,[[0,1,.2,.9,0,34,c],[.62,.92,.3,.7,34,12,'#6d6875']]);const p=lp3(it,.3,.55,38);emj('🧾',p[0],p[1],12);const q=lp3(it,.77,.5,52);emj('💳',q[0],q[1],10);const s=lp3(it,.5,.5,70);if(frontVis(it)){g.save();g.font='700 8px "Be Vietnam Pro",sans-serif';g.textAlign='center';g.fillStyle='#e63946';g.fillText('THU NGÂN',s[0],s[1]);g.restore()}return}
  if(t==='cartrack'){const p=lp3(it,.5,.5,14);const G2=(window.MKC||[]).flatMap(i=>Array(Math.min(i.q,3)).fill(i.e)).slice(0,8);G2.forEach((e,k)=>emj(e,p[0]-8+(k%4)*5,p[1]-12-Math.floor(k/4)*6,10));emj('🛒',p[0],p[1],28);return}
@@ -498,11 +513,11 @@ function drawShop(it,c){const t=it.t,C2=MD&&MD.COUNTERS[t],h=CAT[t].h;if(C2)queu
  if(t==='consult'){parts(it,[[.1,.9,.25,.75,0,24,'#fdfaf6'],[.1,.9,.25,.75,24,3,'#c9a227']]);const s=lp3(it,.5,.95,0);emj(KIND==='mall3'?'💁‍♂️':'💁‍♀️',s[0],s[1]-40,22);const q=lp3(it,.3,.5,27);emj('📋',q[0],q[1]-3,9);if((NOW/1000+3)%11<3.4)bubble(s[0],s[1]-56,KIND==='mall3'?'Em phối đồ cho anh chị nhé!':'Em tư vấn da cho chị nha!');return}
  if(t==='promo'){const p=lp3(it,.5,.5,0);g.strokeStyle='#6d6875';g.lineWidth=2;g.beginPath();g.moveTo(p[0],p[1]);g.lineTo(p[0],p[1]-30);g.stroke();ell(p[0],p[1],8,3,'#6d6875');rr(p[0]-17,p[1]-62,34,32,4,'#e63946','#fff');g.save();g.textAlign='center';g.fillStyle='#fff';g.font='900 10px "Be Vietnam Pro",sans-serif';g.fillText('GIÁ SỐC',p[0],p[1]-49);g.font='900 12px "Be Vietnam Pro",sans-serif';g.fillStyle='#ffd60a';g.fillText(Math.sin(NOW/300)>0?'-50%':'SALE',p[0],p[1]-35);g.restore();return}
  if(!C2)return;
- if(C2.s==='tall'){parts(it,[[.03,.97,.35,.95,0,h,c]]);if(frontVis(it)){fquad(it,.06,.94,.35,4,h-4,shade(c,-.3),null);const G=goodsOf(t,12);let k=0;for(const z of[6,25,44]){fquad(it,.06,.94,.35,z-2,z,shade(c,.15),null);for(const a of[.17,.39,.61,.83]){const p=lp3(it,a,.3,z+8);emj(G[k++%G.length],p[0],p[1],11)}}}return}
- if(C2.s==='fridge'){parts(it,[[.08,.92,.1,.9,0,h,c]]);if(frontVis(it)){fquad(it,.14,.86,.1,6,h-6,'rgba(235,248,255,.85)',null);const G=goodsOf(t,6);let k=0;for(const z of[12,30,48])for(const a of[.32,.68]){const p=lp3(it,a,.08,z);emj(G[k++%G.length],p[0],p[1],10)}}return}
- if(C2.s==='deli'){parts(it,[[0,1,.1,.9,0,h-12,c]]);const G=goodsOf(t,C2.w*3);G.forEach((e,i)=>{const a=(i+.5)/G.length,p=lp3(it,.08+a*.84,.5,h-12+5);emj(e,p[0],p[1],12)});const gl=[lp3(it,0,.1,h-12),lp3(it,1,.1,h-12),lp3(it,1,.1,h),lp3(it,0,.1,h)];if(frontVis(it))poly(gl,'rgba(220,240,255,.35)','rgba(255,255,255,.7)');return}
+ if(C2.s==='tall'){parts(it,[[.03,.97,.35,.95,0,h,c]]);if(frontVis(it)){fquad(it,.06,.94,.35,4,h-4,shade(c,-.3),null);const G=goodsOf(t,12);let k=0;for(const z of[6,25,44]){fquad(it,.06,.94,.35,z-2,z,shade(c,.15),null);for(const a of[.17,.39,.61,.83]){const p=lp3(it,a,.3,z+8);emj(G[k++%G.length],p[0],p[1],11)}}fquad(it,.03,.97,.35,h,h+15,shade(c,-.2),null);drawPlate(it,.05,.95,.35,h+1,h+14)}return}
+ if(C2.s==='fridge'){parts(it,[[.08,.92,.1,.9,0,h,c]]);if(frontVis(it)){fquad(it,.14,.86,.1,6,h-6,'rgba(235,248,255,.85)',null);const G=goodsOf(t,6);let k=0;for(const z of[12,30,48])for(const a of[.32,.68]){const p=lp3(it,a,.08,z);emj(G[k++%G.length],p[0],p[1],10)}drawPlate(it,.12,.88,.1,h-1,h+12)}return}
+ if(C2.s==='deli'){parts(it,[[0,1,.1,.9,0,h-12,c]]);const G=goodsOf(t,C2.w*3);G.forEach((e,i)=>{const a=(i+.5)/G.length,p=lp3(it,.08+a*.84,.5,h-12+5);emj(e,p[0],p[1],12)});const gl=[lp3(it,0,.1,h-12),lp3(it,1,.1,h-12),lp3(it,1,.1,h),lp3(it,0,.1,h)];if(frontVis(it)){poly(gl,'rgba(220,240,255,.35)','rgba(255,255,255,.7)');drawPlate(it,.12,.88,.1,3,h-15)}return}
  // low: hàng bày trên mặt quầy
- parts(it,[[.05,.95,.1,.9,0,h,c]]);if(frontVis(it))fquad(it,.08,.92,.1,h*.4,h*.4+6,'#fff',null);const n=C2.w*3,G=goodsOf(t,n);for(let i=0;i<G.length;i++){const a=(i+.5)/G.length,p=lp3(it,.1+a*.8,.5+(i%2?.14:-.14),h+5);emj(G[i],p[0],p[1],13)}
+ parts(it,[[.05,.95,.1,.9,0,h,c]]);drawPlate(it,.12,.88,.1,h*.15,h*.85);const n=C2.w*3,G=goodsOf(t,n);for(let i=0;i<G.length;i++){const a=(i+.5)/G.length,p=lp3(it,.1+a*.8,.5+(i%2?.14:-.14),h+5);emj(G[i],p[0],p[1],13)}
 }
 
 /* ================= time / env ================= */
