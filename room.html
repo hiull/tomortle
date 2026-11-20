@@ -124,6 +124,8 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .ftabs button{font-size:13px!important;padding:8px 11px!important}.ftabs.many button{font-size:12.5px!important;padding:8px 9px!important}
 .hud button{width:42px!important;height:42px!important}
 @media(max-height:640px){.hint2{display:none}.dock button{min-height:46px}.dock button i{font-size:20px}}
+.modal .sheet{transition:transform .38s cubic-bezier(.3,.8,.3,1)}
+.modal.peek{background:transparent!important;pointer-events:none}.modal.peek .sheet{transform:translateY(calc(100% + 30px))}
 </style>
 </head>
 <body>
@@ -1228,6 +1230,8 @@ const THROWS={
  flower:{e:'🌸',n:'Tung hoa',hit:'🌸',love:1,snd:()=>tone(1760,.12,'triangle',.04)},
  confetti:{e:'🎉',n:'Pháo giấy',hit:'🎊',boom:1,snd:()=>{for(let k=0;k<5;k++)tone(800+k*240,.05,'square',.025,k*.03)}},
  bubble:{e:'🫧',n:'Bong bóng',hit:'🫧',slow:1,snd:()=>tone(1400,.05,'sine',.05)}};
+// đang ăn/uống: bảng đồ ăn trượt xuống để xem nhân vật ăn, xong thì trượt lên lại
+function peekModal(ms){const m=document.querySelector('.modal.on');if(!m)return;m.classList.add('peek');clearTimeout(m.__pk);m.__pk=setTimeout(()=>m.classList.remove('peek'),ms)}
 const PROJ=[],CRUMBS=[];let RC={k:'',n:0,t:0},COMBO={k:'',n:0,t:0},TQ={},TQT=null;
 function launch(from,to,k){const T=THROWS[k];if(!T)return;const s=charScreen(from),d=charScreen(to);const top=to.pose==='lie'?24:36;
  PROJ.push({k,from,to,x0:s[0],y0:s[1]-30,x1:d[0]+(Math.random()-.5)*8,y1:d[1]-top+(Math.random()-.5)*6,t0:NOW,dur:T.fast?300:T.slow?1100:520,r:Math.random()*6});
@@ -1306,7 +1310,7 @@ function hitAt(px,py){for(let i=HITS.length-1;i>=0;i--){const h=HITS[i];if(h.rec
 /* ================= loop ================= */
 let last=performance.now();
 let lastDraw=0;window.__mainG=g;
-function frame(t){const modal=document.querySelector('.modal.on'),busy=me.path.length||pa.path.length||FX.length||PROJ.length||CRUMBS.length||(me.act&&t<me.actT)||(pa.act&&t<pa.actT),gap=modal?160:busy?0:33;
+function frame(t){const modal=document.querySelector('.modal.on:not(.peek)'),busy=me.path.length||pa.path.length||FX.length||PROJ.length||CRUMBS.length||(me.act&&t<me.actT)||(pa.act&&t<pa.actT),gap=modal?160:busy?0:33;
  if(t-lastDraw<gap-2){requestAnimationFrame(frame);return}lastDraw=t;
  const dt=Math.min(.2,(t-last)/1000);last=t;NOW=t;
  stepChar(me,dt);if(livePa()||busyPa())stepChar(pa,dt);for(const n of NPCS)stepChar(n,dt);updatePet();
@@ -1320,7 +1324,7 @@ cv.addEventListener('pointerup',e=>{const p=evPt(e);if(editing){edUp(p);down=nul
 
 /* ================= network ================= */
 let ch=null;
-function send(t,p={}){if(t==='eat'&&p.e){me.hold={e:p.e,t:NOW+(p.drink?1700:1800)};try{eatFx(me,p.e,p.drink)}catch(e){}}if(!ch)return;ch.send({type:'broadcast',event:'r',payload:Object.assign({t},p)})}
+function send(t,p={}){if(t==='eat'&&p.e){peekModal(p.drink?1750:EAT_N*EAT_GAP*1000+750);me.hold={e:p.e,t:NOW+(p.drink?1700:1800)};try{eatFx(me,p.e,p.drink)}catch(e){}}if(!ch)return;ch.send({type:'broadcast',event:'r',payload:Object.assign({t},p)})}
 function snap(){return{x:me.x,y:me.y,pose:me.pose,seat:me.seat,face:me.face,flip:me.flip,path:me.path.length?me.path[me.path.length-1]:null}}
 function sendSnap(){send('snap',snap())}
 let saveUT;function saveU(){UM.pos={x:me.x,y:me.y};clearTimeout(saveUT);saveUT=setTimeout(()=>saveS(UK(ME),UM),1200)}
