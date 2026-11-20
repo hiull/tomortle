@@ -86,7 +86,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
       <form class="row" id="sayForm" style="margin-top:6px"><input class="input" id="sayIn" placeholder="Nói gì đó… 💬" maxlength="80" style="margin:0" autocomplete="off"><button class="btn primary">Nói</button></form>
     </div>
     <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap">
-      <button class="btn small primary hidden" id="bRMenu">📋 Gọi món</button><button class="btn small hidden" id="bResto">🍽️ Bàn của mình</button><button class="btn small primary hidden" id="bCart">🛒 Giỏ chung</button><button class="btn small hidden" id="bList">📝 Danh sách đi chợ</button><button class="btn small hidden" id="bDir">📋 Danh mục</button><button class="btn small hidden" id="bDeals">🔥 Giá sốc · Tìm món</button><button class="btn small nty" id="bNty">😈 Làm này làm kia</button><button class="btn small" id="bAvatar">👗 Thay đồ</button>
+      <button class="btn small primary hidden" id="bRMenu">📋 Gọi món</button><button class="btn small hidden" id="bResto">🍽️ Bàn của mình</button><button class="btn small primary hidden" id="bCart">🛒 Giỏ chung</button><button class="btn small hidden" id="bList">📝 Danh sách đi chợ</button><button class="btn small hidden" id="bDir">📋 Danh mục</button><button class="btn small hidden" id="bDeals">🔥 Giá sốc · Tìm món</button><button class="btn small nty" id="bNty">😈 Làm này làm kia</button><button class="btn small" id="bAvatar">👗 Thay đồ</button><button class="btn small primary" id="bBag" onclick="window.openBag&&window.openBag()">🎒 Đồ đã mua</button>
       <button class="btn small" id="bInvite">💌 Rủ người ấy vào</button>
       <button class="btn small" id="bDecor">✏️ Trang trí phòng</button>
     </div>
@@ -146,7 +146,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .incart{margin-top:10px;padding:8px 10px;border-radius:12px;background:var(--soft);font-size:14px;line-height:1.7;max-height:20vh;overflow:auto}.prods button small{color:var(--muted)}.prods button.in{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 .cl{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}.cl b{font-size:22px}.cl span{flex:1}.cl button{border:1px solid var(--line);background:var(--card);border-radius:50%;width:28px;height:28px;cursor:pointer;color:var(--ink)}
 .prods button u{position:absolute;top:4px;left:50%;transform:translateX(-50%);white-space:nowrap;text-decoration:none;background:#e63946;color:#fff;font-size:10px;font-weight:800;border-radius:6px;padding:1px 4px}.prods button.want{background:#fffbe6}.prods button.want::after{content:"📝";position:absolute;top:2px;right:26px;font-size:12px}.prods button small s,.cl s{opacity:.6}
-.tg{text-decoration:none;background:#e63946;color:#fff;font-size:10px;font-weight:800;border-radius:6px;padding:1px 4px}.cl.done span{text-decoration:line-through;opacity:.5}.cl button[data-t]{border-radius:6px}.cl a{color:var(--accent)}
+.tg{text-decoration:none;background:#e63946;color:#fff;font-size:10px;font-weight:800;border-radius:6px;padding:1px 4px}.cl.done span{text-decoration:line-through;opacity:.5}.cl button[data-t]{border-radius:6px}.cl a{color:var(--accent)}.cl .btn{width:auto;height:auto;border-radius:999px;padding:6px 11px;font-size:12.5px}.cl .btn.primary{background:var(--accent,#ff8fab);color:#fff;border-color:transparent}
 .ctabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.ctabs::-webkit-scrollbar{display:none}.ctabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--ink);white-space:nowrap}.ctabs button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .rcp{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}.rcp>b{font-size:30px;width:40px;text-align:center}.rcp span{flex:1;font-size:14px}.rcp small{display:block;font-size:12px;color:var(--muted)}.rcp small i{font-style:normal}.rcp small i.no{color:#e63946;text-decoration:line-through}.rcp button{white-space:nowrap}
 .dirf{margin:10px 0 6px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:6px}.dirf small{font-weight:600;color:var(--muted)}.dirg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.dirg button{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 10px;cursor:pointer;color:var(--ink);font-weight:700;font-size:13px}.dirg button b{font-size:22px}.dirg button small{display:block;font-weight:600;color:var(--muted);font-size:11px}.dirg button.here{border-color:var(--accent)}
@@ -256,6 +256,12 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <h3>🧊 Tủ lạnh nhà mình</h3><p class="note" style="margin:0 0 8px">Đồ mua ở Siêu thị sẽ tự cất vào đây</p>
   <div id="pantryL" class="incart" style="max-height:50vh"></div>
   <div class="row" style="gap:8px;margin-top:10px"><button class="btn" id="goMarket">🛒 Đi siêu thị</button><button class="btn primary" style="flex:1" id="pantryCook">🍳 Nấu ăn</button></div>
+</div></div>
+<div class="modal" id="mBag"><div class="sheet">
+  <h3>🎒 Đồ đã mua của bạn</h3>
+  <div class="chips" id="bagT" style="margin:6px 0 8px"></div>
+  <div id="bagL" style="max-height:52vh;overflow:auto"></div>
+  <div class="row" style="gap:8px;margin-top:10px"><button class="btn" onclick="window.openAvatarX&&window.openAvatarX()">👗 Phòng thay đồ</button><button class="btn primary" style="flex:1" onclick="this.closest('.modal').classList.remove('on')">Xong</button></div>
 </div></div>
 <div class="modal" id="mTier"><div class="sheet" style="text-align:center">
   <h3 id="tierT">⚛️ Bảng tuần hoàn hạng thẻ</h3>
@@ -814,7 +820,7 @@ function drawChibi(av,sx,sy,o){
  const legY=sit?-4:0;
  // legs
  if(!sit){const sw=o.walking?Math.sin(t*11)*2.5:0;const lc=av.bot==='pants'?bc:sk;
-  rr(-6,-11+sw*.3,5,11-sw*.3,2,lc);rr(1,-11-sw*.3,5,11+sw*.3,2,lc);rr(-6.5,-2+sw*.3,6,3,1.5,'#5a3d4a');rr(0.5,-2-sw*.3,6,3,1.5,'#5a3d4a')}
+  rr(-6,-11+sw*.3,5,11-sw*.3,2,lc);rr(1,-11-sw*.3,5,11+sw*.3,2,lc);rr(-6.5,-2+sw*.3,6,3,1.5,av.shoe||'#5a3d4a');rr(0.5,-2-sw*.3,6,3,1.5,av.shoe||'#5a3d4a');if(av.shoe){g.fillStyle='rgba(255,255,255,.55)';g.fillRect(-5.5,-1.6+sw*.3,2,.9);g.fillRect(1.5,-1.6-sw*.3,2,.9)}}
  else{rr(-6,-8,5,6,2,av.bot==='pants'?bc:sk);rr(1,-8,5,6,2,av.bot==='pants'?bc:sk)}
  const by=sit?-4:0,ONE=av.top==='dress'||av.top==='gown'||av.top==='aodai';
  // back hair (long) behind body
@@ -835,14 +841,16 @@ function drawChibi(av,sx,sy,o){
  // arms
  const hug=o.hug,armA=o.walking?Math.sin(t*11)*.5:0;
  g.fillStyle=av.top==='dress'?sk:tc;
- const arm=(side)=>{g.save();g.translate(side*8,-26+by);g.rotate(hug?-side*1.25:(side*.25+side*armA));rr(-2.5,0,5,11,2.5,av.top==='dress'||av.top==='gown'?sk:tc);circ(0,11,2.6,sk);if(av.nail)circ(0,12.6,1.3,av.nail);g.restore()};
+ const arm=(side)=>{g.save();g.translate(side*8,-26+by);g.rotate(hug?-side*1.25:(side*.25+side*armA));rr(-2.5,0,5,11,2.5,av.top==='dress'||av.top==='gown'?sk:tc);circ(0,11,2.6,sk);if(av.nail)circ(0,12.6,1.3,av.nail);if(side<0&&av.watch){rr(-3,7.4,6,2.4,1,av.watch);circ(0,8.6,1.1,'#f5f5f5')}if(side>0&&av.brace){rr(-3,7.8,6,1.6,.8,av.brace);circ(1.5,8.6,.6,'#fff')}if(side>0&&av.ring)circ(1.8,12.2,.95,av.ring);g.restore()};
+ if(av.neck&&!back){g.strokeStyle=av.neck;g.lineWidth=.9;g.beginPath();g.arc(0,-29+by,4.6,.35,Math.PI-.35);g.stroke();circ(0,-24.2+by,1.4,av.neck);g.globalAlpha=.5+.5*Math.sin(NOW/250);circ(-.4,-24.6+by,.5,'#fff');g.globalAlpha=1}
  arm(-1);arm(1);
  // head
  const hy=-37+by;
  circ(0,hy,12.5,sk);
  if(back){hairBackView(av,0,hy)}else{
   // face
-  const ex=1.2;circ(-4.3+ex,hy+1,1.9,'#3a2430');circ(4.3+ex,hy+1,1.9,'#3a2430');circ(-3.8+ex,hy+.3,.7,'#fff');circ(4.8+ex,hy+.3,.7,'#fff');
+  const ex=1.2;if(av.base){g.globalAlpha=.35;circ(-6+ex,hy+2.5,3.2,'#fff');circ(7+ex,hy+2.5,3.2,'#fff');circ(1+ex,hy-6,3,'#fff');g.globalAlpha=1}if(av.eye){g.globalAlpha=.75;ell(-4.3+ex,hy-.6,2.9,1.6,av.eye);ell(4.3+ex,hy-.6,2.9,1.6,av.eye);g.globalAlpha=1}
+  circ(-4.3+ex,hy+1,1.9,'#3a2430');circ(4.3+ex,hy+1,1.9,'#3a2430');circ(-3.8+ex,hy+.3,.7,'#fff');circ(4.8+ex,hy+.3,.7,'#fff');if(av.lash){g.strokeStyle='#1b1b1b';g.lineWidth=.9;g.beginPath();g.moveTo(-6.2+ex,hy);g.lineTo(-7.3+ex,hy-1.2);g.moveTo(-5.6+ex,hy-.7);g.lineTo(-6.4+ex,hy-2);g.moveTo(6.2+ex,hy);g.lineTo(7.3+ex,hy-1.2);g.moveTo(5.6+ex,hy-.7);g.lineTo(6.4+ex,hy-2);g.stroke()}
   {const bl=av.blush?av.blush+'b3':av.acc==='blush'?'rgba(255,100,140,.7)':'rgba(255,130,160,.38)';circ(-7+ex,hy+4.5,av.blush?2.7:2.3,bl);circ(7+ex,hy+4.5,av.blush?2.7:2.3,bl)}
   g.strokeStyle=av.lip||'#8a3b55';g.lineWidth=av.lip?2.1:1.1;g.beginPath();if(o.mouth==='o'){circ(ex,hy+6,1.6,av.lip||'#8a3b55')}else{g.arc(ex,hy+4.8,2,.2,Math.PI-.2);g.stroke()}
   if(av.mask&&av.mask.t>Date.now()){g.fillStyle=av.mask.c;g.beginPath();g.ellipse(0,hy+2,10.5,9.5,0,0,7);g.fill();circ(-3.1+ex,hy+1,2.1,sk);circ(5.5+ex,hy+1,2.1,sk);circ(-3.1+ex,hy+1,1.5,'#3a2430');circ(5.5+ex,hy+1,1.5,'#3a2430');g.strokeStyle='rgba(0,0,0,.25)';g.lineWidth=1;g.beginPath();g.arc(ex+1,hy+6,1.6,.2,Math.PI-.2);g.stroke()}
@@ -1103,6 +1111,7 @@ function onMsg(m){
  case'go':{if(Math.hypot(m.x-pa.x,m.y-pa.y)>1.6||pa.seat){pa.seat=null;pa.pose='stand';pa.x=m.x;pa.y=m.y}const then=m.then;walkTo(pa,m.tx,m.ty,()=>{if(then?.seat)applySeat(pa,then.seat);if(then?.face){faceToward(pa,then.face[0],then.face[1])}});break}
  case'seat':pa.path=[];if(m.seat)applySeat(pa,m.seat);else{standUp(pa);pa.x=m.x;pa.y=m.y}break;
  case'emo':pa.emo={e:m.e,t:NOW+2600};if(m.burst)burst(pa,m.burst,6);sfx.pop();break;
+ case'gift':burst(pa,'🎁',6);sfxChaching();toast(`🎁 ${ctx.partnerName} vừa tặng bạn ${m.n}! Mở 🎒 Đồ đã mua để dùng nhé`,'🎒 Xem',()=>openBag());break;
  case'say':pa.say={text:m.text,t:NOW+6500};UP.msg={text:m.text,at:Date.now()};lsSet('seenMsg-'+PA,UP.msg.at);sfx.pop();break;
  case'act':doAct(pa,m.a,true);break;
  case'room':R=m.R;BM=blockedMap();petCache.k=-1;fixMe();syncDecorUI();updateAudio();break;
@@ -1526,6 +1535,47 @@ $('#csB').onclick=e=>{const o=e.target.closest('[data-o]');if(o){const v=o.datas
 $('#csBack').onclick=()=>{CS={step:0,fashion:KIND==='mall3'};drawConsult()};
 $('#csAll').onclick=()=>{for(const x of CS.res||[])if(!MK.cart.some(c=>c.n===x.a.n))mkAdd(prodObj([x.a.e,x.a.n,x.a.p,x.a.tag]));toast('🛒 Đã bỏ cả bộ vào giỏ chung · thanh toán ở quầy thu ngân nhé');drawCsResult()};
 
+/* ================= 🎒 Đồ đã mua: mặc, trang điểm, dưỡng da, ăn uống, tặng người ấy (dùng ở mọi phòng) ================= */
+const SKIN_RE=/^(sữa rửa mặt|gel rửa|bọt rửa|nước tẩy trang|sáp tẩy trang|dầu tẩy trang|gel tẩy trang|tẩy trang|toner|nước hoa hồng|nước thần|lotion|essence|serum|tinh chất|ampoule|kem dưỡng|kem chống nắng|gel chống nắng|kem (?!nền|lót|má)|mặt nạ|sữa dưỡng|dưỡng|xịt khoáng|retinol)/i;
+// suy ra cách mặc/dùng từ biểu tượng + tên món (đồ cũ chưa có thông tin mặc cũng dùng được)
+function wearOf(x){if(x.w)return x.w;const n=x.n||'',m=/^@(\w+)\/([0-9a-f]{3,8})(?:\/([0-9a-f]{3,8}))?/i.exec(x.e||''),t=m&&m[1],c1=m?'#'+m[2]:'#e91e63',c2=m&&m[3]?'#'+m[3]:c1;
+ if(SKIN_RE.test(n))return'';
+ if(t==='shoe'||/^giày|^dép|^sandal/i.test(n))return'shoe:'+c1;
+ if(t==='jewel'||/^(nhẫn|vòng|lắc|dây chuyền|bông tai|khuyên)/i.test(n))return/nhẫn/i.test(n)?'ring:'+c2:/vòng|lắc/i.test(n)?'brace:'+(t==='jewel'?c2:c1):'neck:'+(t==='jewel'?c2:c1);
+ if(t==='watch'||/^đồng hồ/i.test(n))return'watch:'+c2;
+ if(/mascara|chuốt mi/i.test(n))return'lash:#1b1b1b';
+ if(/bảng mắt|phấn mắt|eyeshadow|nhũ mắt/i.test(n))return'eye:'+c1;
+ if(t==='cushion'||/cushion|phấn nước|kem nền|phấn nền|foundation|phấn phủ/i.test(n))return'base:1';
+ if(t==='lip'||/^son (?!dưỡng)/i.test(n))return'lip:'+c1;
+ if(t==='perfume'||/^nước hoa(?! hồng)/i.test(n))return'scent:'+c1;
+ if(t==='glasses'||/^kính/i.test(n))return'acc:glasses';if(t==='cap'||/^mũ|^nón/i.test(n))return'acc:cap';if(t==='bag'||/^túi/i.test(n))return'bag:'+c1;
+ if(t==='nail'||/sơn móng/i.test(n))return'nail:'+c1;return''}
+const WEAR_KEYS=['lip','blush','scent','bag','nail','shoe','neck','ring','brace','watch','eye','lash','base'];
+let BAGT='wear',BAG={cl:[],pt:{}};
+async function openBag(){if(!MD&&!window.__MD){try{window.__MD=await import('./market.js')}catch(e){}}const cl=await loadS('closet',{})||{};const pt=Object.assign({items:{}},await loadS('pantry',{}));BAG={cl,pt};drawBag();$('#mBag').classList.add('on')}
+function bagGroups(){const mine=(BAG.cl[ME]||[]);const cnt={};for(const x of mine)cnt[x.n]=(cnt[x.n]||0)+1;const uniq=mine.filter((x,i,a)=>a.findIndex(y=>y.n===x.n)===i).map(x=>Object.assign({},x,{w:wearOf(x),q:cnt[x.n]}));
+ return{wear:uniq.filter(x=>x.w&&/^(top|bot|acc|bag|shoe|neck|ring|brace|watch)/.test(x.w)),makeup:uniq.filter(x=>x.w&&/^(lip|blush|scent|nail|eye|lash|base)/.test(x.w)),skin:uniq.filter(x=>!x.w&&SKIN_RE.test(x.n)),
+  food:Object.entries(BAG.pt.items||{}).filter(([,o])=>o.q>0).map(([n,o])=>({n,e:o.e,q:o.q,food:1})),other:uniq.filter(x=>!x.w&&!SKIN_RE.test(x.n))}}
+function drawBag(){const G=bagGroups(),av=UM.av||avOf(ME);const tabs=[['wear','👗 Quần áo · phụ kiện'],['makeup','💄 Trang điểm · nước hoa'],['skin','🧴 Dưỡng da'],['food','🍱 Đồ ăn · uống'],['other','📦 Khác']];
+ $('#bagT').innerHTML=tabs.map(([k,v])=>`<button data-bt="${k}" class="${k===BAGT?'on':''}">${v} <small>${G[k].length}</small></button>`).join('');
+ const L=G[BAGT];AVD=Object.assign({},av);
+ $('#bagL').innerHTML=L.length?L.map((x,i)=>{const worn=x.w&&isWorn(x.w);const act=x.food?(isDrink(x)?'🥤 Uống':'😋 Ăn'):BAGT==='skin'?'✨ Dùng':x.w?(worn?'✓ Tháo ra':(/^scent/.test(x.w)?'💨 Xịt':/^(lip|blush|eye|lash|base|nail)/.test(x.w)?'💄 Dùng':'👗 Mặc')):'👀 Ngắm';
+  return`<div class="cl"><b>${icoH(x.e)}</b><span>${esc(x.n)}<br><small class="note">×${x.q}${worn?(BAGT==='wear'?' · đang mặc':' · đang dùng'):''}</small></span><button class="btn small ${worn?'':'primary'}" style="flex:none;white-space:nowrap" data-use="${i}">${act}</button>${x.food?'':`<button class="btn small" style="flex:none" data-gift="${i}" title="Tặng người ấy">🎁</button>`}</div>`}).join('')
+  :`<p class="note">Chưa có gì ở mục này · mua ở ${BAGT==='food'?'🛒 Siêu thị':'🛍️ TTTM'} nhé</p>`;
+ $('#bagL').dataset.t=BAGT}
+window.openBag=openBag;window.openAvatarX=()=>{$('#mBag').classList.remove('on');openAvatar()};
+$('#bagT').onclick=e=>{const b=e.target.closest('[data-bt]');if(!b)return;BAGT=b.dataset.bt;sfx.pop();drawBag()};
+$('#bagL').onclick=async e=>{const L=bagGroups()[BAGT];const u=e.target.closest('[data-use]'),gf=e.target.closest('[data-gift]');ac();
+ if(u){const x=L[+u.dataset.use];if(!x)return;
+  if(x.food){const o=BAG.pt.items[x.n];o.q--;if(o.q<=0)delete BAG.pt.items[x.n];await saveS('pantry',BAG.pt);if(typeof PT!=='undefined'&&KIND==='kitchen')PT.items=BAG.pt.items;const dr=isDrink(x);me.emo={e:x.e,t:NOW+2200};burst(me,dr?'💦':'😋',4);send('eat',{e:x.e,drink:dr});dr?sfxSlurp():sfxChew();vib(20)}
+  else if(BAGT==='skin'){me.emo={e:x.e,t:NOW+2400};send('emo',{e:x.e});for(let k=0;k<4;k++)noise(.05,.18,900,'lowpass',k*.16);if(/mặt nạ/i.test(x.n)){doMask()}else{setAv({glow:Date.now()+3600e3});burst(me,'✨',6);toast(`✨ Đã dùng ${x.n}, da căng bóng 1 tiếng`)}}
+  else if(x.w){AVD=Object.assign({},UM.av||avOf(ME));const on=!isWorn(x.w);wearOn(x.w,on);setAv(AVD);burst(me,on?(/^scent/.test(x.w)?'🌸':'✨'):'👋',5);
+   if(on&&/^scent/.test(x.w)){noise(.35,.1,5000,'highpass');noise(.3,.08,5000,'highpass',.4)}else{sfx.pop()}toast(on?`Đã ${/^scent/.test(x.w)?'xịt':/^(lip|blush|eye|lash|base|nail)/.test(x.w)?'dùng':'mặc'} ${x.n} 💗`:`Đã tháo ${x.n}`)}
+  else{me.emo={e:x.e,t:NOW+2500};send('emo',{e:x.e});toast(`Ngắm ${x.n} một chút… đẹp ghê 😍`)}
+  drawBag();return}
+ if(gf){const x=L[+gf.dataset.gift];if(!x)return;if(!confirm(`Tặng ${x.n} cho ${ctx.partnerName}?`))return;const c=BAG.cl;const i=(c[ME]||[]).findIndex(y=>y.n===x.n);if(i<0)return;const [it]=c[ME].splice(i,1);c[PA]=c[PA]||[];c[PA].push(Object.assign({},it,{at:Date.now(),from:ME}));
+  await saveS('closet',c);if(x.w&&isWorn(x.w)){AVD=Object.assign({},UM.av);wearOn(x.w,false);setAv(AVD)}send('gift',{n:x.n,e:x.e});me.emo={e:'🎁',t:NOW+2500};burst(me,'💝',6);sfxChaching();toast(`Đã gói quà ${x.n} gửi ${ctx.partnerName} 🎁`);drawBag()}};
+
 /* ================= 🍽️ Nhà hàng Tomortle: hai đứa là khách (đặt bàn, phục vụ, phòng riêng, trang trí) ================= */
 let RB={booking:null,ratings:[]},RT={dishes:[],bill:[],table:null};
 if(IS_RT){RB=Object.assign(RB,await loadS('resto',{}));RT=Object.assign(RT,await loadS('resto-table',{}));RT.dishes=RT.dishes||[];RT.bill=RT.bill||[];window.RT_DISHES=RT.dishes;
@@ -1689,12 +1739,12 @@ let CLOSET={};
 async function stockCloset(items){try{const c=Object.assign({},await loadS('closet',{}));for(const i of items){const a=MD&&MD.ALL.find(x=>x.n===i.n);const who=i.by||ME;c[who]=c[who]||[];for(let q=0;q<i.q;q++)c[who].push({n:i.n,e:i.e,w:(a&&a.w)||'',at:Date.now()})}await saveS('closet',c);CLOSET=c;
  const mine=items.filter(i=>(i.by||ME)===ME).length;toast(mine?'Đồ đã vào tủ đồ của bạn 👜 · ra 🪞 phòng thử đồ hoặc Thay đồ để mặc':'Đồ đã vào tủ đồ của người ấy 👜','👗 Mặc thử',openAvatar)}catch(e){console.warn(e)}}
 // áp một món lên nhân vật: son/má/nước hoa/áo/quần/phụ kiện/túi; bấm lại món đang mặc để tháo
-function wearOn(w,on){const[k,a,b]=w.split(':');if(k==='lip'||k==='blush'||k==='scent'||k==='bag'||k==='nail'){AVD[k]=on?a:''}else if(k==='top'){AVD.top=a;AVD.tc=b}else if(k==='bot'){AVD.bot=a;AVD.bc=b}else if(k==='acc'){AVD.acc=on?a:'none'}}
+function wearOn(w,on){const[k,a,b]=w.split(':');if(WEAR_KEYS.includes(k)){AVD[k]=on?a:''}else if(k==='top'){if(on){AVD.top=a;AVD.tc=b}else{AVD.top='tee';AVD.tc='#ffffff'}}else if(k==='bot'){if(on){AVD.bot=a;AVD.bc=b}else{AVD.bot='pants';AVD.bc='#3d5a80'}}else if(k==='acc'){AVD.acc=on?a:'none'}}
 function isWorn(w){const[k,a,b]=w.split(':');return k==='top'?AVD.top===a&&AVD.tc===b:k==='bot'?AVD.bot===a&&AVD.bc===b:k==='acc'?AVD.acc===a:AVD[k]===a}
-function drawCloset(){const el=$('#avCloset');if(!el)return;const mine=(CLOSET[ME]||[]).filter((x,i,arr)=>arr.findIndex(y=>y.n===x.n)===i);
+function drawCloset(){const el=$('#avCloset');if(!el)return;const mine=(CLOSET[ME]||[]).filter((x,i,arr)=>arr.findIndex(y=>y.n===x.n)===i).map(x=>Object.assign({},x,{w:wearOf(x)}));
  el.innerHTML=mine.length?`<h4 class="sub">👜 Tủ đồ đã mua (${mine.length})</h4><div class="closet">${mine.map((x,i)=>`<button data-i="${i}" class="${x.w&&isWorn(x.w)?'on':''} ${x.w?'':'col'}" title="${esc(x.n)}">${icoH(x.e,'ico')}<small>${esc(x.n.replace(/^(Son|Nước hoa|Túi|Áo thun|Áo|Đầm|Quần|Chân váy|Mũ|Kính|Giày|Hoodie|Má hồng)\s+/,''))}</small></button>`).join('')}</div><button class="btn small" id="avClean" style="margin-top:6px">✨ Tẩy trang (bỏ son, má, nước hoa, sơn móng, túi)</button>`:'<p class="note" style="margin:4px 0 10px">Tủ đồ trống · mua son, nước hoa, quần áo, túi ở 🛍️ TTTM rồi mặc ở đây nhé</p>';
  el.dataset.list=JSON.stringify(mine.map(x=>x.w))}
-$('#avCloset').onclick=e=>{if(e.target.closest('#avClean')){AVD.lip=AVD.blush=AVD.scent=AVD.bag=AVD.nail='';drawCloset();return}const b=e.target.closest('[data-i]');if(!b)return;const w=JSON.parse($('#avCloset').dataset.list||'[]')[+b.dataset.i];if(!w){toast('Món này để sưu tầm, không mặc lên nhân vật được 💅');return}wearOn(w,!isWorn(w));drawCloset();buildAvOpts();sfx.pop()};
+$('#avCloset').onclick=e=>{if(e.target.closest('#avClean')){AVD.lip=AVD.blush=AVD.scent=AVD.bag=AVD.nail=AVD.eye=AVD.lash=AVD.base='';drawCloset();return}const b=e.target.closest('[data-i]');if(!b)return;const w=JSON.parse($('#avCloset').dataset.list||'[]')[+b.dataset.i];if(!w){toast('Món này là đồ dưỡng da/đồ sưu tầm · dùng ở 🎒 Đồ đã mua hoặc phòng 🧴 Skincare nhé');return}wearOn(w,!isWorn(w));drawCloset();buildAvOpts();sfx.pop()};
 async function openAvatar(){AVD=Object.assign({},avOf(ME));if(!MD&&!window.__MD){try{window.__MD=await import('./market.js')}catch(e){}}CLOSET=await loadS('closet',{})||{};drawCloset();buildAvOpts();$('#mAvatar').classList.add('on');requestAnimationFrame(drawPreview)}
 $('#bAvatar').onclick=openAvatar;
 $('#avRand').onclick=()=>{for(const o of AVO){const vals=o.type==='col'?o.v:Object.keys(o.v);AVD[o.k]=vals[Math.floor(Math.random()*vals.length)]}buildAvOpts()};
