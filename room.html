@@ -923,7 +923,7 @@ function walkNear(c,tiles,after){ // tiles: Set of "x,y"
 function stepChar(c,dt){
  if(!c.path.length){c.walking=false;return}
  const[tx,ty]=c.path[0];const dx=tx-c.x,dy=ty-c.y,dist=Math.hypot(dx,dy),sp=2.8*dt;setFaceDir(c,dx,dy);c.walking=true;c.walkT+=dt;
- if(dist<=sp){c.x=tx;c.y=ty;c.path.shift();if(c===me&&soundOn)sfx.step();if(!c.path.length){c.walking=false;const a=c.after;c.after=null;a&&a(true)}}else{c.x+=dx/dist*sp;c.y+=dy/dist*sp}
+ if(dist<=sp){c.x=tx;c.y=ty;c.path.shift();if(soundOn&&(c===me||(c===pa&&livePa())||(c.npc&&Math.hypot(c.x-me.x,c.y-me.y)<3)))stepSnd(c);if(!c.path.length){c.walking=false;const a=c.after;c.after=null;a&&a(true)}}else{c.x+=dx/dist*sp;c.y+=dy/dist*sp}
 }
 
 /* chibi drawing */
@@ -1129,7 +1129,7 @@ function npcDefs(){const k=KIND;
  if(IS_RT)return[{type:'chibi',role:'waiter',name:'Phục vụ',av:NPC_AV('#ffffff','#1b1b1b',{top:'shirt'})}];
  return[]}
 const NPCS=npcDefs().map((d,i)=>{const ft=freeTiles(),t=ft[Math.floor(Math.random()*ft.length)]||[4,4];return Object.assign(mkChar('npc'+i),d,{x:t[0]+.5,y:t[1]+.5,lineT:0,seed:3+i,npc:true})});
-function npcSay(n,txt,ms=4200){n.say={text:txt,t:NOW+ms}}
+function npcSay(n,txt,ms=4200){n.say={text:txt,t:NOW+ms};try{if(Math.hypot(n.x-me.x,n.y-me.y)<6){if(n.role==='cat')meow();else if(n.role==='bird')chirp();else if(n.role==='robot')beepBoop();else voice(txt,VOICE[n.role]||500)}}catch(e){}}
 // bộ não: chọn việc mỗi vài giây
 function npcBrain(){for(const n of NPCS){if(n.path.length||(n.busyT||0)>NOW)continue;const r=Math.random(),items=R.items.filter(i=>!CAT[i.t].flat);
  const pickUse=f=>{const L=items.filter(f);const it=rnd1(L);if(!it)return false;const adj=adjOfItem(it);const p=bfs(n.x,n.y,(x,y)=>adj.has(x+','+y));if(!p)return false;const t=p[p.length-1];
@@ -1234,7 +1234,7 @@ function drawProj(){for(let i=PROJ.length-1;i>=0;i--){const p=PROJ[i],T=THROWS[p
 
 /* ================= scene compose ================= */
 let HITS=[],OVER=[];
-window.__dbg={wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
+window.__dbg={amb:()=>AMB&&{key:AMB.key,n:AMB.nodes.length,ac:AC&&AC.state},wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
 window.__meScreen=()=>{const r=cv.getBoundingClientRect(),[x,y]=charScreen(me);return[r.x+x*r.width/W,r.y+y*r.width/W]};
 function charScreen(c){const z=c.pose==='sit'?16:c.pose==='lie'?24:0;return iso(c.x,c.y,z)}
 function itemKey(it){const f=fp(it);return f.x+f.y+f.w+f.d-1}
@@ -1305,7 +1305,7 @@ function onMsg(m){
  case'phone':pa.phoneT=m.ms?NOW+m.ms:0;break;
  case'ttpost':toast(`🎬 ${ctx.partnerName} vừa đăng clip TikTok: "${m.cap}"`,'📱 Xem',()=>openPhone('tt'));break;
  case'gift':burst(pa,'🎁',6);sfxChaching();toast(`🎁 ${ctx.partnerName} vừa tặng bạn ${m.n}! Mở 🎒 Đồ đã mua để dùng nhé`,'🎒 Xem',()=>openBag());break;
- case'say':chatLog(PA,m.text);pa.say={text:m.text,t:NOW+6500};UP.msg={text:m.text,at:Date.now()};lsSet('seenMsg-'+PA,UP.msg.at);sfx.pop();break;
+ case'say':chatLog(PA,m.text);try{voice(m.text,VOICE.pa)}catch(e){}pa.say={text:m.text,t:NOW+6500};UP.msg={text:m.text,at:Date.now()};lsSet('seenMsg-'+PA,UP.msg.at);sfx.pop();break;
  case'act':doAct(pa,m.a,true);break;
  case'throw':{const n=Math.min(12,m.n|0||1);for(let i=0;i<n;i++)setTimeout(()=>{RC=RC.k===m.k&&NOW-RC.t<1300?{k:m.k,n:RC.n+1,t:NOW}:{k:m.k,n:1,t:NOW};launch(pa,me,m.k);PROJ[PROJ.length-1].combo={...RC}},i*110);break}
  case'room':R=m.R;BM=blockedMap();petCache.k=-1;fixMe();syncDecorUI();updateAudio();break;
@@ -1339,7 +1339,7 @@ function goNear(tiles,then,after){if(me.seat)standUp(me);const p=bfs(me.x,me.y,(
 function sitOn(it,kind){if(it.npc){toast('Ghế này có khách ngồi rồi ạ 🙂');return}const c=CAT[it.t];const slots=kind==='lie'?c.lie:c.sit;let k=-1;for(let i=0;i<slots.length;i++)if(!seatTaken(it,i,kind,ME)){k=i;break}if(k<0){toast('Chỗ này có người rồi 💞');return}
  const seat={id:it.id,k,kind};goNear(adjOfItem(it),{seat},()=>{applySeat(me,seat);send('seat',{seat});if(kind==='lie')burst(me,'💤',3);checkCuddle()})}
 function checkCuddle(){if(!livePa()||!me.seat||!pa.seat||me.seat.id!==pa.seat.id)return;burst(me,'💗',8);burst(pa,'💕',6);vib(60)}
-function useItem(it,fn){goNear(adjOfItem(it),{face:[...lpt(it,.5,.5)]},()=>{faceToward(me,...lpt(it,.5,.5));fn&&fn()})}
+function useItem(it,fn){goNear(adjOfItem(it),{face:[...lpt(it,.5,.5)]},()=>{faceToward(me,...lpt(it,.5,.5));try{itemSnd(it.t)}catch(e){}fn&&fn()})}
 
 /* actions between two */
 function doAct(c,a,remote){
@@ -1953,7 +1953,7 @@ function applyDeco(){if(KIND!=='resto2')return;R.items=R.items.filter(i=>!i.deco
 
 $('#bResto').onclick=openResto;$('#bRMenu').onclick=openRMenu;
 if(KIND==='resto2')applyDeco();
-function say(text){chatLog(ME,text);me.say={text,t:NOW+6500};UM.msg={text,at:Date.now()};saveS(UK(ME),UM);send('say',{text})}
+function say(text){chatLog(ME,text);try{voice(text,VOICE.me)}catch(e){}me.say={text,t:NOW+6500};UM.msg={text,at:Date.now()};saveS(UK(ME),UM);send('say',{text})}
 
 /* ================= input ================= */
 function evPt(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]}
@@ -1992,7 +1992,61 @@ const mtof=m=>440*Math.pow(2,(m-69)/12);
 const CHORDS=[[53,57,60,64],[52,55,59,62],[50,53,57,60],[48,52,55,59]],PENT=[72,74,76,79,81,84];
 function mnote(f,t,dur,type,vol,cut){const o=AC.createOscillator(),gn=AC.createGain(),lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=cut;o.type=type;o.frequency.value=f;gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(vol,t+.05);gn.gain.exponentialRampToValueAtTime(.0008,t+dur);o.connect(lp);lp.connect(gn);gn.connect(musicGain);o.start(t);o.stop(t+dur+.05)}
 function updateAudio(){if(!AC)return;if(soundOn&&R.music)startMusic();else stopMusic();
- if(soundOn&&raining()){if(!rainNode){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();s.buffer=noiseBuf;s.loop=true;f.type='lowpass';f.frequency.value=1100;gn.gain.value=.12;s.connect(f);f.connect(gn);gn.connect(master);s.start();rainNode={s,gn}}}else if(rainNode){rainNode.s.stop();rainNode=null}}
+ if(soundOn&&raining()){if(!rainNode){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();s.buffer=noiseBuf;s.loop=true;f.type='lowpass';f.frequency.value=1100;gn.gain.value=.12;s.connect(f);f.connect(gn);gn.connect(master);s.start();rainNode={s,gn}}}else if(rainNode){rainNode.s.stop();rainNode=null}try{ambUpdate()}catch(e){}}
+/* ================= 🔊 Âm thanh sống động: nền từng phòng, giọng líu lo, bước chân theo sàn, tiếng đồ vật ================= */
+function sweep(f0,f1,dur,type='sine',vol=.05,when=0,cut=0){if(!soundOn||!AC)return;const t=AC.currentTime+when,o=AC.createOscillator(),gn=AC.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(vol,t+Math.min(.03,dur/4));gn.gain.exponentialRampToValueAtTime(.0008,t+dur);
+ if(cut){const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=cut;o.connect(lp);lp.connect(gn)}else o.connect(gn);gn.connect(master);o.start(t);o.stop(t+dur+.05)}
+// giọng "líu lo" kiểu game: mỗi âm tiết một tiếng bíp ngắn theo cao độ riêng của từng người
+const VOICE={me:440,pa:600,shopper:520,mshopper:620,staff:380,advisor:700,stylist:560,tech:480,waiter:340,spa:660};
+function voice(text,base,type='triangle'){if(!soundOn||!AC||document.hidden)return;const n=Math.min(14,Math.max(2,Math.round(String(text).replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(/\s+/).length*1.3)));
+ for(let i=0;i<n;i++){const f=base*(.82+Math.random()*.45)*(i===n-1&&/[?]/.test(text)?1.25:1);tone(f,.055,type,.022,i*.07)}}
+const meow=()=>{sweep(520,900,.18,'sawtooth',.03,0,1600);sweep(900,480,.3,'sawtooth',.03,.17,1600)};
+const chirp=()=>{for(let i=0;i<3;i++)sweep(2800,4200,.06,'sine',.025,i*.09)};
+const beepBoop=()=>{tone(880,.06,'square',.02);tone(660,.06,'square',.02,.08);tone(990,.08,'square',.02,.16)};
+// bước chân: âm khác nhau theo loại sàn
+function stepSnd(c){const near=c===me?1:(c.npc?.25:.45);if(near<.3&&Math.random()<.5)return;const p=(R.floor&&R.floor.p)||'wood',v=.05*near;
+ if(R.kind==='balcony'||p==='deck'){noise(.05,v,700,'lowpass')}else if(p==='marble'||p==='tiles'||p==='checker'){noise(.03,v*.9,2600,'highpass');noise(.04,v*.6,300,'lowpass')}else if(p==='carpet'||p==='grass'){noise(.06,v*.5,450,'lowpass')}else if(p==='herring'||p==='wood'){noise(.05,v,900,'lowpass');tone(140,.04,'sine',v*.25)}else noise(.05,v,900,'lowpass')}
+// tiếng khi dùng đồ vật
+const ITEM_SND={tv:()=>{noise(.25,.05,4000,'bandpass');[523,659,784].forEach((f,i)=>tone(f,.12,'sine',.04,.25+i*.1))},fridge:()=>{noise(.12,.08,300,'lowpass');tone(60,.5,'sine',.03,.1)},record:()=>{sweep(300,900,.35,'sawtooth',.02,0,1200);noise(.4,.02,3000,'highpass',.3)},
+ piano:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.5,'triangle',.05,i*.12)),camera:()=>{noise(.04,.25,4000,'highpass');tone(1800,.03,'square',.03,.06)},phone:()=>{for(let i=0;i<3;i++)tone(1318,.08,'sine',.05,i*.12)},
+ plant:()=>sfx.water(),flowerbed:()=>sfx.water(),shelf:()=>{noise(.15,.05,2500,'bandpass');noise(.12,.04,2000,'bandpass',.15)},desk:()=>{for(let i=0;i<6;i++)noise(.02,.05,3000,'highpass',i*.07)},
+ gift:()=>{noise(.3,.06,3500,'bandpass');tone(1568,.15,'sine',.04,.3)},mailbox:()=>{noise(.08,.15,500,'lowpass');tone(1047,.12,'sine',.04,.12)},lamp:()=>noise(.02,.2,3000,'highpass'),
+ swing:()=>{sweep(600,420,.4,'sawtooth',.012,0,900);sweep(420,600,.4,'sawtooth',.012,.45,900)},telescope:()=>sweep(200,600,.3,'sine',.03),wardrobe:()=>{sweep(180,120,.3,'sawtooth',.02,0,500);noise(.1,.08,400,'lowpass',.3)},
+ easel:()=>{for(let i=0;i<4;i++)noise(.08,.04,2500,'bandpass',i*.1)},teddy:()=>{sweep(400,300,.2,'sine',.05)},radio:()=>{noise(.3,.06,2000,'bandpass');tone(880,.1,'sine',.03,.3)},grill:()=>noise(1.2,.06,3000,'highpass'),
+ stove:()=>{noise(.1,.1,2000,'bandpass');noise(1,.05,3500,'highpass',.1)},counter:()=>sfx.water(),basin:()=>noise(.8,.07,1400,'bandpass'),vanity:()=>tone(1760,.1,'sine',.03),
+ gametable:()=>{for(let i=0;i<3;i++)noise(.03,.15,1500,'bandpass',i*.09)},bed:()=>noise(.25,.05,300,'lowpass'),sofa:()=>noise(.2,.05,300,'lowpass'),fitting:()=>{noise(.25,.05,3000,'bandpass')},
+ lift:()=>{tone(1319,.25,'sine',.05);tone(1047,.35,'sine',.05,.25)},checkout:()=>{tone(2200,.08,'square',.03)},bar:()=>{for(let i=0;i<6;i++)noise(.04,.06,2600,'bandpass',i*.06)}};
+function itemSnd(t){try{(ITEM_SND[t]||((MD&&MD.COUNTERS[t])?()=>noise(.15,.04,2500,'bandpass'):null))?.()}catch(e){}}
+// âm thanh nền theo phòng, giờ và thời tiết
+let AMB=null;
+function ambBed(freq,type,vol,q=.7){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();s.buffer=noiseBuf;s.loop=true;f.type=type;f.frequency.value=freq;f.Q.value=q;gn.gain.value=0;gn.gain.setTargetAtTime(vol,AC.currentTime,1.2);s.connect(f);f.connect(gn);gn.connect(master);s.start(0,Math.random()*1.5);return{s,gn,f}}
+function ambHum(f,vol){const o=AC.createOscillator(),gn=AC.createGain();o.frequency.value=f;gn.gain.value=0;gn.gain.setTargetAtTime(vol,AC.currentTime,1);o.connect(gn);gn.connect(master);o.start();return{s:o,gn}}
+function ambStop(){if(!AMB)return;clearInterval(AMB.timer);for(const n of AMB.nodes){try{n.gn.gain.setTargetAtTime(0,AC.currentTime,.4);setTimeout(()=>{try{n.s.stop()}catch(e){}},1500)}catch(e){}}AMB=null}
+function ambUpdate(){if(!AC)return;const want=soundOn&&!document.hidden;const key=[KIND,dayPhase(),WX.k].join('|');if(!want){ambStop();return}if(AMB&&AMB.key===key)return;ambStop();
+ const N=[],k=KIND,night=dayPhase()==='night',sunny=WX.k==='sun'||WX.k==='rainbow'||WX.k==='cloud';
+ if(k==='balcony'){const w=ambBed(420,'lowpass',.035);N.push(w);w.lfo=1}
+ if(k.startsWith('market'))N.push(ambBed(620,'bandpass',.045,1.2),ambBed(260,'lowpass',.02));
+ if(k.startsWith('mall'))N.push(ambBed(700,'bandpass',.028,1.2),ambHum(55,.006));
+ if(k.startsWith('resto'))N.push(ambBed(560,'bandpass',.03,1.3));
+ if(k==='kitchen')N.push(ambHum(60,.008),ambHum(120,.004));
+ if(k==='spa')N.push(ambBed(3200,'bandpass',.012,2));
+ const ev=()=>{if(!soundOn||document.hidden)return;const r=Math.random(),h=new Date().getHours();
+  if(k==='room'||k==='balcony'){if(!night&&sunny&&r<(k==='balcony'?.45:.18))chirp();else if(night&&!raining()&&r<(k==='balcony'?.5:.22)){for(let i=0;i<4;i++)tone(4300+Math.random()*200,.03,'sine',.012,i*.06)}
+   if(k==='balcony'&&r>.9){sweep(90,160,1.6,'sawtooth',.012,0,400)}if(k==='balcony'&&r>.97)tone(520,.25,'square',.012,1.7)}
+  if(k==='room'&&Math.random()<.5)tone(2000,.012,'square',.006);
+  if(k==='kitchen'&&r<.15)tone(1400+Math.random()*400,.05,'sine',.02);
+  if(k==='spa'&&r<.3){const P=[1568,1760,2093,2349,2637];for(let i=0;i<3;i++)tone(P[Math.floor(Math.random()*5)],.6,'triangle',.012,i*.18)}
+  if(k.startsWith('market')){if(r<.25)tone(2200,.07,'square',.012);if(r>.96){tone(784,.5,'sine',.035);tone(659,.7,'sine',.035,.45)}if(r>.85&&r<.9)noise(.4,.02,1800,'bandpass')}
+  if(k.startsWith('mall')){if(r<.3)for(let i=0;i<2;i++)noise(.025,.03,3500,'highpass',i*.38);if(r>.95){tone(1047,.6,'sine',.025);tone(1319,.8,'sine',.025,.3);tone(1568,1,'sine',.025,.6)}if(k==='mall6'&&r>.8&&r<.86)beepBoop()}
+  if(k.startsWith('resto')){if(r<.35)tone(3000+Math.random()*1500,.08,'sine',.012);if(r>.9)for(let i=0;i<2;i++)tone(2600+Math.random()*600,.15,'sine',.015,i*.05)}};
+ AMB={key,nodes:N,timer:setInterval(ev,1800)}}
+document.addEventListener('visibilitychange',()=>{try{ambUpdate()}catch(e){}});
+setInterval(()=>{try{ambUpdate()}catch(e){}},30000);
+// bảng mở ra / đóng lại: tiếng "phụt" nhẹ
+try{new MutationObserver(ms=>{for(const m of ms){const el=m.target;if(!el.classList||!el.classList.contains('modal'))continue;const on=el.classList.contains('on');if(on!==!!el.__on){el.__on=on;if(soundOn&&AC){if(on){sweep(500,900,.09,'sine',.025)}else{sweep(800,450,.08,'sine',.018)}}}}}).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']})}catch(e){}
+// gõ chữ: tiếng lạch cạch nhỏ
+document.addEventListener('keydown',e=>{if(!soundOn||!AC)return;const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')&&e.key.length===1)noise(.015,.04,3500+Math.random()*1500,'highpass')},true);
+
 function syncHud(){$('#hSound').textContent=soundOn?'🔊':'🔇';$('#hLight').classList.toggle('off',!R.light)}
 $('#hSound').onclick=()=>{soundOn=!soundOn;lsSet('room-sound',soundOn);ac();updateAudio();syncHud()};
 $('#hLight').onclick=()=>{R.light=!R.light;saveRoom();syncHud()};
@@ -2088,7 +2142,7 @@ const NAUGHTY=[['slap','👋','Đánh yêu',4,1,'Phát vào mông một cái �
  ['spoon','😴','Ôm nhau ngủ',12,30,'Nằm ôm nhau trên giường'],['shower','🛁','Tắm chung',25,60,'Bồn tắm đầy bọt 🫧'],['spicy','🔥','Sexy time 🔞',50,120,'Đóng cửa, tắt đèn… 😈']];
 let LOVEB={pts:0};
 const cdKey=a=>'naughty-'+ME+'-'+a;
-function addLove(n){LOVEB.pts=(LOVEB.pts||0)+n;LOVE+=n;saveS('love-bonus',LOVEB,300);send('love',{n});renderLove();const[sx,sy]=charScreen(me);spawn(sx,sy-70,`+${n} 💗`,{vy:-26,life:2,size:15})}
+function addLove(n){try{[1319,1568,2093].forEach((f,i)=>tone(f,.25,'sine',.04,i*.08))}catch(e){}LOVEB.pts=(LOVEB.pts||0)+n;LOVE+=n;saveS('love-bonus',LOVEB,300);send('love',{n});renderLove();const[sx,sy]=charScreen(me);spawn(sx,sy-70,`+${n} 💗`,{vy:-26,life:2,size:15})}
 function renderLove(){const el=$('#loveB');if(el)el.textContent='💗 '+LOVE}
 function openNaughty(){const now=Date.now();$('#ntyL').innerHTML=NAUGHTY.map(([k,e,n,p,cd,d])=>{const left=Math.ceil(((lsGet(cdKey(k),0)+cd*6e4)-now)/6e4);return`<button data-k="${k}" ${left>0?'class="cd"':''}><b>${e}</b><span>${esc(n)}<small>${left>0?`⏳ ${left} phút nữa`:esc(d)}</small></span><i>+${p}</i></button>`}).join('');$('#mNty').classList.add('on')}
 $('#ntyL').onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;const A=NAUGHTY.find(x=>x[0]===b.dataset.k);
