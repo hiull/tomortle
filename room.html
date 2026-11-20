@@ -18,6 +18,7 @@
 #room{display:block;width:100%;height:auto;cursor:pointer}
 /* phòng chung vừa khít một màn hình: không cuộn trang, khung phòng tự co giãn */
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{position:fixed;inset:0;width:100%}
 body>.app{height:100vh;height:100dvh;display:flex;flex-direction:column;box-sizing:border-box;padding-top:calc(8px + env(safe-area-inset-top));padding-bottom:calc(8px + env(safe-area-inset-bottom))}
 body>.app>*{flex:none}body>.app>.roomwrap{flex:1 1 0;min-height:150px;display:flex;align-items:center;justify-content:center}
 #room{width:auto;height:auto;max-width:100%}
@@ -1186,7 +1187,7 @@ function autoTick(){if(!autoOK()||NOW<autoNext)return;me.auto=true;autoNext=NOW+
  if(r<.8){const ss=items.filter(i=>CAT[i.t].sit||(!shop&&CAT[i.t].lie&&Math.random()<.3));const it=rnd1(ss);if(it){sitOn(it,CAT[it.t].sit?'sit':'lie');return}}
  if(r<.92){const ft=freeTiles(),t=rnd1(ft);if(t)goTile(t[0],t[1]);return}
  if(Math.random()<.5){me.act='dance';me.actT=NOW+2600;send('emo',{e:'💃'})}else emo(rnd1(['😊','🎶','💭','✨','🥱']))}
-setInterval(()=>{try{autoTick()}catch(e){}},1200);
+setInterval(()=>{try{autoTick()}catch(e){window.__autoErr=String(e&&e.stack||e).slice(0,300)}},1200);
 
 /* ================= 🎯 Ném đồ (spam thoải mái): mỗi lần bấm là một món bay sang người ấy, có combo ================= */
 const THROWS={
@@ -1234,7 +1235,7 @@ function drawProj(){for(let i=PROJ.length-1;i>=0;i--){const p=PROJ[i],T=THROWS[p
 
 /* ================= scene compose ================= */
 let HITS=[],OVER=[];
-window.__dbg={amb:()=>AMB&&{key:AMB.key,n:AMB.nodes.length,ac:AC&&AC.state},wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
+window.__dbg={auto:()=>({auto:me.auto,hidden:document.hidden,editing,modal:!!document.querySelector('.modal.on'),ctxm:!!document.querySelector('.ctxm'),idle:Math.round(NOW-lastInput),err:window.__autoErr||null}),amb:()=>AMB&&{key:AMB.key,n:AMB.nodes.length,ac:AC&&AC.state},wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
 window.__meScreen=()=>{const r=cv.getBoundingClientRect(),[x,y]=charScreen(me);return[r.x+x*r.width/W,r.y+y*r.width/W]};
 function charScreen(c){const z=c.pose==='sit'?16:c.pose==='lie'?24:0;return iso(c.x,c.y,z)}
 function itemKey(it){const f=fp(it);return f.x+f.y+f.w+f.d-1}
@@ -1961,9 +1962,15 @@ let down=null;
 cv.addEventListener('pointerdown',e=>{ac();const p=evPt(e);down={p,t:Date.now(),id:e.pointerId};if(editing){edDown(p,e);return}});
 cv.addEventListener('pointermove',e=>{if(editing&&drag){edMove(evPt(e))}});
 cv.addEventListener('pointerup',e=>{const p=evPt(e);if(editing){edUp(p);down=null;return}if(!down)return;if(Math.hypot(p[0]-down.p[0],p[1]-down.p[1])>12){down=null;return}down=null;tap(p)});
+// chạm vào NPC / người ấy / đồ vật: nhân vật tự đi lại gần ngay (menu vẫn hiện để chọn việc)
+function approach(h){try{if(me.seat||me.path.length&&me.after)return;let adj;
+ if(h.kind==='item'){adj=adjOfItem(h.ref)}else{const c=h.ref,fx=Math.floor(c.x),fy=Math.floor(c.y);adj=new Set();for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])if(inB(fx+a,fy+b)&&!BM[fx+a][fy+b])adj.add((fx+a)+','+(fy+b))}
+ if(adj.has(Math.floor(me.x)+','+Math.floor(me.y)))return;const p=bfs(me.x,me.y,(x,y)=>adj.has(x+','+y));if(!p)return;const t=p[p.length-1];const c=h.kind==='item'?lpt(h.ref,.5,.5):[h.ref.x,h.ref.y];
+ if(h.kind==='npc'){h.ref.path=[];h.ref.busyT=NOW+5000}goTile(t[0],t[1],{face:c},()=>{faceToward(me,c[0],c[1]);if(h.kind==='npc')faceToward(h.ref,me.x,me.y)})}catch(e){}}
 function tap([px,py]){
  if(menuEl){closeMenu()}
  const h=pickAt(px,py);
+ if(h&&h.ref&&h.ref!==me&&(h.kind==='npc'||h.kind==='char'||(h.kind==='item'&&!CAT[h.ref.t].flat)))approach(h);
  if(h){if(h.kind==='char'){charMenu(h.ref,px,py-10);return}if(h.kind==='pet'){petMenu(px,py-14);return}if(h.kind==='npc'){npcMenu(h.ref,px,py-14);return}if(h.kind==='item'){if(itemMenu(h.ref,px,py-8))return}if(h.kind==='wall'){if(wallMenu(h.ref,px,py))return}}
  const[gx,gy]=unIso(px,py);const tx=Math.floor(gx),ty=Math.floor(gy);
  if(!inB(tx,ty))return;

@@ -12,6 +12,13 @@
   // hai ngón tay trên màn hình → không cho trình duyệt zoom (sự kiện pointer vẫn tới app để kéo/xoay sticker)
   document.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
   // chạm đúp: đã chặn bằng touch-action:manipulation (không chặn sự kiện để bấm nhanh 2 lần vẫn ăn)
+  // trang không cuộn (vd phòng chung): sau khi bàn phím iPhone tắt, kéo màn hình về đúng chỗ cũ để hàng nút trên cùng bấm được
+  var fixedPage = function () { try { return getComputedStyle(document.documentElement).overflowY === 'hidden' || getComputedStyle(document.body).position === 'fixed'; } catch (e) { return false; } };
+  var resetView = function () { if (!fixedPage()) return; if (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop) { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; } };
+  document.addEventListener('focusout', function () { setTimeout(resetView, 60); setTimeout(resetView, 350); }, true);
+  if (window.visualViewport) visualViewport.addEventListener('resize', function () { if (visualViewport.height > innerHeight * 0.85) setTimeout(resetView, 80); });
+  window.addEventListener('orientationchange', function () { setTimeout(resetView, 300); });
+  window.addEventListener('pageshow', resetView);
   // máy tính: ctrl + lăn chuột / ctrl + phím +/-
   document.addEventListener('wheel', function (e) { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
   document.addEventListener('keydown', function (e) { if ((e.ctrlKey || e.metaKey) && /^(\+|=|-|_|0)$/.test(e.key)) e.preventDefault(); });
