@@ -842,22 +842,29 @@ function drawChibi(av,sx,sy,o){
  const hug=o.hug,armA=o.walking?Math.sin(t*11)*.5:0;
  g.fillStyle=av.top==='dress'?sk:tc;
  const arm=(side)=>{g.save();g.translate(side*8,-26+by);g.rotate(hug?-side*1.25:(side*.25+side*armA));rr(-2.5,0,5,11,2.5,av.top==='dress'||av.top==='gown'?sk:tc);circ(0,11,2.6,sk);if(av.nail)circ(0,12.6,1.3,av.nail);if(side<0&&av.watch){rr(-3,7.4,6,2.4,1,av.watch);circ(0,8.6,1.1,'#f5f5f5')}if(side>0&&av.brace){rr(-3,7.8,6,1.6,.8,av.brace);circ(1.5,8.6,.6,'#fff')}if(side>0&&av.ring)circ(1.8,12.2,.95,av.ring);g.restore()};
- if(av.neck&&!back){g.strokeStyle=av.neck;g.lineWidth=.9;g.beginPath();g.arc(0,-29+by,4.6,.35,Math.PI-.35);g.stroke();circ(0,-24.2+by,1.4,av.neck);g.globalAlpha=.5+.5*Math.sin(NOW/250);circ(-.4,-24.6+by,.5,'#fff');g.globalAlpha=1}
  arm(-1);arm(1);
  // head
  const hy=-37+by;
  circ(0,hy,12.5,sk);
  if(back){hairBackView(av,0,hy)}else{
   // face
-  const ex=1.2;if(av.base){g.globalAlpha=.35;circ(-6+ex,hy+2.5,3.2,'#fff');circ(7+ex,hy+2.5,3.2,'#fff');circ(1+ex,hy-6,3,'#fff');g.globalAlpha=1}if(av.eye){g.globalAlpha=.75;ell(-4.3+ex,hy-.6,2.9,1.6,av.eye);ell(4.3+ex,hy-.6,2.9,1.6,av.eye);g.globalAlpha=1}
-  circ(-4.3+ex,hy+1,1.9,'#3a2430');circ(4.3+ex,hy+1,1.9,'#3a2430');circ(-3.8+ex,hy+.3,.7,'#fff');circ(4.8+ex,hy+.3,.7,'#fff');if(av.lash){g.strokeStyle='#1b1b1b';g.lineWidth=.9;g.beginPath();g.moveTo(-6.2+ex,hy);g.lineTo(-7.3+ex,hy-1.2);g.moveTo(-5.6+ex,hy-.7);g.lineTo(-6.4+ex,hy-2);g.moveTo(6.2+ex,hy);g.lineTo(7.3+ex,hy-1.2);g.moveTo(5.6+ex,hy-.7);g.lineTo(6.4+ex,hy-2);g.stroke()}
+  const ex=1.2;if(av.base){g.globalAlpha=.35;circ(-6+ex,hy+2.5,3.2,'#fff');circ(7+ex,hy+2.5,3.2,'#fff');circ(1+ex,hy-6,3,'#fff');g.globalAlpha=1}if(av.eye){g.globalAlpha=.75;ell(-4.3+ex,hy-.2,2.8,1.4,av.eye);ell(4.3+ex,hy-.2,2.8,1.4,av.eye);g.globalAlpha=1}
+  if(av.contour){g.globalAlpha=.22;ell(-9+ex,hy+4,2.4,5,shade(sk,-.4));ell(10.5+ex,hy+4,2.4,5,shade(sk,-.4));g.globalAlpha=1}
+  circ(-4.3+ex,hy+1,1.9,'#3a2430');circ(4.3+ex,hy+1,1.9,'#3a2430');if(av.liner){g.strokeStyle=av.liner;g.lineWidth=.9;g.beginPath();g.moveTo(-6.3+ex,hy+.2);g.quadraticCurveTo(-4.3+ex,hy-1.4,-2.5+ex,hy);g.lineTo(-7.2+ex,hy-.8);g.moveTo(2.5+ex,hy);g.quadraticCurveTo(4.3+ex,hy-1.4,6.3+ex,hy+.2);g.lineTo(7.2+ex,hy-.8);g.stroke()}circ(-3.8+ex,hy+.3,.7,'#fff');circ(4.8+ex,hy+.3,.7,'#fff');if(av.lash){g.strokeStyle='#1b1b1b';g.lineWidth=.9;g.beginPath();g.moveTo(-6.2+ex,hy);g.lineTo(-7.3+ex,hy-1.2);g.moveTo(-5.6+ex,hy-.7);g.lineTo(-6.4+ex,hy-2);g.moveTo(6.2+ex,hy);g.lineTo(7.3+ex,hy-1.2);g.moveTo(5.6+ex,hy-.7);g.lineTo(6.4+ex,hy-2);g.stroke()}
   {const bl=av.blush?av.blush+'b3':av.acc==='blush'?'rgba(255,100,140,.7)':'rgba(255,130,160,.38)';circ(-7+ex,hy+4.5,av.blush?2.7:2.3,bl);circ(7+ex,hy+4.5,av.blush?2.7:2.3,bl)}
-  g.strokeStyle=av.lip||'#8a3b55';g.lineWidth=av.lip?2.1:1.1;g.beginPath();if(o.mouth==='o'){circ(ex,hy+6,1.6,av.lip||'#8a3b55')}else{g.arc(ex,hy+4.8,2,.2,Math.PI-.2);g.stroke()}
+  g.strokeStyle=av.lip||'#8a3b55';g.lineWidth=av.lip?2.1:1.1;g.beginPath();if(o.mouth==='o'){circ(ex,hy+6,1.6,av.lip||'#8a3b55')}else if(av.teethT>Date.now()){g.fillStyle=av.lip||'#8a3b55';g.beginPath();g.arc(ex,hy+4.2,2.6,.05,Math.PI-.05);g.fill();g.fillStyle='#fff';g.fillRect(ex-1.9,hy+4.3,3.8,1.1);if((NOW/700|0)%3===0)spark(ex+3.5,hy+3.5,1.1)}else{g.arc(ex,hy+4.8,2,.2,Math.PI-.2);g.stroke()}
+  if(av.gloss&&o.mouth!=='o'){g.globalAlpha=.9;circ(ex-.6,hy+6.2,.55,'#fff');circ(ex+.8,hy+6.3,.4,'#fff');g.globalAlpha=1}
+  if(av.hl){for(const sxh of[-6.5,7.5]){g.globalAlpha=.55+.45*Math.sin(NOW/300+sxh);circ(sxh+ex,hy+1.8,.9,'#fff');g.globalAlpha=1}}
   if(av.mask&&av.mask.t>Date.now()){g.fillStyle=av.mask.c;g.beginPath();g.ellipse(0,hy+2,10.5,9.5,0,0,7);g.fill();circ(-3.1+ex,hy+1,2.1,sk);circ(5.5+ex,hy+1,2.1,sk);circ(-3.1+ex,hy+1,1.5,'#3a2430');circ(5.5+ex,hy+1,1.5,'#3a2430');g.strokeStyle='rgba(0,0,0,.25)';g.lineWidth=1;g.beginPath();g.arc(ex+1,hy+6,1.6,.2,Math.PI-.2);g.stroke()}
   hairFront(av,0,hy,false,false);
+  if(av.brow){const ex=1.2;g.strokeStyle=av.brow;g.lineWidth=1.6;g.lineCap='round';g.beginPath();g.moveTo(-6.6+ex,hy-1.3);g.quadraticCurveTo(-4.4+ex,hy-2.6,-2.3+ex,hy-1.7);g.moveTo(2.3+ex,hy-1.7);g.quadraticCurveTo(4.4+ex,hy-2.6,6.6+ex,hy-1.3);g.stroke()}
+  if(av.hairT>Date.now()){g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=1.3;g.lineCap='round';g.beginPath();g.arc(-2,hy-2,10,-2.5,-1.9);g.stroke();g.beginPath();g.arc(-2,hy-2,10,-1.6,-1.25);g.stroke();if((NOW/500|0)%4===0)spark(-8,hy-10,1.4)}
   if(av.glow>Date.now()){const t3=NOW/380;for(let k=0;k<3;k++){g.globalAlpha=.4+.6*Math.abs(Math.sin(t3+k*1.7));spark(Math.cos(k*2.1+t3*.3)*14,hy-4+Math.sin(k*2.6)*9,2.4);}g.globalAlpha=1}
  }
  accessory(av,0,hy,back);
+ if(av.neck&&!back){g.strokeStyle=av.neck;g.lineWidth=1;g.beginPath();g.moveTo(-4.5,-25.2+by);g.quadraticCurveTo(0,-21+by,4.5,-25.2+by);g.stroke();circ(0,-21.6+by,1.5,av.neck);g.globalAlpha=.5+.5*Math.sin(NOW/250);circ(-.4,-22+by,.55,'#fff');g.globalAlpha=1}
+ if(av.freshT>Date.now()&&!o.noShadow){const t4=NOW/900;g.strokeStyle='rgba(150,200,255,.75)';g.lineWidth=.8;for(let k=0;k<3;k++){const yy=-8-((t4*14+k*13)%38),xx=Math.sin(t4*2+k*2)*13;g.globalAlpha=1-(-yy-8)/38;g.beginPath();g.arc(xx,yy+by,1.6+k*.4,0,7);g.stroke()}g.globalAlpha=1}
+ if(o.hold){g.save();g.font='9px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';const hx=10;if(String(o.hold).startsWith('@')){g.restore();emj(o.hold,hx,-16+by,9)}else{g.fillText(o.hold,hx,-16+by);g.restore()}}
  if(av.bag&&!lie){const sd=back?-1:1;g.strokeStyle=shade(av.bag,-.3);g.lineWidth=1.2;g.beginPath();g.moveTo(-5*sd,-27+by);g.lineTo(9*sd,-15+by);g.stroke();rr(sd>0?7:-14,-16+by,7,7,2,av.bag,shade(av.bag,-.3));circ(sd>0?10.5:-10.5,-13+by,.9,'#e0c066')}
  if(av.scent){const t2=NOW/450+(o.seed||0);for(let k=0;k<3;k++){g.globalAlpha=.55+.45*Math.sin(t2*2+k);circ(Math.cos(t2+k*2.1)*15,-30+by+Math.sin(t2*1.3+k)*13,1.5,av.scent);circ(Math.cos(t2+k*2.1)*15,-30+by+Math.sin(t2*1.3+k)*13,.7,'#fff')}g.globalAlpha=1}
  g.restore();
@@ -1052,6 +1059,7 @@ setInterval(()=>{try{autoTick()}catch(e){}},1200);
 
 /* ================= scene compose ================= */
 let HITS=[],OVER=[];
+window.__meScreen=()=>{const r=cv.getBoundingClientRect(),[x,y]=charScreen(me);return[r.x+x*r.width/W,r.y+y*r.width/W]};
 function charScreen(c){const z=c.pose==='sit'?16:c.pose==='lie'?24:0;return iso(c.x,c.y,z)}
 function itemKey(it){const f=fp(it);return f.x+f.y+f.w+f.d-1}
 function render(dt){
@@ -1063,7 +1071,7 @@ function render(dt){
   D.push({k,fn:()=>drawItem(it),hit:{kind:'item',ref:it,poly:[iso(f.x,f.y+f.d),iso(f.x+f.w,f.y+f.d),iso(f.x+f.w,f.y),iso(f.x+f.w,f.y,h),iso(f.x,f.y,h),iso(f.x,f.y+f.d,h)]}})}
  for(const c of[pa,me]){const live=c===me||livePa()||busyPa();let k=c.x+c.y;if(c.seat){const it=itemById(c.seat.id);if(it)k=itemKey(it)+((it.r|0)<2||c.pose==='lie'?.5:-.5)}
   D.push({k,fn:()=>{const[sx,sy]=charScreen(c);const av=avOf(c.id);drawAura(c,sx,sy);
-   drawChibi(av,sx,sy,{face:c.face,flip:c.flip,pose:c.pose,walking:c.walking,dance:c.act==='dance'&&NOW<c.actT,hug:(c.act==='hug'||c.act==='kiss')&&NOW<c.actT,mouth:(c.act==='kiss'&&NOW<c.actT)?'o':null,seed:c===me?0:2});
+   drawChibi(av,sx,sy,{face:c.face,flip:c.flip,pose:c.pose,walking:c.walking,dance:c.act==='dance'&&NOW<c.actT,hug:(c.act==='hug'||c.act==='kiss')&&NOW<c.actT,mouth:(c.act==='kiss'&&NOW<c.actT)?'o':null,seed:c===me?0:2,hold:c.hold&&NOW<c.hold.t?c.hold.e:null});
    if(c.act==='dizzy'&&NOW<c.actT){for(let i=0;i<3;i++){const a=NOW/200+i*2.1;g.font='9px sans-serif';g.fillText('⭐',sx+Math.cos(a)*12,sy-56+Math.sin(a)*4)}}
    if(c.act==='pillow'&&NOW<c.actT&&c.pillow){const p=c.pillow,f=1-(c.actT-NOW)/600;const x=p[0]+(p[2]-p[0])*f,y=p[1]+(p[3]-p[1])*f-Math.sin(f*Math.PI)*40;g.save();g.translate(x,y);g.rotate(f*8);rr(-8,-5,16,10,4,'#fff','#e6a3b9');g.restore()}
    OVER.push(()=>{const col=c===me?'#ff7aa2':'#9b86d1';const nm=c===me?ctx.myName:ctx.partnerName;
@@ -1099,7 +1107,7 @@ requestAnimationFrame(frame);
 
 /* ================= network ================= */
 let ch=null;
-function send(t,p={}){if(!ch)return;ch.send({type:'broadcast',event:'r',payload:Object.assign({t},p)})}
+function send(t,p={}){if(t==='eat'&&p.e)me.hold={e:p.e,t:NOW+3500};if(!ch)return;ch.send({type:'broadcast',event:'r',payload:Object.assign({t},p)})}
 function snap(){return{x:me.x,y:me.y,pose:me.pose,seat:me.seat,face:me.face,flip:me.flip,path:me.path.length?me.path[me.path.length-1]:null}}
 function sendSnap(){send('snap',snap())}
 let saveUT;function saveU(){UM.pos={x:me.x,y:me.y};clearTimeout(saveUT);saveUT=setTimeout(()=>saveS(UK(ME),UM),1200)}
@@ -1125,7 +1133,7 @@ function onMsg(m){
  case'cook':window.COOKING={until:NOW+COOK_MS};pa.emo={e:m.e,t:NOW+COOK_MS};sfx.whoosh();break;
  case'rt':RT=m.RT;window.RT_DISHES=RT.dishes;if($('#mResto').classList.contains('on'))drawResto();break;
  case'rb':RB=m.RB;applyDeco();break;
- case'eat':burst(pa,m.drink?'💦':'😋',3);pa.emo={e:m.e,t:NOW+1800};if(m.drink)sfxSlurp();else sfxChew();break;
+ case'eat':burst(pa,m.drink?'💦':'😋',3);pa.emo={e:m.e,t:NOW+1800};pa.hold={e:m.e,t:NOW+3500};if(m.drink)sfxSlurp();else sfxChew();break;
  case'mkop':if(m.o){mkApply(m.o,m.d);drawMk()}break;
  case'mkhello':if(IS_MK)sendMk('mk',{MK});break;
  }
@@ -1539,7 +1547,14 @@ $('#csAll').onclick=()=>{for(const x of CS.res||[])if(!MK.cart.some(c=>c.n===x.a
 const SKIN_RE=/^(sữa rửa mặt|gel rửa|bọt rửa|nước tẩy trang|sáp tẩy trang|dầu tẩy trang|gel tẩy trang|tẩy trang|toner|nước hoa hồng|nước thần|lotion|essence|serum|tinh chất|ampoule|kem dưỡng|kem chống nắng|gel chống nắng|kem (?!nền|lót|má)|mặt nạ|sữa dưỡng|dưỡng|xịt khoáng|retinol)/i;
 // suy ra cách mặc/dùng từ biểu tượng + tên món (đồ cũ chưa có thông tin mặc cũng dùng được)
 function wearOf(x){if(x.w)return x.w;const n=x.n||'',m=/^@(\w+)\/([0-9a-f]{3,8})(?:\/([0-9a-f]{3,8}))?/i.exec(x.e||''),t=m&&m[1],c1=m?'#'+m[2]:'#e91e63',c2=m&&m[3]?'#'+m[3]:c1;
- if(SKIN_RE.test(n))return'';
+ if(/che khuyết điểm|kem lót|kem bb|bb cream|cc cream|xịt kho[áa] nền|phấn phủ|primer|concealer/i.test(n))return'base:1';
+ if(/tạo khối|contour|bronzer/i.test(n))return'contour:1';
+ if(/highlight|bắt sáng|killawatt/i.test(n))return'hl:1';
+ if(/chân mày|kẻ mày|chì mày|brow/i.test(n))return'brow:#4e342e';
+ if(/kẻ mắt|eyeliner|bút kẻ/i.test(n))return'liner:#1b1b1b';
+ if(/son dưỡng|dưỡng môi|mặt nạ ngủ môi|lip (comfort|balm|oil|sleeping)|sáp dưỡng|vaseline|balm dotcom|sugar lip/i.test(n))return'gloss:1';
+ if(/^(má hồng|phấn má)/i.test(n))return'blush:'+(t==='palette'&&m&&m[3]?c2:c1);
+ if(careOf(x))return'';
  if(t==='shoe'||/^giày|^dép|^sandal/i.test(n))return'shoe:'+c1;
  if(t==='jewel'||/^(nhẫn|vòng|lắc|dây chuyền|bông tai|khuyên)/i.test(n))return/nhẫn/i.test(n)?'ring:'+c2:/vòng|lắc/i.test(n)?'brace:'+(t==='jewel'?c2:c1):'neck:'+(t==='jewel'?c2:c1);
  if(t==='watch'||/^đồng hồ/i.test(n))return'watch:'+c2;
@@ -1550,16 +1565,19 @@ function wearOf(x){if(x.w)return x.w;const n=x.n||'',m=/^@(\w+)\/([0-9a-f]{3,8})
  if(t==='perfume'||/^nước hoa(?! hồng)/i.test(n))return'scent:'+c1;
  if(t==='glasses'||/^kính/i.test(n))return'acc:glasses';if(t==='cap'||/^mũ|^nón/i.test(n))return'acc:cap';if(t==='bag'||/^túi/i.test(n))return'bag:'+c1;
  if(t==='nail'||/sơn móng/i.test(n))return'nail:'+c1;return''}
-const WEAR_KEYS=['lip','blush','scent','bag','nail','shoe','neck','ring','brace','watch','eye','lash','base'];
+const WEAR_KEYS=['lip','blush','scent','bag','nail','shoe','neck','ring','brace','watch','eye','lash','base','contour','hl','brow','liner','gloss'];
+// đồ chăm sóc dùng xong có hiệu ứng tạm thời trên nhân vật
+function careOf(x){const n=x.n||'';if(/bàn chải|kem đánh răng|nước súc miệng/i.test(n))return'teeth';if(/dầu gội|dầu xả|ủ tóc|dưỡng tóc|mặt nạ tóc|tinh dầu tóc|xịt tóc|dầu dưỡng (tóc|elixir|treatment)|elixir ultime|olaplex|moroccanoil/i.test(n))return'hair';
+ if(/sữa tắm|bom tắm|dưỡng thể|bơ dưỡng|body|kem tay|rửa tay|tẩy da chết|tắm/i.test(n))return'body';if(/^mặt nạ|mask$/i.test(n))return'mask';if(SKIN_RE.test(n)||/niacinamide|hyaluronic|pad |^pad|nước bí đao|^gel|xịt khoáng|^kem |^nước dưỡng/i.test(n))return'face';return null}
 let BAGT='wear',BAG={cl:[],pt:{}};
 async function openBag(){if(!MD&&!window.__MD){try{window.__MD=await import('./market.js')}catch(e){}}const cl=await loadS('closet',{})||{};const pt=Object.assign({items:{}},await loadS('pantry',{}));BAG={cl,pt};drawBag();$('#mBag').classList.add('on')}
 function bagGroups(){const mine=(BAG.cl[ME]||[]);const cnt={};for(const x of mine)cnt[x.n]=(cnt[x.n]||0)+1;const uniq=mine.filter((x,i,a)=>a.findIndex(y=>y.n===x.n)===i).map(x=>Object.assign({},x,{w:wearOf(x),q:cnt[x.n]}));
- return{wear:uniq.filter(x=>x.w&&/^(top|bot|acc|bag|shoe|neck|ring|brace|watch)/.test(x.w)),makeup:uniq.filter(x=>x.w&&/^(lip|blush|scent|nail|eye|lash|base)/.test(x.w)),skin:uniq.filter(x=>!x.w&&SKIN_RE.test(x.n)),
-  food:Object.entries(BAG.pt.items||{}).filter(([,o])=>o.q>0).map(([n,o])=>({n,e:o.e,q:o.q,food:1})),other:uniq.filter(x=>!x.w&&!SKIN_RE.test(x.n))}}
-function drawBag(){const G=bagGroups(),av=UM.av||avOf(ME);const tabs=[['wear','👗 Quần áo · phụ kiện'],['makeup','💄 Trang điểm · nước hoa'],['skin','🧴 Dưỡng da'],['food','🍱 Đồ ăn · uống'],['other','📦 Khác']];
+ return{wear:uniq.filter(x=>x.w&&/^(top|bot|acc|bag|shoe|neck|ring|brace|watch)/.test(x.w)),makeup:uniq.filter(x=>x.w&&/^(lip|blush|scent|nail|eye|lash|base|contour|hl|brow|liner|gloss)/.test(x.w)),skin:uniq.filter(x=>!x.w&&careOf(x)),
+  food:Object.entries(BAG.pt.items||{}).filter(([,o])=>o.q>0).map(([n,o])=>({n,e:o.e,q:o.q,food:1})),other:uniq.filter(x=>!x.w&&!careOf(x))}}
+function drawBag(){const G=bagGroups(),av=UM.av||avOf(ME);const tabs=[['wear','👗 Quần áo · phụ kiện'],['makeup','💄 Trang điểm · nước hoa'],['skin','🧴 Dưỡng da · tắm gội'],['food','🍱 Đồ ăn · uống'],['other','📦 Khác']];
  $('#bagT').innerHTML=tabs.map(([k,v])=>`<button data-bt="${k}" class="${k===BAGT?'on':''}">${v} <small>${G[k].length}</small></button>`).join('');
  const L=G[BAGT];AVD=Object.assign({},av);
- $('#bagL').innerHTML=L.length?L.map((x,i)=>{const worn=x.w&&isWorn(x.w);const act=x.food?(isDrink(x)?'🥤 Uống':'😋 Ăn'):BAGT==='skin'?'✨ Dùng':x.w?(worn?'✓ Tháo ra':(/^scent/.test(x.w)?'💨 Xịt':/^(lip|blush|eye|lash|base|nail)/.test(x.w)?'💄 Dùng':'👗 Mặc')):'👀 Ngắm';
+ $('#bagL').innerHTML=L.length?L.map((x,i)=>{const worn=x.w&&isWorn(x.w);const act=x.food?(isDrink(x)?'🥤 Uống':'😋 Ăn'):BAGT==='skin'?({hair:'🧴 Gội',body:'🛁 Tắm',teeth:'🪥 Đánh',mask:'🧖 Đắp'}[careOf(x)]||'✨ Dùng'):x.w?(worn?'✓ Tháo ra':(/^scent/.test(x.w)?'💨 Xịt':/^(lip|blush|eye|lash|base|nail|contour|hl|brow|liner|gloss)/.test(x.w)?'💄 Dùng':'👗 Mặc')):'👀 Ngắm';
   return`<div class="cl"><b>${icoH(x.e)}</b><span>${esc(x.n)}<br><small class="note">×${x.q}${worn?(BAGT==='wear'?' · đang mặc':' · đang dùng'):''}</small></span><button class="btn small ${worn?'':'primary'}" style="flex:none;white-space:nowrap" data-use="${i}">${act}</button>${x.food?'':`<button class="btn small" style="flex:none" data-gift="${i}" title="Tặng người ấy">🎁</button>`}</div>`}).join('')
   :`<p class="note">Chưa có gì ở mục này · mua ở ${BAGT==='food'?'🛒 Siêu thị':'🛍️ TTTM'} nhé</p>`;
  $('#bagL').dataset.t=BAGT}
@@ -1567,10 +1585,15 @@ window.openBag=openBag;window.openAvatarX=()=>{$('#mBag').classList.remove('on')
 $('#bagT').onclick=e=>{const b=e.target.closest('[data-bt]');if(!b)return;BAGT=b.dataset.bt;sfx.pop();drawBag()};
 $('#bagL').onclick=async e=>{const L=bagGroups()[BAGT];const u=e.target.closest('[data-use]'),gf=e.target.closest('[data-gift]');ac();
  if(u){const x=L[+u.dataset.use];if(!x)return;
-  if(x.food){const o=BAG.pt.items[x.n];o.q--;if(o.q<=0)delete BAG.pt.items[x.n];await saveS('pantry',BAG.pt);if(typeof PT!=='undefined'&&KIND==='kitchen')PT.items=BAG.pt.items;const dr=isDrink(x);me.emo={e:x.e,t:NOW+2200};burst(me,dr?'💦':'😋',4);send('eat',{e:x.e,drink:dr});dr?sfxSlurp():sfxChew();vib(20)}
-  else if(BAGT==='skin'){me.emo={e:x.e,t:NOW+2400};send('emo',{e:x.e});for(let k=0;k<4;k++)noise(.05,.18,900,'lowpass',k*.16);if(/mặt nạ/i.test(x.n)){doMask()}else{setAv({glow:Date.now()+3600e3});burst(me,'✨',6);toast(`✨ Đã dùng ${x.n}, da căng bóng 1 tiếng`)}}
+  if(x.food){const o=BAG.pt.items[x.n];o.q--;if(o.q<=0)delete BAG.pt.items[x.n];await saveS('pantry',BAG.pt);if(typeof PT!=='undefined'&&KIND==='kitchen')PT.items=BAG.pt.items;const dr=isDrink(x);me.hold={e:x.e,t:NOW+3500};me.emo={e:x.e,t:NOW+2200};burst(me,dr?'💦':'😋',4);send('eat',{e:x.e,drink:dr});dr?sfxSlurp():sfxChew();vib(20)}
+  else if(BAGT==='skin'){const cf=careOf(x);me.emo={e:x.e,t:NOW+2400};send('emo',{e:x.e});const H=3600e3;
+   if(cf==='mask'){doMask()}
+   else if(cf==='hair'){noise(1.4,.09,1500,'bandpass');burst(me,'🫧',8);setAv({hairT:Date.now()+2*H});toast(`🧴 Gội ${x.n} xong, tóc bóng mượt thơm phức 2 tiếng ✨`)}
+   else if(cf==='body'){noise(1.6,.08,1200,'bandpass');burst(me,'🫧',10);setAv({freshT:Date.now()+2*H});toast(`🛁 Tắm với ${x.n}, người thơm tho sạch sẽ 2 tiếng 🫧`)}
+   else if(cf==='teeth'){noise(1.2,.06,3000,'bandpass');burst(me,'✨',4);setAv({teethT:Date.now()+H});toast('🪥 Răng trắng sáng, cười tươi 1 tiếng 😁')}
+   else{for(let k=0;k<4;k++)noise(.05,.18,900,'lowpass',k*.16);setAv({glow:Date.now()+H});burst(me,'✨',6);toast(`✨ Đã dùng ${x.n}, da căng bóng 1 tiếng`)}}
   else if(x.w){AVD=Object.assign({},UM.av||avOf(ME));const on=!isWorn(x.w);wearOn(x.w,on);setAv(AVD);burst(me,on?(/^scent/.test(x.w)?'🌸':'✨'):'👋',5);
-   if(on&&/^scent/.test(x.w)){noise(.35,.1,5000,'highpass');noise(.3,.08,5000,'highpass',.4)}else{sfx.pop()}toast(on?`Đã ${/^scent/.test(x.w)?'xịt':/^(lip|blush|eye|lash|base|nail)/.test(x.w)?'dùng':'mặc'} ${x.n} 💗`:`Đã tháo ${x.n}`)}
+   if(on&&/^scent/.test(x.w)){noise(.35,.1,5000,'highpass');noise(.3,.08,5000,'highpass',.4)}else{sfx.pop()}toast(on?`Đã ${/^scent/.test(x.w)?'xịt':/^(lip|blush|eye|lash|base|nail|contour|hl|brow|liner|gloss)/.test(x.w)?'dùng':'mặc'} ${x.n} 💗`:`Đã tháo ${x.n}`)}
   else{me.emo={e:x.e,t:NOW+2500};send('emo',{e:x.e});toast(`Ngắm ${x.n} một chút… đẹp ghê 😍`)}
   drawBag();return}
  if(gf){const x=L[+gf.dataset.gift];if(!x)return;if(!confirm(`Tặng ${x.n} cho ${ctx.partnerName}?`))return;const c=BAG.cl;const i=(c[ME]||[]).findIndex(y=>y.n===x.n);if(i<0)return;const [it]=c[ME].splice(i,1);c[PA]=c[PA]||[];c[PA].push(Object.assign({},it,{at:Date.now(),from:ME}));
@@ -1744,7 +1767,7 @@ function isWorn(w){const[k,a,b]=w.split(':');return k==='top'?AVD.top===a&&AVD.t
 function drawCloset(){const el=$('#avCloset');if(!el)return;const mine=(CLOSET[ME]||[]).filter((x,i,arr)=>arr.findIndex(y=>y.n===x.n)===i).map(x=>Object.assign({},x,{w:wearOf(x)}));
  el.innerHTML=mine.length?`<h4 class="sub">👜 Tủ đồ đã mua (${mine.length})</h4><div class="closet">${mine.map((x,i)=>`<button data-i="${i}" class="${x.w&&isWorn(x.w)?'on':''} ${x.w?'':'col'}" title="${esc(x.n)}">${icoH(x.e,'ico')}<small>${esc(x.n.replace(/^(Son|Nước hoa|Túi|Áo thun|Áo|Đầm|Quần|Chân váy|Mũ|Kính|Giày|Hoodie|Má hồng)\s+/,''))}</small></button>`).join('')}</div><button class="btn small" id="avClean" style="margin-top:6px">✨ Tẩy trang (bỏ son, má, nước hoa, sơn móng, túi)</button>`:'<p class="note" style="margin:4px 0 10px">Tủ đồ trống · mua son, nước hoa, quần áo, túi ở 🛍️ TTTM rồi mặc ở đây nhé</p>';
  el.dataset.list=JSON.stringify(mine.map(x=>x.w))}
-$('#avCloset').onclick=e=>{if(e.target.closest('#avClean')){AVD.lip=AVD.blush=AVD.scent=AVD.bag=AVD.nail=AVD.eye=AVD.lash=AVD.base='';drawCloset();return}const b=e.target.closest('[data-i]');if(!b)return;const w=JSON.parse($('#avCloset').dataset.list||'[]')[+b.dataset.i];if(!w){toast('Món này là đồ dưỡng da/đồ sưu tầm · dùng ở 🎒 Đồ đã mua hoặc phòng 🧴 Skincare nhé');return}wearOn(w,!isWorn(w));drawCloset();buildAvOpts();sfx.pop()};
+$('#avCloset').onclick=e=>{if(e.target.closest('#avClean')){AVD.lip=AVD.blush=AVD.scent=AVD.bag=AVD.nail=AVD.eye=AVD.lash=AVD.base=AVD.contour=AVD.hl=AVD.brow=AVD.liner=AVD.gloss='';drawCloset();return}const b=e.target.closest('[data-i]');if(!b)return;const w=JSON.parse($('#avCloset').dataset.list||'[]')[+b.dataset.i];if(!w){toast('Món này là đồ dưỡng da/đồ sưu tầm · dùng ở 🎒 Đồ đã mua hoặc phòng 🧴 Skincare nhé');return}wearOn(w,!isWorn(w));drawCloset();buildAvOpts();sfx.pop()};
 async function openAvatar(){AVD=Object.assign({},avOf(ME));if(!MD&&!window.__MD){try{window.__MD=await import('./market.js')}catch(e){}}CLOSET=await loadS('closet',{})||{};drawCloset();buildAvOpts();$('#mAvatar').classList.add('on');requestAnimationFrame(drawPreview)}
 $('#bAvatar').onclick=openAvatar;
 $('#avRand').onclick=()=>{for(const o of AVO){const vals=o.type==='col'?o.v:Object.keys(o.v);AVD[o.k]=vals[Math.floor(Math.random()*vals.length)]}buildAvOpts()};
