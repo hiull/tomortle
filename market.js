@@ -342,3 +342,19 @@ export function samplesToday(d = new Date()) {
   const out = []; for (let i = 0; i < 3; i++)out.push(pool.splice(Math.floor(r() * pool.length), 1)[0]); return out;
 }
 export const TIERS = [[0, 'Thành viên', '🤍', 0], [100, 'Bạc', '🥈', 0], [300, 'Vàng', '🥇', 3], [800, 'Kim cương', '💎', 5]];
+
+/* ================= Nhà hàng Tomortle: thực đơn 4 phong cách (hai đứa là khách) ================= */
+export const RESTO_MENU = {
+  viet: { n: '🇻🇳 Món Việt', items: [['@bowl/fff3e0/fafafa/a1887f', 'Phở bò tái nạm', 75000], ['@bowl/ffcc80/fafafa/8d6e63', 'Bún chả Hà Nội', 70000], ['@roll/fce4ec', 'Gỏi cuốn tôm thịt', 60000], ['@plate/fdd835/43a047', 'Bánh xèo', 85000],
+    ['@plate/fff8e1/c62828', 'Cơm tấm sườn bì chả', 75000], ['@bowl/e64a19/fafafa/6d4c41', 'Bún bò Huế', 75000], ['@pot/4e342e/90a4ae', 'Cá kho tộ', 120000], ['@pot/ffb74d/e53935', 'Canh chua cá lóc', 110000], ['@bunch/2e7d32', 'Rau muống xào tỏi', 55000],
+    ['@pot/e64a19/ffcc80', 'Lẩu Thái hải sản', 320000], ['@glass/6d4c41/fafafa', 'Cà phê sữa đá', 35000], ['@glass/fff176/43a047', 'Trà chanh', 30000], ['@glass/ff80ab/fff59d', 'Chè ba màu', 40000]] },
+  euro: { n: '🍷 Âu sang trọng', items: [['🥣', 'Súp kem nấm truffle', 150000], ['🥗', 'Salad Caesar', 140000], ['🥩', 'Bò Wagyu áp chảo', 890000], ['🐟', 'Cá hồi áp chảo sốt chanh dây', 390000],
+    ['🍝', 'Mì Ý sốt kem nấm', 220000], ['🦞', 'Tôm hùm nướng phô mai', 1250000], ['🍚', 'Risotto nấm porcini', 260000], ['🍖', 'Sườn cừu nướng thảo mộc', 690000], ['🍰', 'Tiramisu', 120000], ['🍮', 'Crème brûlée', 110000],
+    ['🍷', 'Vang đỏ Bordeaux (ly)', 220000], ['🥂', 'Champagne (ly)', 350000], ['🍹', 'Mocktail dâu', 120000]] },
+  asia: { n: '🍣 Nhật – Hàn', items: [['🍣', 'Sushi tổng hợp', 280000], ['@plate/ffab91/fafafa', 'Sashimi cá hồi', 260000], ['🍜', 'Ramen tonkotsu', 160000], ['🍤', 'Tempura tôm', 180000], ['@bowl/fff3e0/fafafa/ffcc80', 'Udon bò', 150000],
+    ['🍗', 'Gà rán sốt Hàn', 190000], ['🥓', 'Ba chỉ nướng BBQ Hàn', 240000], ['🍙', 'Kimbap', 90000], ['@tokbokki', 'Tokbokki phô mai', 120000], ['🍲', 'Lẩu kim chi', 260000], ['@bowl/ff7043/fafafa/fdd835', 'Cơm trộn Bibimbap', 140000],
+    ['@bottle/81c784/fafafa/Soju', 'Soju', 120000], ['🍶', 'Sake nóng', 180000], ['🍵', 'Trà xanh Nhật', 40000]] },
+  cafe: { n: '🍰 Cafe – tráng miệng', items: [['🍰', 'Bánh kem dâu', 75000], ['@cake/fff8e1/ffcc80', 'Cheesecake', 85000], ['🥐', 'Croissant bơ', 55000], ['@cake/6d4c41/f8bbd0', 'Bánh mousse socola', 80000], ['🍨', 'Kem 3 viên', 70000],
+    ['@cup/fafafa/f8bbd0/Bingsu', 'Bingsu dâu', 120000], ['🧋', 'Trà sữa trân châu', 55000], ['☕', 'Latte', 60000], ['@glass/c5e1a5/fafafa', 'Matcha latte', 65000], ['@glass/ffb300/fafafa', 'Sinh tố xoài', 60000], ['@glass/ff9800/fafafa', 'Nước cam ép', 55000], ['🧇', 'Waffle mật ong', 75000]] },
+};
+export const RESTO_DECO = { none: ['Không trang trí', '', 0], roses: ['🌹 Nến & hoa hồng', '🌹🕯️', 300000], birthday: ['🎂 Sinh nhật', '🎈🎂', 400000], anniversary: ['💞 Kỷ niệm ngày yêu', '💞🕯️', 450000], propose: ['💍 Cầu hôn', '💍🌹', 900000] };

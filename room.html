@@ -75,7 +75,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
       <form class="row" id="sayForm" style="margin-top:6px"><input class="input" id="sayIn" placeholder="Nói gì đó… 💬" maxlength="80" style="margin:0" autocomplete="off"><button class="btn primary">Nói</button></form>
     </div>
     <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap">
-      <button class="btn small primary hidden" id="bCart">🛒 Giỏ chung</button><button class="btn small hidden" id="bList">📝 Danh sách đi chợ</button><button class="btn small hidden" id="bDir">📋 Danh mục</button><button class="btn small hidden" id="bDeals">🔥 Giá sốc · Tìm món</button><button class="btn small nty" id="bNty">😈 Làm này làm kia</button><button class="btn small" id="bAvatar">👗 Thay đồ</button>
+      <button class="btn small primary hidden" id="bRMenu">📋 Gọi món</button><button class="btn small hidden" id="bResto">🍽️ Bàn của mình</button><button class="btn small primary hidden" id="bCart">🛒 Giỏ chung</button><button class="btn small hidden" id="bList">📝 Danh sách đi chợ</button><button class="btn small hidden" id="bDir">📋 Danh mục</button><button class="btn small hidden" id="bDeals">🔥 Giá sốc · Tìm món</button><button class="btn small nty" id="bNty">😈 Làm này làm kia</button><button class="btn small" id="bAvatar">👗 Thay đồ</button>
       <button class="btn small" id="bInvite">💌 Rủ người ấy vào</button>
       <button class="btn small" id="bDecor">✏️ Trang trí phòng</button>
     </div>
@@ -199,6 +199,29 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <div class="ntyl" id="ntyL"></div>
   <button class="btn block" style="margin-top:10px" onclick="this.closest('.modal').classList.remove('on')">Thôi để sau 🙈</button>
 </div></div>
+<div class="modal" id="mRMenu"><div class="sheet">
+  <h3>📋 Thực đơn Nhà hàng Tomortle</h3>
+  <div class="ctabs" id="rmC"></div>
+  <div class="prods" id="rmL"></div>
+  <div class="incart" id="rmQ"></div>
+  <div class="row" style="gap:8px;margin-top:10px"><button class="btn" onclick="this.closest('.modal').classList.remove('on')">Để sau</button><button class="btn primary" style="flex:1" id="rmSend">🤵 Gửi món cho bếp</button></div>
+</div></div>
+<div class="modal" id="mResto"><div class="sheet">
+  <h3>🍽️ Bàn của hai đứa</h3>
+  <div id="rsL" style="max-height:40vh;overflow:auto"></div>
+  <p class="note" id="rsBill" style="margin:8px 0"></p>
+  <p class="note" style="margin:4px 0">Thanh toán bằng</p><div class="payl" id="payL2"></div>
+  <div class="row" style="gap:8px"><button class="btn" id="rsMenu">📋 Gọi thêm</button><button class="btn primary" style="flex:1" id="rsPay">🧾 Tính tiền</button></div>
+  <button class="btn block" style="margin-top:8px" onclick="this.closest('.modal').classList.remove('on')">Đóng</button>
+</div></div>
+<div class="modal" id="mBook"><div class="sheet">
+  <h3>📅 Đặt bàn Nhà hàng Tomortle</h3><p class="note" id="bkCur" style="margin:0 0 8px"></p>
+  <div class="row" style="gap:6px"><label class="note" style="flex:1">Ngày<input class="input" type="date" id="bkDate" style="margin:4px 0 0"></label><label class="note" style="flex:1">Giờ<input class="input" type="time" id="bkTime" style="margin:4px 0 0"></label></div>
+  <label class="note" style="display:block;margin-top:8px">Khu vực<select class="input" id="bkArea" style="margin:4px 0 0;width:100%"><option value="hall">🍽️ Sảnh chung (ăn cùng khách khác)</option><option value="vip">🕯️ Phòng riêng (chỉ hai đứa)</option></select></label>
+  <label class="note hidden" id="bkDecoRow" style="display:block;margin-top:8px">Trang trí phòng riêng<select class="input" id="bkDeco" style="margin:4px 0 0;width:100%"></select></label>
+  <label class="note" style="display:block;margin-top:8px">Lời nhắn cho nhà hàng<input class="input" id="bkNote" maxlength="80" placeholder="VD: kỷ niệm 2 năm, cho bàn gần cửa sổ…" style="margin:4px 0 0"></label>
+  <div class="row" style="gap:8px;margin-top:12px"><button class="btn" onclick="this.closest('.modal').classList.remove('on')">Huỷ</button><button class="btn primary" style="flex:1" id="bkOk">💁 Xác nhận đặt bàn</button></div>
+</div></div>
 <div class="modal" id="mCook"><div class="sheet">
   <h3>🍳 Nấu món gì đây?</h3><p class="note" id="cookSub" style="margin:0 0 6px"></p>
   <div class="row" style="gap:6px;margin-bottom:6px"><input class="input" id="cookQ" placeholder="🔎 Tìm món: phở, lẩu, chè…" style="margin:0;flex:1" autocomplete="off"><label class="note" style="display:flex;align-items:center;gap:4px;white-space:nowrap"><input type="checkbox" id="cookOk"> Nấu được</label></div>
@@ -219,10 +242,10 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 <div id="toast"></div><div class="fx" id="fx"></div>
 <script type="module">
 const DEMO=new URLSearchParams(location.search).has('demo');
-const KIND=({balcony:'balcony',market:'market',market2:'market2',market3:'market3',mall:'mall',mall2:'mall2',mall3:'mall3',kitchen:'kitchen'})[new URLSearchParams(location.search).get('r')]||'room';const RK=KIND==='room'?'room':'room-'+KIND;const PAGE=RK;const UNLOCK=0; // ban công đã mở cho cả hai
+const KIND=({balcony:'balcony',market:'market',market2:'market2',market3:'market3',mall:'mall',mall2:'mall2',mall3:'mall3',kitchen:'kitchen',resto:'resto',resto2:'resto2'})[new URLSearchParams(location.search).get('r')]||'room';const RK=KIND==='room'?'room':'room-'+KIND;const PAGE=RK;const UNLOCK=0; // ban công đã mở cho cả hai
 const C=DEMO?null:await import('./common.js');
-const IS_MK=KIND.startsWith('market')||KIND.startsWith('mall');const IS_MALL=KIND.startsWith('mall');
-const MD=(IS_MK||KIND==='kitchen')?await import('./market.js'):null;
+const IS_MK=KIND.startsWith('market')||KIND.startsWith('mall');const IS_MALL=KIND.startsWith('mall');const IS_RT=KIND.startsWith('resto');
+const MD=(IS_MK||KIND==='kitchen'||IS_RT)?await import('./market.js'):null;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
@@ -274,6 +297,12 @@ const CAT={
  ktable:{n:'Bàn ăn',e:'🍽️',w:2,d:1,h:30,c:'#c69c72'},
  checkout:{n:'Quầy thu ngân',e:'🧾',w:2,d:1,h:34,c:'#ff8fab'},
  cartrack:{n:'Xe đẩy',e:'🛒',w:1,d:1,h:30,c:'#c8c8cf'},
+ rtable:{n:'Bàn ăn nhà hàng',e:'🍽️',w:1,d:1,h:26,c:'#fafafa'},
+ host:{n:'Quầy lễ tân',e:'💁',w:1,d:1,h:38,c:'#8d6e63'},
+ waiter:{n:'Phục vụ',e:'🤵',w:1,d:1,h:56,c:'#212121'},
+ bar:{n:'Quầy bar',e:'🍸',w:2,d:1,h:40,c:'#5d4037'},
+ piano:{n:'Đàn piano',e:'🎹',w:1,d:1,h:40,c:'#212121'},
+ balloon:{n:'Bóng bay',e:'🎈',w:1,d:1,h:60,c:'#ff8fab'},
  fitting:{n:'Phòng thử đồ',e:'🪞',w:1,d:1,h:70,c:'#f8bbd0'},
  lift:{n:'Thang máy',e:'🛗',w:1,d:1,h:72,c:'#b0bec5'},
  sample:{n:'Quầy ăn thử',e:'🍢',w:1,d:1,h:28,c:'#fff3e0'},
@@ -309,13 +338,18 @@ const MLAYOUT={
 function defMarket(k=KIND){return{v:1,mv:3,kind:k,wall:{c:{market:'#d8f3e6',market2:'#fff1d6',market3:'#fde2e4',mall:'#f3e5f5',mall2:'#fce4ec',mall3:'#ede7f6'}[k],p:k.startsWith('mall')?'plain':'stripes'},floor:{c:'#f6f0e8',p:'checker'},light:true,music:true,rain:false,
  items:MLAYOUT[k].map(([t,x,y,r])=>({id:nid(),t,x,y,r,c:CAT[t].c})),
  walls:(k==='market'||k==='mall'?[{t:'door',w:'B',p:5},{t:'clock',w:'B',p:2}]:[{t:'fairy',w:'B',p:4}]).concat([{t:'garland',w:'A',p:0},{t:'garland',w:'A',p:4}]).map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
+function defResto(k=KIND){const vip=k==='resto2';return{v:1,kind:k,wall:{c:vip?'#4a1c2c':'#f4e1c6',p:vip?'plain':'stripes'},floor:{c:vip?'#6d3a3a':'#c69c72',p:vip?'carpet':'wood'},light:true,music:true,rain:false,
+ items:(vip?[['rug',2,2,0],['rtable',3,3,0],['chair',3,2,0],['chair',3,4,2],['waiter',6,3,3],['piano',6,0,0],['plant',0,0,1],['host',0,2,1]]:
+  [['host',0,3,1],['bar',3,0,0],['piano',6,0,0],['plant',0,0,1],['waiter',7,4,3],['rtable',2,2,0],['chair',2,1,0],['chair',2,3,2],['rtable',5,2,0],['chair',5,1,0],['chair',5,3,2],['rtable',2,5,0,1],['chair',2,4,0,1],['chair',2,6,2,1],['rtable',5,6,0,1],['chair',5,5,0,1],['chair',5,7,2,1],['vase',7,7,0]])
+  .map(([t,x,y,r,npc])=>Object.assign({id:nid(),t,x,y,r,c:CAT[t].c},npc?{npc:1}:{})),
+ walls:[{t:'door',w:'B',p:5},{t:vip?'fairy':'window',w:'A',p:vip?1:4},{t:'frame',w:'B',p:2},{t:'clock',w:'A',p:vip?5:2}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 function defKitchen(){return{v:1,kind:'kitchen',wall:{c:'#fff1e6',p:'gingham'},floor:{c:'#f6f0e8',p:'tiles'},light:true,music:true,rain:false,
  items:[{t:'counter',x:0,y:0,r:0},{t:'stove',x:2,y:0,r:0},{t:'fridge',x:3,y:0,r:0},{t:'shelf',x:4,y:0,r:0},{t:'plant',x:7,y:0,r:0},
   {t:'ktable',x:3,y:4,r:0},{t:'chair',x:3,y:3,r:0},{t:'chair',x:4,y:5,r:2},{t:'lamp',x:7,y:3,r:3},{t:'rug',x:2,y:3,r:0},{t:'vase',x:7,y:7,r:0}].map(o=>Object.assign({id:nid(),c:CAT[o.t].c},o)),
  walls:[{t:'door',w:'B',p:5},{t:'window',w:'A',p:5},{t:'clock',w:'B',p:2},{t:'garland',w:'A',p:0}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 const UK=id=>'room-u-'+id;
 let [R,UM,UP]=await Promise.all([loadS(RK,null),loadS(UK(ME),{}),loadS(UK(PA),{})]);
-if(!R||!R.items||(IS_MK&&(R.mv|0)<3))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():KIND==='kitchen'?defKitchen():defRoom();R.kind=KIND;
+if(!R||!R.items||(IS_MK&&(R.mv|0)<3))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():IS_RT?defResto():KIND==='kitchen'?defKitchen():defRoom();R.kind=KIND;
 R.items=R.items.filter(i=>CAT[i.t]);
 UM=UM||{};UP=UP||{};if(!UM.av){const bk=lsGet('roomU-'+ME,null);if(bk&&bk.av)UM=bk}
 
@@ -379,13 +413,23 @@ function fquad(it,a0,a1,b,z0,z1,fill,stroke){if(!frontVis(it))return null;const 
 const icoSrc=k=>{const M2=MD||window.__MD;return'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(M2?M2.iconSvg(k):'')};
 const icoImg={};function icoOf(k){if(!icoImg[k]){const im=new Image();im.src=icoSrc(k);icoImg[k]=im}return icoImg[k]}
 const icoH=(e,cls='ico')=>String(e).startsWith('@')?`<img class="${cls}" src="${icoSrc(e.slice(1))}" alt="">`:e;
-function emj(e,x,y,sz){if(String(e).startsWith('@')){const im=icoOf(e.slice(1));if(im.complete&&im.naturalWidth)g.drawImage(im,x-sz*.6,y-sz*.6,sz*1.2,sz*1.2);return}g.save();g.font=sz+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(e,x,y);g.restore()}
+function emj(e,x,y,sz){if(String(e).startsWith('@')){const im=icoOf(e.slice(1));if(im.complete&&im.naturalWidth)g.drawImage(im,x-sz*.6,y-sz*.6,sz*1.2,sz*1.2);return}g.save();g.globalAlpha=1;g.fillStyle='#222';g.font=sz+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(e,x,y);g.restore()}
 /* đồ siêu thị: kệ/quầy vẽ đơn giản + hàng hoá lấy từ danh sách món của quầy */
 const goodsCache={};function goodsOf(k,n){const key=k+n;if(!goodsCache[key]){const L=(MD&&MD.PROD[k])||[];const out=[];for(let i=0;i<n&&L.length;i++)out.push(L[Math.floor(i*L.length/n)][0]);goodsCache[key]=out}return goodsCache[key]}
-const SHOPX=new Set(['checkout','cartrack','lift','sample','promo','fitting']);
+const SHOPX=new Set(['checkout','cartrack','lift','sample','promo','fitting','rtable','host','waiter','bar','piano','balloon']);
 function drawShop(it,c){const t=it.t,C2=MD&&MD.COUNTERS[t],h=CAT[t].h;
  if(t==='checkout'){parts(it,[[0,1,.2,.9,0,34,c],[.62,.92,.3,.7,34,12,'#6d6875']]);const p=lp3(it,.3,.55,38);emj('🧾',p[0],p[1],12);const q=lp3(it,.77,.5,52);emj('💳',q[0],q[1],10);const s=lp3(it,.5,.5,70);if(frontVis(it)){g.save();g.font='700 8px "Be Vietnam Pro",sans-serif';g.textAlign='center';g.fillStyle='#e63946';g.fillText('THU NGÂN',s[0],s[1]);g.restore()}return}
  if(t==='cartrack'){const p=lp3(it,.5,.5,14);const G2=(window.MKC||[]).flatMap(i=>Array(Math.min(i.q,3)).fill(i.e)).slice(0,8);G2.forEach((e,k)=>emj(e,p[0]-8+(k%4)*5,p[1]-12-Math.floor(k/4)*6,10));emj('🛒',p[0],p[1],28);return}
+ if(t==='rtable'){parts(it,[[.42,.58,.42,.58,0,22,'#8d6e63',.5,.5]]);const m=lp3(it,.5,.5,24);ell(m[0],m[1],26,13,'#fafafa','#e0e0e0');ell(m[0],m[1]+2,26,13,'rgba(0,0,0,.04)');
+  if(it.npc){emj('🍝',m[0]-7,m[1]-3,11);emj('🍷',m[0]+8,m[1]-6,10);const t2=NOW/900+it.x;emj(it.x%2?'👩':'👨',m[0]-20,m[1]-26+Math.sin(t2)*1,20);emj(it.x%2?'👨':'👩',m[0]+20,m[1]-26+Math.cos(t2)*1,20);if((NOW/1000+it.x*3)%14<2.5)bubble(m[0],m[1]-46,'Ngon quá 😋');return}
+  const mineT=!R.items.some(o=>o.t==='rtable'&&!o.npc&&o!==it&&(me.seat&&itemById(me.seat.id)&&Math.hypot(lpt(o,.5,.5)[0]-me.x,lpt(o,.5,.5)[1]-me.y)<Math.hypot(lpt(it,.5,.5)[0]-me.x,lpt(it,.5,.5)[1]-me.y)));
+  if(mineT){(window.RT_DISHES||[]).slice(-4).forEach((d,k)=>{emj(d.e,m[0]-15+k*10,m[1]-4+(k%2)*4,12)});const dk=window.RDECO;if(dk&&dk!=='none'){const E={roses:['🌹','🕯️'],birthday:['🎂','🎈'],anniversary:['💞','🕯️'],propose:['💍','🌹']}[dk]||[];E.forEach((e,k)=>emj(e,m[0]-18+k*36,m[1]-8,12))}}
+  emj('🕯️',m[0],m[1]-10,9);return}
+ if(t==='host'){parts(it,[[.05,.95,.15,.85,0,38,c]]);const m=lp3(it,.5,.5,38);emj('📖',m[0]-6,m[1]-3,11);const pp=lp3(it,.5,.95,0);emj('💁‍♀️',pp[0],pp[1]-52,22);if((NOW/1000)%11<2.6)bubble(pp[0],pp[1]-68,'Xin chào quý khách!');return}
+ if(t==='waiter'){const pp=lp3(it,.5,.5,0);ell(pp[0],pp[1],11,4.5,'rgba(60,20,40,.16)');emj('🤵',pp[0],pp[1]-26+Math.sin(NOW/500)*1,30);emj('🍽️',pp[0]+14,pp[1]-30,11);if((NOW/1000)%13<2.4)bubble(pp[0],pp[1]-46,'Anh chị gọi món chưa ạ?');return}
+ if(t==='bar'){parts(it,[[0,1,.2,.9,0,40,c],[0,1,.15,.95,40,3,'#3e2723']]);['🍾','🍷','🥃','🍸'].forEach((e,k)=>{const q=lp3(it,.15+k*.23,.4,47);emj(e,q[0],q[1],11)});return}
+ if(t==='piano'){parts(it,[[.05,.95,.1,.9,0,36,c],[.05,.95,.1,.4,36,14,'#111']]);if(frontVis(it))fquad(it,.1,.9,.9,30,34,'#fafafa',null);const q=lp3(it,.5,.5,52);emj(R.music?'🎶':'🎹',q[0],q[1]-4,12);return}
+ if(t==='balloon'){const q=lp3(it,.5,.5,0);g.strokeStyle='#bbb';g.lineWidth=1;g.beginPath();g.moveTo(q[0],q[1]);g.lineTo(q[0],q[1]-34);g.stroke();emj('🎈',q[0]-6,q[1]-48+Math.sin(NOW/600)*2,20);emj('🎈',q[0]+7,q[1]-52+Math.cos(NOW/700)*2,18);return}
  if(t==='fitting'){parts(it,[[.1,.9,.1,.9,0,6,'#d7ccc8'],[.15,.85,.3,.42,6,64,'#c9a227']]);if(frontVis(it)){fquad(it,.2,.8,.3,12,64,'rgba(225,245,255,.85)','#c9a227')}const p=lp3(it,.5,.3,74);emj('🪞',p[0],p[1]-4,12);return}
  if(t==='lift'){parts(it,[[.05,.95,.05,.95,0,72,'#b0bec5']]);if(frontVis(it)){fquad(it,.15,.85,.05,4,60,'#cfd8dc',null);fquad(it,.49,.51,.05,4,60,'#90a4ae',null);fquad(it,.3,.7,.05,63,70,'#263238',null)}const p=lp3(it,.5,.05,66);g.save();g.font='700 7px monospace';g.textAlign='center';g.fillStyle='#ff5252';g.fillText(MD?MD.FLOORS[KIND]?.s||'':'',p[0],p[1]+2);g.restore();return}
  if(t==='sample'){parts(it,[[.1,.9,.2,.8,0,26,'#fff3e0'],[.1,.9,.2,.8,26,2,'#e63946']]);const p=lp3(it,.5,.5,28);ell(p[0],p[1],12,5,'#fff','#ddd');(window.SAMPLE_E||['🍢']).forEach((e,k)=>emj(e,p[0]-7+k*7,p[1]-3,9));const s=lp3(it,.5,.9,0);emj('👩‍🍳',s[0],s[1]-40,22);if((NOW/1000)%9<3.2)bubble(s[0],s[1]-56,'Mời anh chị ăn thử ạ!');return}
@@ -755,7 +799,7 @@ function offlineSpot(){const bed=R.items.find(i=>i.t==='bed');if(bed){const k=(m
  const s=R.items.find(i=>CAT[i.t].sit);if(s)return{seat:{id:s.id,k:0,kind:'sit'}};const p=UP.pos&&!BM[Math.floor(UP.pos.x)]?.[Math.floor(UP.pos.y)]?UP.pos:{x:5.5,y:5.5};return{x:p.x,y:p.y}}
 /* người ấy đang mở app (trang khác) → nhân vật tự đi lại, làm việc linh tinh thay vì ngủ */
 const busyPa=()=>!livePa()&&(DEMO?false:!!ctx.partnerOnline);
-const PG={home:'đang ở trang Nhà 🏠',booth:'đang chụp photobooth 📸',watch:'đang xem phim 🎬',call:'đang gọi video 📹',letters:'đang viết thư 💌',draw:'đang vẽ 🎨',games:'đang chơi game 🎮',study:'đang học bài 📚',album:'đang xem album 🗂️',calendar:'đang xem lịch 📅',daily:'đang trả lời câu hỏi 💭',fridge:'đang dán note 📝',gifts:'đang chọn quà 🎁',voice:'đang thu lời chào 🎙️',map:'đang xem bản đồ 🗺️',walk:'đang dạo phố 🚶',bucket:'đang xem bucket list ✅',fund:'đang xem quỹ gặp nhau 💰',heart:'đang đo nhịp tim 💓',recap:'đang xem tổng kết 📊',backup:'đang sao lưu 💾','room-balcony':'đang ở ban công 🌙','room-market':'đang đi siêu thị · tầng 1 🛒','room-market2':'đang đi siêu thị · tầng 2 🛒','room-market3':'đang đi siêu thị · tầng 3 🛒','room-mall':'đang dạo TTTM · mỹ phẩm cao cấp 💄','room-mall2':'đang dạo TTTM · mỹ phẩm 💋','room-mall3':'đang dạo TTTM · thời trang 👗','room-kitchen':'đang nấu ăn 🍳',room:'đang ở phòng ngủ 🛏️'};
+const PG={home:'đang ở trang Nhà 🏠',booth:'đang chụp photobooth 📸',watch:'đang xem phim 🎬',call:'đang gọi video 📹',letters:'đang viết thư 💌',draw:'đang vẽ 🎨',games:'đang chơi game 🎮',study:'đang học bài 📚',album:'đang xem album 🗂️',calendar:'đang xem lịch 📅',daily:'đang trả lời câu hỏi 💭',fridge:'đang dán note 📝',gifts:'đang chọn quà 🎁',voice:'đang thu lời chào 🎙️',map:'đang xem bản đồ 🗺️',walk:'đang dạo phố 🚶',bucket:'đang xem bucket list ✅',fund:'đang xem quỹ gặp nhau 💰',heart:'đang đo nhịp tim 💓',recap:'đang xem tổng kết 📊',backup:'đang sao lưu 💾','room-balcony':'đang ở ban công 🌙','room-market':'đang đi siêu thị · tầng 1 🛒','room-market2':'đang đi siêu thị · tầng 2 🛒','room-market3':'đang đi siêu thị · tầng 3 🛒','room-mall':'đang dạo TTTM · mỹ phẩm cao cấp 💄','room-mall2':'đang dạo TTTM · mỹ phẩm 💋','room-mall3':'đang dạo TTTM · thời trang 👗','room-resto':'đang ở nhà hàng 🍽️','room-resto2':'đang ở phòng riêng nhà hàng 🕯️','room-kitchen':'đang nấu ăn 🍳',room:'đang ở phòng ngủ 🛏️'};
 const paDoing=()=>PG[ctx.partnerPage]||'đang dùng app ✨';
 const USE_EMO={tv:'📺',desk:'📚',shelf:'📖',fridge:'🧃',plant:'💧',easel:'🎨',record:'🎵',teddy:'🧸',petbed:'🍖',vase:'🌸',camera:'📸',phone:'📱',mailbox:'💌',radio:'🎙️',gift:'🎁',wardrobe:'👗',gametable:'🎲',telescope:'🔭',flowerbed:'🌷',grill:'🍢',lamp:'💡',produce:'🍎',snacks:'🍪',drinks:'🥤',bakery:'🥐',checkout:'🧾',cartrack:'🛒',stove:'🍳',counter:'🫧',ktable:'🍽️',lift:'🛗',sample:'😋',promo:'🔥'};
 if(MD)for(const[k,v]of Object.entries(MD.COUNTERS))USE_EMO[k]=v.e;
@@ -763,7 +807,7 @@ function paIdle(){if(!busyPa()||pa.path.length||pa.act&&NOW<pa.actT)return;
  if(pa.pose==='lie'){standUp(pa)}
  const r=Math.random(),items=R.items.filter(i=>!CAT[i.t].flat);
  if(r<.3){const ft=freeTiles();const t=ft[Math.floor(Math.random()*ft.length)];if(t)walkTo(pa,t[0],t[1])}
- else if(r<.5){const ss=items.filter(i=>CAT[i.t].sit);const it=ss[Math.floor(Math.random()*ss.length)];if(!it)return;const k=CAT[it.t].sit.findIndex((_,i)=>!seatTaken(it,i,'sit',PA));if(k<0)return;const adj=[...adjOfItem(it)];const t=adj[Math.floor(Math.random()*adj.length)];if(t){const[a,b]=t.split(',').map(Number);walkTo(pa,a,b,ok=>{if(ok)applySeat(pa,{id:it.id,k,kind:'sit'})})}}
+ else if(r<.5){const ss=items.filter(i=>CAT[i.t].sit&&!i.npc);const it=ss[Math.floor(Math.random()*ss.length)];if(!it)return;const k=CAT[it.t].sit.findIndex((_,i)=>!seatTaken(it,i,'sit',PA));if(k<0)return;const adj=[...adjOfItem(it)];const t=adj[Math.floor(Math.random()*adj.length)];if(t){const[a,b]=t.split(',').map(Number);walkTo(pa,a,b,ok=>{if(ok)applySeat(pa,{id:it.id,k,kind:'sit'})})}}
  else if(r<.85){const us=items.filter(i=>USE_EMO[i.t]);const it=us[Math.floor(Math.random()*us.length)];if(!it)return;const adj=[...adjOfItem(it)];const t=adj[Math.floor(Math.random()*adj.length)];if(t){const[a,b]=t.split(',').map(Number);walkTo(pa,a,b,ok=>{if(!ok)return;const c=lpt(it,.5,.5);faceToward(pa,c[0],c[1]);pa.emo={e:USE_EMO[it.t],t:NOW+3500}})}}
  else if(r<.93){pa.act='dance';pa.actT=NOW+3000;burst(pa,'🎵',3)}
  else pa.emo={e:['😊','🎶','💭','🥰','😋'][Math.floor(Math.random()*5)],t:NOW+2500}}
@@ -837,6 +881,8 @@ function onMsg(m){
  case'mk':MK=m.MK;drawMk();break;
  case'pt':PT=m.PT;window.DISHES=PT.dishes;drawCook();if($('#mTable').classList.contains('on'))drawTable();break;
  case'cook':window.COOKING={until:NOW+COOK_MS};pa.emo={e:m.e,t:NOW+COOK_MS};sfx.whoosh();break;
+ case'rt':RT=m.RT;window.RT_DISHES=RT.dishes;if($('#mResto').classList.contains('on'))drawResto();break;
+ case'rb':RB=m.RB;applyDeco();break;
  case'eat':burst(pa,m.drink?'💦':'😋',3);pa.emo={e:m.e,t:NOW+1800};if(m.drink)sfxSlurp();else sfxChew();break;
  case'mkop':if(m.o){mkApply(m.o,m.d);drawMk()}break;
  case'mkhello':if(IS_MK)sendMk('mk',{MK});break;
@@ -854,7 +900,7 @@ placeOfflinePartner();
 /* my movement + broadcast */
 function goTile(tx,ty,then,after){const sx=me.x,sy=me.y;if(walkTo(me,tx,ty,ok=>{if(ok){after&&after();}saveU()})){send('go',{x:sx,y:sy,tx,ty,then})}}
 function goNear(tiles,then,after){if(me.seat)standUp(me);const p=bfs(me.x,me.y,(x,y)=>tiles.has(x+','+y));if(!p){toast('Không có lối đi tới đó 🥲');return}const t=p[p.length-1];goTile(t[0],t[1],then,after)}
-function sitOn(it,kind){const c=CAT[it.t];const slots=kind==='lie'?c.lie:c.sit;let k=-1;for(let i=0;i<slots.length;i++)if(!seatTaken(it,i,kind,ME)){k=i;break}if(k<0){toast('Chỗ này có người rồi 💞');return}
+function sitOn(it,kind){if(it.npc){toast('Ghế này có khách ngồi rồi ạ 🙂');return}const c=CAT[it.t];const slots=kind==='lie'?c.lie:c.sit;let k=-1;for(let i=0;i<slots.length;i++)if(!seatTaken(it,i,kind,ME)){k=i;break}if(k<0){toast('Chỗ này có người rồi 💞');return}
  const seat={id:it.id,k,kind};goNear(adjOfItem(it),{seat},()=>{applySeat(me,seat);send('seat',{seat});if(kind==='lie')burst(me,'💤',3);checkCuddle()})}
 function checkCuddle(){if(!livePa()||!me.seat||!pa.seat||me.seat.id!==pa.seat.id)return;burst(me,'💗',8);burst(pa,'💕',6);vib(60)}
 function useItem(it,fn){goNear(adjOfItem(it),{face:[...lpt(it,.5,.5)]},()=>{faceToward(me,...lpt(it,.5,.5));fn&&fn()})}
@@ -892,6 +938,12 @@ function itemMenu(it,sx,sy){const c=CAT[it.t];const B=[];let sub='';
  switch(it.t){
  case'lift':for(const[k,f]of myFloors())if(k!==KIND)B.push([`🛗 ${f.n}`,()=>nav('room.html?r='+k+(DEMO?'&demo':'')),!B.length]);B.push(['🏠 Về phòng chung',()=>nav('room.html'+(DEMO?'?demo':''))]);sub='Đang ở '+MD.FLOORS[KIND].n;break;
  case'sample':sub='Hôm nay mời ăn thử · mỗi người 6 lần/ngày';SAMPLES.forEach((x,k)=>B.push([`😋 Ăn thử ${x.n}`,()=>tasteSample(it,x),!k]));break;
+ case'rtable':if(it.npc){sub='Bàn này có khách rồi ạ 🙂';B.push(['😊 Chào khách bàn bên',()=>{say('Chúc ngon miệng nha! 😊');setTimeout(()=>toast('👩👨: Cảm ơn hai bạn, hai bạn đẹp đôi quá 💗'),900)},1]);break}{const ch3=R.items.filter(o=>o.t==='chair'&&!o.npc&&Math.hypot(o.x-it.x,o.y-it.y)<1.6);sub=RT.dishes.length?`${RT.dishes.length} món trên bàn`:'Bàn trống';if(ch3.length)B.push(['🪑 Ngồi vào bàn',()=>{const c=ch3.find(c=>!seatTaken(c,0,'sit',ME))||ch3[0];sitOn(c,'sit')},1]);B.push(['📋 Gọi món',openRMenu,!ch3.length]);B.push(['🍽️ Món trên bàn',openResto])}break;
+ case'host':sub=RB.booking?`Đặt bàn: ${RB.booking.date} ${RB.booking.time} · ${RB.booking.area==='vip'?'phòng riêng':'sảnh'}`:'Chưa đặt bàn';B.push(['📅 Đặt bàn',()=>{useItem(it);openBook()},1]);B.push(KIND==='resto2'?['🚪 Ra sảnh chung',()=>nav('room.html?r=resto'+(DEMO?'&demo':''))]:['🚪 Vào phòng riêng',()=>{if(!RB.booking||RB.booking.area!=='vip'){toast('💁 Phòng riêng cần đặt trước ạ','📅 Đặt bàn',openBook);return}nav('room.html?r=resto2'+(DEMO?'&demo':''))}]);break;
+ case'waiter':waiterMenu(sx,sy,it);return true;
+ case'bar':goUse('🍸 Gọi cocktail',()=>{RT.dishes.push({id:nid(),e:'🍸',n:'Cocktail',b:3,by:ME});RT.bill.push({n:'Cocktail',p:150000,by:ME});rtSave();noise(.5,.12,2500,'bandpass');toast('🍸 Bartender lắc cocktail cho anh chị đây!')},1);goUse('🍾 Mở champagne',()=>{RT.dishes.push({id:nid(),e:'🥂',n:'Champagne',b:3,by:ME});RT.bill.push({n:'Champagne (chai)',p:1800000,by:ME});rtSave();noise(.08,.4,1200,'bandpass');burst(me,'🍾',4);burst(me,'✨',6)});break;
+ case'piano':goUse(R.music?'🔇 Dừng nhạc':'🎹 Nhờ chơi một bản',()=>{R.music=!R.music;saveRoom();updateAudio();if(R.music)burst(me,'🎶',5)},1);break;
+ case'balloon':goUse('🎈 Chọc bóng',()=>{noise(.1,.5,1500,'bandpass');burst(me,'🎉',6)},1);break;
  case'fitting':B.push(['👗 Thử & mặc đồ đã mua',()=>{useItem(it,openAvatar)},1]);sub='Mặc thử đồ trong tủ, son, nước hoa…';break;
  case'promo':B.push(['🔥 Xem giá sốc hôm nay',()=>{$('#findIn').value='';openFind()},1]);B.push(['📝 Danh sách đi chợ',()=>$('#bList').click()]);break;
  case'bed':B.push(['😴 Nằm nghỉ',()=>sitOn(it,'lie'),1]);break;
@@ -931,7 +983,7 @@ function itemMenu(it,sx,sy){const c=CAT[it.t];const B=[];let sub='';
 function wallMenu(wi,sx,sy){const c=WCAT[wi.t];const B=[];let sub='';const front=wi.w==='A'?[wi.p,0]:[0,wi.p];const tiles=new Set();for(let i=0;i<c.s;i++){const t=wi.w==='A'?[wi.p+i,0]:[0,wi.p+i];if(!BM[t[0]][t[1]])tiles.add(t.join(','))}
  const go=fn=>()=>{if(!tiles.size){fn();return}goNear(tiles,null,()=>{me.face='b';me.flip=wi.w==='B';fn()})};
  if(wi.t==='window'){B.push([R.rain?'☀️ Cho tạnh mưa':'🌧️ Cho trời mưa',go(()=>{R.rain=!R.rain;saveRoom();updateAudio()}),1])}
- else if(wi.t==='door'){if(R.kind!=='room'){B.push(['🛏️ Về phòng chung',go(()=>nav('room.html')),1]);if(R.kind==='kitchen')B.push(['🛒 Đi siêu thị mua đồ',go(()=>nav('room.html?r=market'))]);if(R.kind==='market')B.push(['🍳 Mang đồ về bếp',go(()=>nav('room.html?r=kitchen'))])}else{B.push(['🍳 Vào bếp nấu ăn',go(()=>nav('room.html?r=kitchen')),1]);B.push(['🛒 Đi siêu thị cùng nhau',go(()=>nav('room.html?r=market'))]);B.push([LOVE>=UNLOCK?'🌙 Ra ban công':`🔒 Ban công (${LOVE}/${UNLOCK} điểm)`,go(()=>{if(LOVE>=UNLOCK)nav('room.html?r=balcony');else toast(`Cần ${UNLOCK} điểm yêu thương để mở ban công. Điểm có từ thư, ảnh, câu hỏi mỗi ngày, quà…`)})])}B.push(['🏠 Về trang Nhà',go(()=>nav('./'))])}
+ else if(wi.t==='door'){if(R.kind!=='room'){B.push(['🛏️ Về phòng chung',go(()=>nav('room.html')),1]);if(R.kind==='kitchen')B.push(['🛒 Đi siêu thị mua đồ',go(()=>nav('room.html?r=market'))]);if(R.kind==='market')B.push(['🍳 Mang đồ về bếp',go(()=>nav('room.html?r=kitchen'))])}else{B.push(['🍳 Vào bếp nấu ăn',go(()=>nav('room.html?r=kitchen')),1]);B.push(['🍽️ Đi ăn nhà hàng',go(()=>nav('room.html?r=resto'))]);B.push(['🛒 Đi siêu thị cùng nhau',go(()=>nav('room.html?r=market'))]);B.push([LOVE>=UNLOCK?'🌙 Ra ban công':`🔒 Ban công (${LOVE}/${UNLOCK} điểm)`,go(()=>{if(LOVE>=UNLOCK)nav('room.html?r=balcony');else toast(`Cần ${UNLOCK} điểm yêu thương để mở ban công. Điểm có từ thư, ảnh, câu hỏi mỗi ngày, quà…`)})])}B.push(['🏠 Về trang Nhà',go(()=>nav('./'))])}
  else if(wi.t==='mirror'){B.push(['👗 Ngắm & thay đồ',go(openAvatar),1])}
  else if(wi.t==='calendar'){const d=daysToMeet();sub=d==null?'Chưa hẹn ngày gặp, đặt ở trang Nhà nhé':d<=0?'Hôm nay gặp nhau!':`Còn ${d} ngày nữa là gặp nhau`;B.push(['📅 Mở Lịch chung',go(()=>nav('calendar.html')),1])}
  else if(wi.t==='frame'){const dt=daysTogether();sub=dt?`Ngày thứ ${dt} bên nhau ♡`:'♡';B.push(['🗂️ Mở Album chung',go(()=>nav('album.html')),1])}
@@ -952,7 +1004,7 @@ function throwBall(){const ft=freeTiles();const t=ft[Math.floor(Math.random()*ft
 function renamePet(){const n=prompt('Tên mới cho bé:',R.pet.n);if(n&&n.trim()){R.pet.n=n.trim().slice(0,16);saveRoom()}}
 function burstAt(x,y,txt,n){const[sx,sy]=iso(x,y);for(let i=0;i<n;i++)spawn(sx+(Math.random()-.5)*16,sy-18,txt,{vy:-18-Math.random()*16})}
 function waterPlant(){if(R.plant.at&&Date.now()-R.plant.at<4*36e5){toast('Cây vừa được tưới rồi, lát nữa nhé 🌱');return}R.plant.w=(R.plant.w||0)+1;R.plant.at=Date.now();R.plant.by=ME;saveRoom();const it=R.items.find(i=>i.t==='plant');if(it){const p=lpt(it,.5,.5);burstAt(p[0],p[1],'💧',5)}sfx.water();if(plantStage()===4&&R.plant.w===14){toast('Cây chung đã ra hoa rồi! 🌸');}}
-function inviteP(){if(DEMO){demoPartner=!demoPartner;if(demoPartner){const[dx,dy]=doorTile();pa.seat=null;pa.pose='stand';pa.x=dx+.5;pa.y=dy+.5;walkTo(pa,5,4)}else placeOfflinePartner();return}C.invite(ctx,RK,({balcony:'Ra ban công ngắm sao 🌙',market:'Đi siêu thị cùng nhau 🛒',market2:'Đi siêu thị cùng nhau 🛒',market3:'Đi siêu thị cùng nhau 🛒',mall:'Đi dạo TTTM cùng nhau 🛍️',mall2:'Đi dạo TTTM cùng nhau 🛍️',mall3:'Đi dạo TTTM cùng nhau 🛍️',kitchen:'Vào bếp nấu ăn cùng nhau 🍳'})[KIND]||'Vào phòng chung 🏠')}
+function inviteP(){if(DEMO){demoPartner=!demoPartner;if(demoPartner){const[dx,dy]=doorTile();pa.seat=null;pa.pose='stand';pa.x=dx+.5;pa.y=dy+.5;walkTo(pa,5,4)}else placeOfflinePartner();return}C.invite(ctx,RK,({balcony:'Ra ban công ngắm sao 🌙',market:'Đi siêu thị cùng nhau 🛒',market2:'Đi siêu thị cùng nhau 🛒',market3:'Đi siêu thị cùng nhau 🛒',mall:'Đi dạo TTTM cùng nhau 🛍️',mall2:'Đi dạo TTTM cùng nhau 🛍️',mall3:'Đi dạo TTTM cùng nhau 🛍️',resto:'Đi ăn nhà hàng cùng nhau 🍽️',resto2:'Vào phòng riêng nhà hàng 🕯️',kitchen:'Vào bếp nấu ăn cùng nhau 🍳'})[KIND]||'Vào phòng chung 🏠')}
 /* ================= siêu thị nhiều tầng ================= */
 const PROD=MD?MD.PROD:{};
 const vnd=n=>(n||0).toLocaleString('vi-VN')+'đ';
@@ -1019,8 +1071,8 @@ const sfxWallet=()=>{tone(1568,.18,'sine',.08);tone(2093,.32,'sine',.08,.15)};//
 const sfxApplePay=()=>{tone(1318,.12,'sine',.06);tone(1975,.25,'sine',.06,.1)};
 const PAYS=[['cash','💵','Tiền mặt'],['card','💳','Thẻ Visa/Master'],['momo','🟪','MoMo'],['zalo','🟦','ZaloPay'],['qr','🏦','Chuyển khoản QR'],['apple','','Apple Pay']];
 let payMethod=lsGet('payMethod','cash');
-function drawPays(){const el=$('#payL');if(!el)return;el.innerHTML=PAYS.map(([k,e,n])=>`<button data-p="${k}" class="${k===payMethod?'on':''}">${e} ${n}</button>`).join('')}
-$('#payL').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;payMethod=b.dataset.p;lsSet('payMethod',payMethod);drawPays();ac();if(payMethod==='cash')noise(.05,.2,1500,'bandpass');else sfxApplePay()};
+function drawPays(){for(const el of document.querySelectorAll('#payL,#payL2'))el.innerHTML=PAYS.map(([k,e,n])=>`<button data-p="${k}" class="${k===payMethod?'on':''}">${e} ${n}</button>`).join('')}
+$('#payL2').onclick=$('#payL').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;payMethod=b.dataset.p;lsSet('payMethod',payMethod);drawPays();ac();if(payMethod==='cash')noise(.05,.2,1500,'bandpass');else sfxApplePay()};
 // mã QR giả (chỉ để trang trí) vẽ bằng canvas
 function fakeQR(seed){const c=document.createElement('canvas'),n=25,z=6;c.width=c.height=n*z+16;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.fillStyle='#111';let a=seed>>>0;
  const fin=(i,j)=>{x.fillRect(8+i*z,8+j*z,7*z,7*z);x.fillStyle='#fff';x.fillRect(8+(i+1)*z,8+(j+1)*z,5*z,5*z);x.fillStyle='#111';x.fillRect(8+(i+2)*z,8+(j+2)*z,3*z,3*z)};
@@ -1143,6 +1195,70 @@ const sfxSlurp=()=>{for(let k=0;k<11;k++)noise(.055,.16,650+k*140+Math.random()*
 function eatDish(id){const d=PT.dishes.find(x=>x.id===id);if(!d)return;d.b--;if(d.b<=0)PT.dishes=PT.dishes.filter(x=>x!==d);ptSave();const dr=isDrink(d);me.emo={e:d.e,t:NOW+1800};burst(me,dr?'💦':'😋',3);send('eat',{e:d.e,drink:dr});if(dr)sfxSlurp();else sfxChew();vib(dr?[20,30,20]:[15,40,15,40,15]);drawTable();
  const atTable=c=>c.seat&&itemById(c.seat.id)?.t==='chair';
  if(atTable(me)&&atTable(pa)&&livePa()){burst(me,'💗',5);burst(pa,'💗',4);toast('Ăn cùng nhau ngon gấp đôi 💗')}else if(d.b<=0)toast(`Hết sạch ${d.n} rồi, ngon quá 😋`)}
+/* ================= 🍽️ Nhà hàng Tomortle: hai đứa là khách (đặt bàn, phục vụ, phòng riêng, trang trí) ================= */
+let RB={booking:null,ratings:[]},RT={dishes:[],bill:[],table:null};
+if(IS_RT){RB=Object.assign(RB,await loadS('resto',{}));RT=Object.assign(RT,await loadS('resto-table',{}));RT.dishes=RT.dishes||[];RT.bill=RT.bill||[];window.RT_DISHES=RT.dishes;
+ $('#bResto').classList.remove('hidden');$('#bRMenu').classList.remove('hidden');
+ $('#hint').textContent=(KIND==='resto2'?'Phòng riêng · ':'Sảnh nhà hàng · ')+'ngồi vào bàn rồi chạm 🤵 phục vụ để gọi món · 💁 lễ tân để đặt bàn'+(KIND==='resto'?' · cửa phòng riêng ở quầy lễ tân':'');
+ setTimeout(()=>{const b=RB.booking;if(b&&b.date===new Date().toISOString().slice(0,10))toast(`💁 Chào ${ctx.myName}! Bàn ${b.area==='vip'?'phòng riêng':'sảnh'} lúc ${b.time} đã sẵn sàng ạ`);else toast('💁 Xin chào quý khách, mời anh chị vào bàn ạ!')},900)}
+function rtSave(){saveS('resto-table',RT,400);send('rt',{RT});window.RT_DISHES=RT.dishes;if($('#mResto').classList.contains('on'))drawResto()}
+const vndR=n=>(n||0).toLocaleString('vi-VN')+'đ';
+let rCat='viet',orderQ=[];
+function openRMenu(){drawRMenu();$('#mRMenu').classList.add('on')}
+function drawRMenu(){const M=MD.RESTO_MENU;$('#rmC').innerHTML=Object.entries(M).map(([k,c])=>`<button data-c="${k}" class="${k===rCat?'on':''}">${c.n}</button>`).join('');
+ $('#rmL').innerHTML=M[rCat].items.map(([e,n,p])=>{const q=orderQ.filter(x=>x.n===n).length;return`<button data-n="${esc(n)}" class="${q?'in':''}">${q?`<em>${q}</em>`:''}<b>${icoH(e)}</b>${esc(n)}<small>${vndR(p)}</small></button>`}).join('');
+ $('#rmQ').innerHTML=orderQ.length?`📝 <b>Gọi:</b> ${orderQ.map(x=>`${icoH(x.e,'ico s')} ${esc(x.n)}`).join(' · ')} · <b>${vndR(orderQ.reduce((a,x)=>a+x.p,0))}</b>`:'Chạm món để gọi, chạm lại món đã chọn sẽ bỏ bớt'}
+$('#rmC').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;rCat=b.dataset.c;drawRMenu()};
+$('#rmL').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;const it=MD.RESTO_MENU[rCat].items.find(x=>x[1]===b.dataset.n);const i=orderQ.findIndex(x=>x.n===it[1]);if(e.target.closest('em')&&i>=0)orderQ.splice(i,1);else orderQ.push({e:it[0],n:it[1],p:it[2]});sfx.pop();drawRMenu()};
+$('#rmSend').onclick=()=>{if(!orderQ.length){toast('Chưa chọn món nào ạ 🤵');return}const list=orderQ.slice();orderQ=[];$('#mRMenu').classList.remove('on');
+ RT.bill.push(...list.map(x=>({n:x.n,p:x.p,by:ME})));rtSave();say('Cho mình gọi món nha 🙋');tone(1568,.15,'sine',.05);
+ toast(`🤵 Dạ, ${list.length} món sẽ ra ngay ạ!`);list.forEach((x,k)=>setTimeout(()=>{RT.dishes.push({id:nid(),e:x.e,n:x.n,b:isDrink({e:x.e,n:x.n})?3:4,by:ME});rtSave();tone(2093,.25,'sine',.05);tone(2637,.35,'sine',.04,.12);toast(`🤵 ${x.n} của anh chị đây ạ, chúc ngon miệng!`)},3500+k*2500))};
+function openResto(){drawResto();drawPays();$('#mResto').classList.add('on')}
+function drawResto(){const D=RT.dishes;$('#rsL').innerHTML=D.length?D.map(d=>{const dr=isDrink(d);return`<div class="cl"><b>${icoH(d.e)}</b><span>${esc(d.n)}<br><small class="note">còn ${d.b} ${dr?'ngụm':'miếng'}</small></span><button class="btn small primary" data-eat="${d.id}">${dr?'🥤 Uống':'😋 Ăn'}</button></div>`}).join(''):'<p class="note">Bàn chưa có món. Bấm 📋 Gọi món nhé.</p>';
+ const tot=RT.bill.reduce((a,x)=>a+x.p,0);$('#rsBill').innerHTML=RT.bill.length?`🧾 Đã gọi ${RT.bill.length} món · <b>${vndR(tot)}</b>`:''}
+$('#rsL').onclick=e=>{const a=e.target.closest('[data-eat]');if(!a)return;const d=RT.dishes.find(x=>x.id===a.dataset.eat);if(!d)return;d.b--;if(d.b<=0)RT.dishes=RT.dishes.filter(x=>x!==d);const dr=isDrink(d);rtSave();me.emo={e:d.e,t:NOW+1800};burst(me,dr?'💦':'😋',3);send('eat',{e:d.e,drink:dr});if(dr)sfxSlurp();else sfxChew();vib(20);drawResto();
+ const atT=c=>c.seat&&itemById(c.seat.id)?.t==='chair';if(atT(me)&&atT(pa)&&livePa())burst(me,'💗',3)};
+$('#rsMenu').onclick=()=>{$('#mResto').classList.remove('on');openRMenu()};
+$('#rsPay').onclick=()=>{$('#mResto').classList.remove('on');restoPay()};
+// thanh toán bằng ví chung (như siêu thị): quét món, chọn cách trả, in hoá đơn, cha-ching, rồi đánh giá
+async function restoPay(){if(!RT.bill.length){toast('Chưa gọi món nào để tính tiền ạ 🤵');return}ac();const W=Object.assign({budget:500000},await loadS('market',{}));
+ const sub=RT.bill.reduce((a,x)=>a+x.p,0),svc=Math.round(sub*.05/1000)*1000,vat=Math.round(sub*.08/1000)*1000,deco=RB.booking&&RB.booking.decoPaid===false?MD.RESTO_DECO[RB.booking.deco]?.[2]||0:0,total=sub+svc+vat+deco;
+ if(total>W.budget){toast(`Ví chung còn ${vndR(W.budget)}, chưa đủ ${vndR(total)} 🥺 · nạp ví ở Siêu thị nhé`);return}
+ const d=new Date();$('#infoT').textContent='🧾 Đang tính tiền…';
+ $('#infoB').innerHTML=`<div class="rc"><div><b>NHÀ HÀNG TOMORTLE</b><span>${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span></div><div id="rcL"></div><div id="rcPay" style="margin-top:6px"></div><div id="rcT"></div></div>`;$('#mInfo').classList.add('on');
+ const lines={};for(const x of RT.bill){lines[x.n]=lines[x.n]||{n:x.n,p:x.p,q:0};lines[x.n].q++}
+ for(const l of Object.values(lines)){const row=document.createElement('div');row.className='scan';row.innerHTML=`<span>${esc(l.n)} ×${l.q}</span><span>${vndR(l.p*l.q)}</span>`;$('#rcL').append(row);sfxBeep();row.classList.add('hit');await new Promise(r=>setTimeout(r,300))}
+ $('#infoT').textContent='💳 Thanh toán…';const how=await payStep(total);$('#infoT').textContent='🖨️ Đang in hoá đơn…';sfxPrint(1.3);await new Promise(r=>setTimeout(r,1400));
+ $('#rcT').innerHTML=`<div style="border-top:1px dashed #999;margin-top:4px;padding-top:4px"><span>Tạm tính</span><span>${vndR(sub)}</span></div><div><span>Phí phục vụ 5%</span><span>${vndR(svc)}</span></div><div><span>VAT 8%</span><span>${vndR(vat)}</span></div>${deco?`<div><span>Trang trí ${esc(MD.RESTO_DECO[RB.booking.deco][0])}</span><span>${vndR(deco)}</span></div>`:''}
+  <div class="big"><b>TỔNG</b><b>${vndR(total)}</b></div><div><span>Thanh toán</span><span>${how}</span></div><div><span>Ví chung còn</span><span>${vndR(W.budget-total)}</span></div><div style="justify-content:center">Cảm ơn quý khách, hẹn gặp lại 💗</div>
+  <div style="justify-content:center;margin-top:6px" id="rStars">${[1,2,3,4,5].map(k=>`<button class="btn small" data-s="${k}">⭐${k}</button>`).join('')}</div>`;
+ $('#infoT').textContent='🧾 Hoá đơn nhà hàng';sfxChaching();burst(me,'💸',4);
+ W.budget-=total;W.hist=[...(W.hist||[]),{at:Date.now(),total,n:RT.bill.length,by:ME,pay:how,where:'resto'}].slice(-30);await saveS('market',W);
+ if(deco){RB.booking.decoPaid=true;saveS('resto',RB)}RT.bill=[];rtSave();
+ $('#rStars').onclick=e=>{const b=e.target.closest('[data-s]');if(!b)return;RB.ratings=[...(RB.ratings||[]),{s:+b.dataset.s,at:Date.now(),by:ME}].slice(-50);saveS('resto',RB);$('#rStars').innerHTML=`Cảm ơn anh chị đã đánh giá ${'⭐'.repeat(+b.dataset.s)} 💗`;if(+b.dataset.s>=4)burst(me,'⭐',5)}}
+// phục vụ: rót rượu, bánh kem bất ngờ, nhạc công
+function waiterMenu(sx,sy,it){menu(sx,sy,'🤵 Phục vụ','Anh chị cần gì ạ?',[['📋 Gọi món',()=>{useItem(it);openRMenu()},1],['🍽️ Bàn của mình',()=>openResto()],
+ ['🍷 Rót thêm rượu',()=>{useItem(it);RT.dishes.push({id:nid(),e:'🍷',n:'Vang đỏ (ly)',b:3,by:ME});RT.bill.push({n:'Vang đỏ (ly)',p:220000,by:ME});rtSave();noise(.6,.08,700,'bandpass');toast('🤵 Rượu của anh chị đây ạ 🍷')}],
+ ['🎂 Mang bánh kem bất ngờ',()=>{useItem(it);setTimeout(()=>{RT.dishes.push({id:nid(),e:'🎂',n:'Bánh kem bất ngờ',b:4,by:ME});RT.bill.push({n:'Bánh kem bất ngờ',p:250000,by:ME});rtSave();[523,523,587,523,698,659].forEach((f,k)=>tone(f,.35,'triangle',.05,k*.38));burst(me,'🎉',6);burst(pa,'🎉',6);say('Bất ngờ chưa! 🎂💗')},2500)}],
+ [R.music?'🔇 Tạm dừng nhạc':'🎻 Mời nhạc công chơi nhạc',()=>{R.music=!R.music;saveRoom();updateAudio();if(R.music){burst(me,'🎻',4);toast('🎻 Nhạc công đang chơi bản tình ca cho hai bạn')}}],
+ ['🧾 Tính tiền',()=>restoPay()]])}
+// đặt bàn
+function openBook(){const b=RB.booking||{};const td=new Date();td.setHours(19,0,0,0);
+ $('#bkDate').value=b.date||new Date().toISOString().slice(0,10);$('#bkTime').value=b.time||'19:00';$('#bkArea').value=b.area||'hall';$('#bkDeco').innerHTML=Object.entries(MD.RESTO_DECO).map(([k,v])=>`<option value="${k}" ${b.deco===k?'selected':''}>${v[0]}${v[2]?' · '+vndR(v[2]):''}</option>`).join('');$('#bkNote').value=b.note||'';
+ $('#bkCur').innerHTML=b.date?`📅 Đang đặt: <b>${b.date} lúc ${b.time}</b> · ${b.area==='vip'?'Phòng riêng':'Sảnh chung'}${b.deco&&b.deco!=='none'?' · '+MD.RESTO_DECO[b.deco][0]:''}${b.note?' · “'+esc(b.note)+'”':''}`:'Chưa có lịch đặt bàn';$('#mBook').classList.add('on')}
+$('#bkOk').onclick=()=>{const area=$('#bkArea').value,deco=area==='vip'?$('#bkDeco').value:'none';RB.booking={date:$('#bkDate').value,time:$('#bkTime').value,area,deco,decoPaid:deco==='none',note:$('#bkNote').value.trim().slice(0,80),by:ME,at:Date.now()};saveS('resto',RB);send('rb',{RB});
+ $('#mBook').classList.remove('on');tone(1318,.12,'sine',.05);tone(1760,.2,'sine',.05,.1);toast(`💁 Đã đặt bàn ${area==='vip'?'phòng riêng':'sảnh'} ${RB.booking.date} lúc ${RB.booking.time} ✓`,area==='vip'?'🚪 Vào phòng riêng':'',area==='vip'?()=>nav('room.html?r=resto2'+(DEMO?'&demo':'')):null);
+ if(KIND==='resto2')applyDeco()};
+$('#bkArea').onchange=()=>$('#bkDecoRow').classList.toggle('hidden',$('#bkArea').value!=='vip');
+// trang trí phòng riêng theo gói đã đặt
+function applyDeco(){if(KIND!=='resto2')return;R.items=R.items.filter(i=>!i.deco);const d=(RB.booking&&RB.booking.deco)||'none';
+ const add=(t,x,y,r=0)=>{if(!BM[x]?.[y])R.items.push({id:nid(),t,x,y,r,c:CAT[t].c,deco:1})};
+ if(d==='roses'||d==='anniversary'||d==='propose'){add('vase',2,2);add('vase',5,5);add('lantern',2,5);add('lantern',5,2)}
+ if(d==='birthday'||d==='propose'){add('balloon',1,1);add('balloon',6,1)}if(d==='anniversary')add('balloon',6,6);
+ BM=blockedMap();window.RDECO=d}
+
+$('#bResto').onclick=openResto;$('#bRMenu').onclick=openRMenu;
+if(KIND==='resto2')applyDeco();
 function say(text){me.say={text,t:NOW+6500};UM.msg={text,at:Date.now()};saveS(UK(ME),UM);send('say',{text})}
 
 /* ================= input ================= */
@@ -1325,8 +1441,8 @@ async function calcLove(){if(DEMO){LOVEB=Object.assign({pts:0},await loadS('love
  const[a,b,c2,d,e,f,g2]=await Promise.all([cnt('letters'),cnt('daily_answers'),cnt('album'),cnt('vgifts'),cnt('notes'),cnt('voices'),cnt('bucket',q=>q.eq('done',true))]);LOVE=a+Math.floor(b/2)+c2+d+e+f+g2*3+Math.floor(((R.plant&&R.plant.w)||0)/2)}catch(x){}LOVEB=Object.assign({pts:0},await loadS('love-bonus',{}));LOVE+=LOVEB.pts||0;renderRoomTabs();renderLove()}
 function renderRoomTabs(){const el=$('#roomTabs');if(!el)return;
  // 4 phòng trên một hàng (vuốt ngang nếu chật); trong siêu thị thêm một hàng tầng gọn T1·T2·T3
- el.innerHTML=`<div class="rtabs"><button class="${KIND==='room'?'on':''}" data-r="room">🛏️ Phòng ngủ</button><button class="${KIND==='balcony'?'on':''}" data-r="balcony">🌙 Ban công</button><button class="${KIND==='kitchen'?'on':''}" data-r="kitchen">🍳 Bếp</button><button class="${KIND.startsWith('market')?'on':''}" data-r="market">🛒 Siêu thị</button><button class="${IS_MALL?'on':''}" data-r="mall">🛍️ TTTM</button></div>${IS_MK?`<div class="ftabs"><span>🛗</span>${myFloors().map(([k,f])=>`<button class="${KIND===k?'on':''}" data-r="${k}" title="${f.n}"><b>${f.s}</b> ${({market:'Tươi sống',market2:'Đồ khô · uống',market3:'Đặc sản',mall:'Cao cấp',mall2:'Bình dân',mall3:'Thời trang'})[k]}</button>`).join('')}</div>`:''}`}
-document.addEventListener('click',e=>{const b=e.target.closest('#roomTabs button');if(!b)return;const r=b.dataset.r;if(r===KIND||(r==='market'&&KIND.startsWith('market'))||(r==='mall'&&IS_MALL))return;if(r==='balcony'&&LOVE<UNLOCK){toast(`Cần ${UNLOCK} điểm yêu thương để mở ban công. Gửi thư, ảnh, trả lời câu hỏi mỗi ngày… để tích điểm nhé`);return}nav((r==='room'?'room.html':'room.html?r='+r)+(DEMO?(r==='room'?'?':'&')+'demo':''))});
+ el.innerHTML=`<div class="rtabs"><button class="${KIND==='room'?'on':''}" data-r="room">🛏️ Phòng ngủ</button><button class="${KIND==='balcony'?'on':''}" data-r="balcony">🌙 Ban công</button><button class="${KIND==='kitchen'?'on':''}" data-r="kitchen">🍳 Bếp</button><button class="${KIND.startsWith('market')?'on':''}" data-r="market">🛒 Siêu thị</button><button class="${IS_MALL?'on':''}" data-r="mall">🛍️ TTTM</button><button class="${IS_RT?'on':''}" data-r="resto">🍽️ Nhà hàng</button></div>${IS_MK?`<div class="ftabs"><span>🛗</span>${myFloors().map(([k,f])=>`<button class="${KIND===k?'on':''}" data-r="${k}" title="${f.n}"><b>${f.s}</b> ${({market:'Tươi sống',market2:'Đồ khô · uống',market3:'Đặc sản',mall:'Cao cấp',mall2:'Bình dân',mall3:'Thời trang'})[k]}</button>`).join('')}</div>`:''}`}
+document.addEventListener('click',e=>{const b=e.target.closest('#roomTabs button');if(!b)return;const r=b.dataset.r;if(r===KIND||(r==='market'&&KIND.startsWith('market'))||(r==='mall'&&IS_MALL)||(r==='resto'&&IS_RT))return;if(r==='balcony'&&LOVE<UNLOCK){toast(`Cần ${UNLOCK} điểm yêu thương để mở ban công. Gửi thư, ảnh, trả lời câu hỏi mỗi ngày… để tích điểm nhé`);return}nav((r==='room'?'room.html':'room.html?r='+r)+(DEMO?(r==='room'?'?':'&')+'demo':''))});
 calcLove();
 /* ================= first run ================= */
 if(!UM.av){setTimeout(openAvatar,500)}else afterSetup();
