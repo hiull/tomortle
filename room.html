@@ -361,8 +361,15 @@ if(DEMO){ctx={me:{id:'me-demo'},partnerId:'pa-demo',myName:'hius',partnerName:'B
   const h=document.createElement('header');h.innerHTML='<a class="btn small" href="./">← Nhà</a><div class="logo" style="font-size:20px">Phòng chung (demo)</div>';document.querySelector('.app').prepend(h)}
 else{C.header('Phòng chung','./');ctx=await C.boot()}
 const ME=ctx.me.id,PA=ctx.partnerId,IS_A=ctx.couple.user_a===ME;
-const loadS=async(k,d)=>DEMO?lsGet('demo-'+k,d):await C.loadState(k,d);
-const saveS=(k,v,delay)=>{if(k===UK(ME))lsSet('roomU-'+ME,v);return DEMO?lsSet('demo-'+k,v):C.saveState(k,v,delay)};
+const SLOW=DEMO?+(new URLSearchParams(location.search).get('slow')||0):0;// chỉ để thử mạng chậm ở chế độ demo
+const loadS=async(k,d)=>DEMO?(SLOW?await new Promise(r=>setTimeout(()=>r(lsGet('demo-'+k,d)),SLOW)):lsGet('demo-'+k,d)):await C.loadState(k,d);
+const PRE_WAIT=new Set();
+const saveS=(k,v,delay)=>{if(k===UK(ME))lsSet('roomU-'+ME,v);if(PRE_WAIT.has(k))return Promise.resolve();return DEMO?lsSet('demo-'+k,v):C.saveState(k,v,delay)};
+// tải trước song song ngay khi mở trang; quá 8 giây thì dùng tạm giá trị mặc định (không ghi đè dữ liệu thật cho tới khi tải xong)
+const PRE={};function pre(k,d){if(!(k in PRE)){const real=Promise.resolve().then(()=>loadS(k,d)).catch(()=>d);let late=false;
+ PRE[k]=Promise.race([real.then(v=>v==null?d:v),new Promise(r=>setTimeout(()=>{late=true;PRE_WAIT.add(k);r(d)},8000))]);
+ real.then(()=>{if(late){PRE_WAIT.delete(k);try{toast('Mạng hơi chậm · dữ liệu vừa tải xong','🔄 Tải lại',()=>location.reload())}catch(e){}}})}return PRE[k]}
+pre('market',{});if(IS_MK||KIND==='kitchen')pre('pantry',{});if(KIND==='spa'){pre('skincare',{});pre('closet',{})}if(IS_RT){pre('resto',{});pre('resto-table',{})}
 
 /* ================= catalog ================= */
 const WOOD='#d9a87c';
@@ -1103,7 +1110,7 @@ setInterval(paIdle,4500);
 function placeOfflinePartner(){const o=offlineSpot();pa.path=[];if(o.seat)applySeat(pa,o.seat);else{pa.seat=null;pa.pose='stand';pa.x=o.x;pa.y=o.y}}
 
 /* ================= ⚛️ Thẻ thành viên nguyên tố ================= */
-let CARD_LIFE=((await loadS('market',{}))||{}).life||0;
+let CARD_LIFE=((await pre('market',{}))||{}).life||0;
 const lifeNow=()=>CARD_LIFE;
 function tileHTML(i,cls=''){const[pt,nm,ic,off,o]=TM.TIERS[i];return`<div class="ptile ${o.rainbow?'rb':''} ${cls}" data-ti="${i}" style="--a:${o.col};--b:${o.col2}"><i>${o.num}</i><u>${ic}</u><b>${o.sym}</b><span>${esc(nm)}</span><small>${o.mass}</small></div>`}
 function cardHTML(life){const i=tierIdx(life),nx=TM.TIERS[i+1],pct=nx?Math.min(100,(life-TM.TIERS[i][0])/(nx[0]-TM.TIERS[i][0])*100):100;
@@ -1305,6 +1312,11 @@ function frame(t){const modal=document.querySelector('.modal.on'),busy=me.path.l
  stepChar(me,dt);if(livePa()||busyPa())stepChar(pa,dt);for(const n of NPCS)stepChar(n,dt);updatePet();
  render(dt);requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
+/* nhận cú chạm ngay khi phòng vừa hiện (không chờ tải dữ liệu xong) */
+let down=null;
+cv.addEventListener('pointerdown',e=>{ac();const p=evPt(e);down={p,t:Date.now(),id:e.pointerId};if(editing){edDown(p,e);return}});
+cv.addEventListener('pointermove',e=>{if(editing&&drag){edMove(evPt(e))}});
+cv.addEventListener('pointerup',e=>{const p=evPt(e);if(editing){edUp(p);down=null;return}if(!down)return;if(Math.hypot(p[0]-down.p[0],p[1]-down.p[1])>12){down=null;return}down=null;try{tap(p)}catch(err){console.warn(err)}});
 
 /* ================= network ================= */
 let ch=null;
@@ -1477,7 +1489,7 @@ const BLD=IS_MALL?'mall':'mart',myFloors=()=>Object.entries(MD.FLOORS).filter(([
 let MK={cart:[],budget:500000,hist:[],list:[],points:0,life:0};
 // giỏ hàng dùng chung mọi tầng → kênh riêng 'market-cart'
 let mkch=null;function sendMk(t,p={}){if(mkch)mkch.send({type:'broadcast',event:'m',payload:Object.assign({t},p)})}
-if(IS_MK){MK=Object.assign(MK,await loadS('market',{}));MK.list=MK.list||[];MK.points=MK.points||0;MK.life=MK.life||0;
+if(IS_MK){MK=Object.assign(MK,JSON.parse(JSON.stringify(await pre('market',{}))));MK.list=MK.list||[];MK.points=MK.points||0;MK.life=MK.life||0;
  ['#bCart','#bDir','#bList','#bDeals'].forEach(s=>$(s).classList.remove('hidden'));
  $('#hint').textContent=(IS_MALL?'Tomortle Mall · ':'')+MD.FLOORS[KIND].n+' · chạm quầy để chọn đồ · giỏ dùng chung · thang máy 🛗 đổi tầng'+(IS_MALL?' · 🪞 phòng thử đồ':'');
  if(!DEMO){mkch=C.featureChannel(ctx,'market-cart');mkch.on('broadcast',{event:'m'},({payload})=>onMsg(payload)).subscribe(s=>{if(s==='SUBSCRIBED')sendMk('mkhello')})}}
@@ -1611,7 +1623,7 @@ drawMk();
 const COOK_MS=3500;
 const RECIPES=MD?MD.RECIPES:[];
 let PT={items:{},dishes:[]};
-if(KIND==='kitchen'||IS_MK){PT=Object.assign(PT,await loadS('pantry',{}));PT.items=PT.items||{};PT.dishes=PT.dishes||[];window.DISHES=PT.dishes}
+if(KIND==='kitchen'||IS_MK){PT=Object.assign(PT,await pre('pantry',{}));PT.items=PT.items||{};PT.dishes=PT.dishes||[];window.DISHES=PT.dishes}
 if(KIND==='kitchen')$('#hint').textContent='Chạm bếp để nấu · tủ lạnh có đồ mua ở siêu thị · nấu xong ra bàn ngồi ăn cùng nhau nhé';
 function ptSave(){saveS('pantry',PT,500);send('pt',{PT});window.DISHES=PT.dishes;drawCook()}
 async function stockPantry(cart){try{const pt=Object.assign({items:{},dishes:[]},await loadS('pantry',{}));pt.items=pt.items||{};for(const i of cart){const o=pt.items[i.n]||{e:i.e,q:0,tag:i.tag||''};o.q+=i.q;pt.items[i.n]=o}await saveS('pantry',pt);PT=pt;toast('Đồ đã cất vào tủ lạnh trong Bếp 🍳','Vào bếp',()=>nav('room.html?r=kitchen'+(DEMO?'&demo':'')))}catch(e){console.warn(e)}}
@@ -1665,7 +1677,7 @@ const SKSTEP={remove:['Tẩy trang','🧼',/^(nước|sáp|dầu|bông|gel) tẩ
  moist:['Kem dưỡng','🧴',/^(kem dưỡng|kem (?!chống|nền|lót|mắt)|gel dưỡng|sữa dưỡng (?!thể)|dưỡng ẩm)/i],sun:['Chống nắng','☀️',/chống nắng|sunscreen|sun (cream|milk|stick)/i],mask:['Mặt nạ','🧖',/^mặt nạ(?! ngủ môi)/i]};
 const SKR={am:['clean','toner','serum','moist','sun'],pm:['remove','clean','toner','serum','moist','mask']};
 let SK={},SKCL={},skMode=new Date().getHours()<15&&new Date().getHours()>=4?'am':'pm';
-if(KIND==='spa'){SK=await loadS('skincare',{})||{};SKCL=await loadS('closet',{})||{};$('#hint').textContent='Chạm 💄 bàn trang điểm để skincare · 🚿 rửa mặt · 💆 giường spa đắp mặt nạ · mỹ phẩm mua ở 🛍️ TTTM sẽ lên kệ'}
+if(KIND==='spa'){SK=await pre('skincare',{})||{};SKCL=await pre('closet',{})||{};$('#hint').textContent='Chạm 💄 bàn trang điểm để skincare · 🚿 rửa mặt · 💆 giường spa đắp mặt nạ · mỹ phẩm mua ở 🛍️ TTTM sẽ lên kệ'}
 const today=()=>new Date().toISOString().slice(0,10);
 function skinItems(){return(SKCL[ME]||[]).filter(x=>Object.values(SKSTEP).some(s=>s[2].test(x.n))).filter((x,i,a)=>a.findIndex(y=>y.n===x.n)===i)}
 function skinGoods(){const L=skinItems().map(x=>x.e);return L.length?L:['🧴','🧼','💧','🫧','🌸','🧖']}
@@ -1909,7 +1921,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#mPhone').classL
 
 /* ================= 🍽️ Nhà hàng Tomortle: hai đứa là khách (đặt bàn, phục vụ, phòng riêng, trang trí) ================= */
 let RB={booking:null,ratings:[]},RT={dishes:[],bill:[],table:null};
-if(IS_RT){RB=Object.assign(RB,await loadS('resto',{}));RT=Object.assign(RT,await loadS('resto-table',{}));RT.dishes=RT.dishes||[];RT.bill=RT.bill||[];window.RT_DISHES=RT.dishes;
+if(IS_RT){RB=Object.assign(RB,await pre('resto',{}));RT=Object.assign(RT,await pre('resto-table',{}));RT.dishes=RT.dishes||[];RT.bill=RT.bill||[];window.RT_DISHES=RT.dishes;
  $('#bResto').classList.remove('hidden');$('#bRMenu').classList.remove('hidden');
  $('#hint').textContent=(KIND==='resto2'?'Phòng riêng · ':'Sảnh nhà hàng · ')+'ngồi vào bàn rồi chạm 🤵 phục vụ để gọi món · 💁 lễ tân để đặt bàn'+(KIND==='resto'?' · cửa phòng riêng ở quầy lễ tân':'');
  setTimeout(()=>{const b=RB.booking;if(b&&b.date===new Date().toISOString().slice(0,10))toast(`💁 Chào ${ctx.myName}! Bàn ${b.area==='vip'?'phòng riêng':'sảnh'} lúc ${b.time} đã sẵn sàng ạ`);else toast('💁 Xin chào quý khách, mời anh chị vào bàn ạ!')},900)}
@@ -1975,10 +1987,6 @@ function say(text){chatLog(ME,text);try{voice(text,VOICE.me)}catch(e){}me.say={t
 
 /* ================= input ================= */
 function evPt(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]}
-let down=null;
-cv.addEventListener('pointerdown',e=>{ac();const p=evPt(e);down={p,t:Date.now(),id:e.pointerId};if(editing){edDown(p,e);return}});
-cv.addEventListener('pointermove',e=>{if(editing&&drag){edMove(evPt(e))}});
-cv.addEventListener('pointerup',e=>{const p=evPt(e);if(editing){edUp(p);down=null;return}if(!down)return;if(Math.hypot(p[0]-down.p[0],p[1]-down.p[1])>12){down=null;return}down=null;tap(p)});
 // chạm vào NPC / người ấy / đồ vật: nhân vật tự đi lại gần ngay (menu vẫn hiện để chọn việc)
 function approach(h){try{if(me.seat||me.path.length&&me.after)return;let adj;
  if(h.kind==='item'){adj=adjOfItem(h.ref)}else{const c=h.ref,fx=Math.floor(c.x),fy=Math.floor(c.y);adj=new Set();for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])if(inB(fx+a,fy+b)&&!BM[fx+a][fy+b])adj.add((fx+a)+','+(fy+b))}
@@ -2077,7 +2085,7 @@ $('#hLight').onclick=()=>{R.light=!R.light;saveRoom();syncHud()};
 syncHud();
 
 /* ================= decorate ================= */
-let editing=false,sel=null,drag=null;
+var editing=false,sel=null,drag=null;
 function fits(it,x,y,r){const c=CAT[it.t],w=(r&1)?c.d:c.w,d=(r&1)?c.w:c.d;if(x<0||y<0||x+w>N||y+d>N)return false;for(const o of R.items){if(o===it)continue;if(!!CAT[o.t].flat!==!!c.flat)continue;const f=fp(o);if(x<f.x+f.w&&x+w>f.x&&y<f.y+f.d&&y+d>f.y)return false}return true}
 function wallFits(wi,w,p){const s=WCAT[wi.t].s;if(p<0||p+s>N)return false;if(R.kind==='balcony'&&w==='A')return false;if(w==='B'&&p<1&&false)return false;for(const o of R.walls){if(o===wi||o.w!==w)continue;const s2=WCAT[o.t].s;if(p<o.p+s2&&p+s>o.p)return false}return true}
 function setEditing(on){editing=on;sel=null;drag=null;closeMenu();$('#wrap').classList.toggle('edit',on);$('#playUI').classList.toggle('hidden',on);$('#decorUI').classList.toggle('hidden',!on);$('#hint').textContent=on?'Chế độ trang trí: chạm đồ để chọn, kéo để dời':'Chạm sàn để đi · chạm đồ vật, thú cưng hay người ấy để tương tác';if(!on){fixMe();saveRoom()}syncDecorUI()}
