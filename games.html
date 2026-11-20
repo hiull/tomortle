@@ -116,12 +116,41 @@ const QS = [
   'Siêu năng lực muốn có?', 'Cách giải toả căng thẳng?', 'Ứng dụng mở nhiều nhất trên điện thoại?', 'Món muốn hai đứa cùng nấu?',
   'Thời gian trong ngày thích nhất?', 'Biệt danh hồi nhỏ?', 'Ước mơ nghề nghiệp hồi bé?', 'Thứ muốn làm nhất trong lần gặp tới?',
   'Mùi hương yêu thích?', 'Kiểu hẹn hò lý tưởng?', 'Điều hay làm khi nhớ người kia?', 'Đồ vật luôn mang theo người?',
-  'Thể loại nhạc nghe khi buồn?', 'Trà sữa topping gì?', 'Điều nhỏ nhặt làm vui cả ngày?', 'Nơi muốn sống sau này?'
+  'Thể loại nhạc nghe khi buồn?', 'Trà sữa topping gì?', 'Điều nhỏ nhặt làm vui cả ngày?', 'Nơi muốn sống sau này?',
+  'Món ăn ghét nhất?', 'Size giày?', 'Bộ phim hoạt hình yêu thích?', 'Ca sĩ/nhóm nhạc thần tượng?', 'Thích đi biển hay lên núi?', 'Thích chó hay mèo?',
+  'Uống cà phê kiểu gì?', 'Mấy giờ thường đi ngủ?', 'Đồ ăn đêm hay gọi nhất?', 'Câu cửa miệng hay nói?', 'Thứ hay làm mất/quên nhất?',
+  'Món ăn nấu ngon nhất?', 'Môn thể thao thích xem hoặc chơi?', 'Hôm nào là ngày tuyệt nhất từ trước tới giờ?', 'Một tật xấu tự thấy?', 'Điều muốn thay đổi ở bản thân?',
+  'Trò chơi tuổi thơ thích nhất?', 'Mơ thấy gì gần đây nhất?', 'Trang phục mặc thoải mái nhất?', 'Mùi đồ ăn làm nhớ nhà nhất?', 'Quán ăn muốn quay lại nhất?',
+  'Lúc buồn muốn được người kia làm gì?', 'Lời khen làm vui nhất?', 'Khoảnh khắc thấy người kia đáng yêu nhất?', 'Điều đầu tiên sẽ làm khi gặp lại nhau?', 'Bài hát của hai đứa?',
+  'Ngày kỷ niệm muốn tổ chức thế nào?', 'Kiểu tóc muốn thử?', 'Đi xem phim thì chọn bắp vị gì?', 'Đồ dùng không thể sống thiếu?', 'Nếu được đổi tên thì muốn tên gì?',
+  'Thích được gọi bằng biệt danh nào nhất?', 'Món tráng miệng yêu thích?', 'Nước ngoài muốn đến nhất?', 'Hồi nhỏ sợ nhất cái gì?', 'Điều làm tự hào nhất về bản thân?',
+  'Ngày Chủ nhật lý tưởng?', 'Sở thích bí mật ít ai biết?', 'Thứ hay mua khi buồn?', 'Ứng dụng nghe nhạc hay dùng?', 'Màu son/màu áo hay chọn nhất?',
+  'Muốn học thêm kỹ năng gì?', 'Thích nhận quà bất ngờ hay quà được hỏi trước?', 'Điều sẽ làm nếu được nghỉ một tuần?', 'Món hai đứa ăn chung nhiều nhất?', 'Lần đầu tiên nói thương nhau là ở đâu?'
 ];
+// Câu hỏi theo "lượt" (round) đánh số chung: thứ tự câu xáo cố định theo cặp → hai máy luôn cùng một câu
+const QORD = (() => { let a = 0; for (const ch2 of String(ctx.couple.channel_key || 'x')) a = (a * 31 + ch2.charCodeAt(0)) >>> 0; const o = QS.map((_, i) => i); for (let i = o.length - 1; i > 0; i--) { a = (a * 1664525 + 1013904223) >>> 0; const j = a % (i + 1);[o[i], o[j]] = [o[j], o[i]] } return o })();
+const qOf = r => QORD[((r % QORD.length) + QORD.length) % QORD.length];
+function newQuiz(subject, prev) { const round = ((prev && prev.round) || 0) + 1; return { round, i: qOf(round), subject, ans: null, guess: null, reveal: false, verdict: null, score: (prev && prev.score) || {} } }
 let Q = await loadState('quiz', null);
-function newQuiz(subject, prev) { return { i: Math.floor(Math.random() * QS.length), subject, ans: null, guess: null, reveal: false, verdict: null, score: (prev && prev.score) || {} } }
-if (!Q || Q.i == null) Q = newQuiz(ME, Q);
+if (!Q || Q.i == null) Q = { round: 0, i: qOf(0), subject: ctx.couple.user_a, ans: null, guess: null, reveal: false, verdict: null, score: {} };
+if (Q.round == null) Q.round = 0;
+// gộp trạng thái của hai máy thay vì ghi đè: lượt mới hơn thắng, cùng lượt thì giữ đủ câu trả lời của cả hai
+function mergeQuiz(p) {
+  if (!p || p.i == null) return false; const pr = p.round || 0;
+  if (pr > Q.round) { Q = p; return true }
+  if (pr < Q.round) return false;
+  const before = JSON.stringify(Q);
+  if (p.i !== Q.i && (p.ts || 0) > (Q.ts || 0)) { Q = p; return true } // cùng lượt mà vừa "Đổi câu"
+  Q.ans = Q.ans ?? p.ans; Q.guess = Q.guess ?? p.guess; Q.verdict = Q.verdict ?? p.verdict;
+  const sc = Object.assign({}, p.score || {}); for (const [k, v] of Object.entries(Q.score || {})) sc[k] = Math.max(v, sc[k] || 0); Q.score = sc;
+  Q.reveal = Q.ans != null && Q.guess != null; return JSON.stringify(Q) !== before;
+}
 function renderQuiz() {
+  const qi = $('#qIn'), draft = qi ? qi.value : null, foc = qi && document.activeElement === qi, sel = qi ? [qi.selectionStart, qi.selectionEnd] : null;
+  renderQuiz0();
+  const q2 = $('#qIn'); if (q2 && draft) { q2.value = draft; if (foc) { q2.focus(); try { q2.setSelectionRange(sel[0], sel[1]) } catch (e) { } } }
+}
+function renderQuiz0() {
   const subjectIsMe = Q.subject === ME;
   const myN = ctx.myName, yourN = ctx.partnerName;
   const subjN = subjectIsMe ? myN : yourN, guessN = subjectIsMe ? yourN : myN;
@@ -147,14 +176,15 @@ $('#quizBody').addEventListener('submit', e => {
   if (Q.subject === ME) Q.ans = v; else Q.guess = v;
   if (Q.ans != null && Q.guess != null) Q.reveal = true;
   syncQuiz();
+  loadState('quiz', null).then(r => { if (mergeQuiz(r)) syncQuiz() });
 });
 $('#quizBody').addEventListener('click', e => {
   const b = e.target.closest('[data-v]'); if (b) { Q.verdict = b.dataset.v; const guesser = Q.subject === ME ? YOU : ME; Q.score = Q.score || {}; Q.score[guesser] = (Q.score[guesser] || 0) + ({ right: 2, close: 1, wrong: 0 }[Q.verdict]); if (Q.verdict !== 'wrong') hearts(8); syncQuiz(); return }
   if (e.target.id === 'qNext') { Q = newQuiz(Q.subject === ME ? YOU : ME, Q); syncQuiz() }
 });
-$('#quizSkip').onclick = () => { Q.i = Math.floor(Math.random() * QS.length); Q.ans = Q.guess = null; Q.reveal = false; Q.verdict = null; syncQuiz() };
-function syncQuiz() { renderQuiz(); send('quiz', Q); saveState('quiz', Q) }
-ch.on('broadcast', { event: 'quiz' }, ({ payload }) => { const wasRev = Q.reveal; Q = payload; renderQuiz(); if (Q.reveal && !wasRev) vib(40); if (Q.verdict === 'right' && Q.subject === YOU) hearts(8) });
+$('#quizSkip').onclick = () => { Q.i = QORD[(QORD.indexOf(Q.i) + 7 + Math.floor(Math.random() * 20)) % QORD.length]; Q.ans = Q.guess = null; Q.reveal = false; Q.verdict = null; syncQuiz() };
+function syncQuiz() { Q.ts = Date.now(); renderQuiz(); send('quiz', Q); saveState('quiz', Q) }
+ch.on('broadcast', { event: 'quiz' }, ({ payload }) => { const wasRev = Q.reveal; const ch2 = mergeQuiz(payload); if (!ch2) return; renderQuiz(); if (Q.reveal && !wasRev && !payload.reveal) { send('quiz', Q); saveState('quiz', Q) } if (Q.reveal && !wasRev) vib(40); if (Q.verdict === 'right' && Q.subject === YOU) hearts(8) });
 renderQuiz();
 
 /* ================= CARDS ================= */
@@ -200,7 +230,7 @@ ch.subscribe();
 document.addEventListener('visibilitychange', async () => {
   if (document.hidden) return;
   const [c, q, k] = await Promise.all([loadState('caro', null), loadState('quiz', null), loadState('cards', null)]);
-  if (c && c.b) { C = c; renderCaro() } if (q && q.i != null) { Q = q; renderQuiz() } if (k) { K = k; renderCards() }
+  if (c && c.b) { C = c; renderCaro() } if (q && q.i != null && mergeQuiz(q)) renderQuiz(); if (k) { K = k; renderCards() }
 });
 setTab(tab);
 </script>
