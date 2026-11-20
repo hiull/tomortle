@@ -126,6 +126,26 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 @media(max-height:640px){.hint2{display:none}.dock button{min-height:46px}.dock button i{font-size:20px}}
 .modal .sheet{transition:transform .38s cubic-bezier(.3,.8,.3,1)}
 .modal.peek{background:transparent!important;pointer-events:none}.modal.peek .sheet{transform:translateY(calc(100% + 30px))}
+
+.ph-body.anim{animation:phOpen .28s cubic-bezier(.2,.9,.3,1.1)}@keyframes phOpen{from{transform:scale(.88);opacity:.2}to{transform:none;opacity:1}}
+.ph-widgets{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 12px}.ph-wg{background:rgba(255,255,255,.22);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:20px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;text-shadow:0 1px 2px rgba(0,0,0,.25);cursor:pointer}
+.ph-wg b{font-size:24px;line-height:1.1}.ph-wg small{font-size:10.5px;opacity:.9;text-transform:capitalize}.ph-wg span{font-size:11px;font-weight:700;margin-top:4px}.ph-wg.love{background:rgba(255,77,141,.35)}
+.ph-grid i{position:relative}.ph-grid i em{position:absolute;top:-6px;right:-6px;background:#ff3b30;color:#fff;font-style:normal;font-size:11px;font-weight:800;min-width:19px;height:19px;border-radius:10px;display:grid;place-items:center;padding:0 4px;border:2px solid rgba(255,255,255,.9)}
+.ph-homew{display:flex;flex-direction:column;min-height:100%}.ph-homew .ph-grid{gap:10px 4px}.ph-homew .ph-grid i{width:48px;height:48px;font-size:24px}
+.ph-dock{margin-top:auto;margin-bottom:4px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 6px;border-radius:26px;background:rgba(255,255,255,.28);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.ph-dock button{background:none;border:0;display:flex;flex-direction:column;align-items:center;cursor:pointer;font-family:inherit;color:#fff}.ph-dock span{display:none}.ph-dock i{font-style:normal;position:relative;width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:26px}
+.ph-dock i em{position:absolute;top:-6px;right:-6px;background:#ff3b30;color:#fff;font-style:normal;font-size:11px;font-weight:800;min-width:19px;height:19px;border-radius:10px;display:grid;place-items:center;padding:0 4px;border:2px solid rgba(255,255,255,.9)}
+.ph-lock{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:18px;height:100%}.ph-lt{font-size:66px;font-weight:300;letter-spacing:-2px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.25)}.ph-ld{font-size:14px;font-weight:600;text-transform:capitalize;margin-top:4px}
+.ph-notifs{width:100%;margin-top:22px;display:flex;flex-direction:column;gap:8px}.ph-nt{background:rgba(255,255,255,.3);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;padding:9px 12px;text-align:left;font-size:12.5px;cursor:pointer}.ph-nt b{display:block;font-size:11.5px;opacity:.95}
+.ph-unlock{margin-top:auto;margin-bottom:14px;border:0;background:rgba(0,0,0,.25);color:#fff;border-radius:999px;padding:10px 18px;font:700 13px inherit;display:flex;align-items:center;gap:8px;cursor:pointer}.ph-face{font-size:20px;transition:transform .3s}.ph-face.ok{transform:scale(1.4)}
+.ph-banner{position:absolute;top:40px;left:8px;right:8px;z-index:8;background:rgba(255,255,255,.95);color:#222;border-radius:18px;padding:9px 12px;font-size:12.5px;box-shadow:0 8px 20px rgba(0,0,0,.25);animation:phBan .35s cubic-bezier(.2,.9,.3,1.2);cursor:pointer;transition:transform .35s,opacity .35s}.ph-banner b{display:block;font-size:11.5px}.ph-banner.out{transform:translateY(-80px);opacity:0}@keyframes phBan{from{transform:translateY(-80px)}to{transform:none}}
+.ph-snk{border-radius:12px;border:4px solid #0f380f;width:100%;max-width:252px;touch-action:none}.ph-pad{display:flex;flex-direction:column;align-items:center;gap:4px}.ph-pad div{display:flex;gap:46px}.ph-pad button{width:50px;height:42px;border:0;border-radius:12px;background:rgba(255,255,255,.85);font-size:18px;cursor:pointer}
+.ph-torch{width:130px;height:130px;border-radius:50%;border:0;font-size:56px;background:rgba(255,255,255,.25);cursor:pointer;box-shadow:inset 0 0 0 4px rgba(255,255,255,.4)}.ph-torch.on{background:#fff6c7;box-shadow:0 0 50px 10px rgba(255,240,160,.8)}
+.ph-cal{width:100%;background:rgba(255,255,255,.9);color:#222;border-radius:16px;padding:10px}.ph-cal>div{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:6px;font-size:12px}.ph-cal i{font-style:normal;font-weight:800;font-size:10px;opacity:.6}.ph-cal span{padding:4px 0;border-radius:8px}.ph-cal .td{background:#0a84ff;color:#fff;font-weight:800}.ph-cal .mt{background:#ff4d8d;color:#fff;font-weight:800}
+.ph-notes{display:flex;flex-direction:column;gap:6px;margin-top:8px}.ph-notes div{background:#fff8d6;color:#3a2a00;border-radius:12px;padding:8px 30px 8px 10px;position:relative;font-size:13px}.ph-notes small{display:block;opacity:.6;font-size:10.5px}.ph-notes button{position:absolute;top:6px;right:6px;border:0;background:none;font-size:14px;cursor:pointer}
+.ph-calc{background:#000;border-radius:18px;padding:10px;margin-top:4px}.ph-cd{text-align:right;font-size:44px;font-weight:300;padding:8px 6px;overflow:hidden;white-space:nowrap}.ph-ck{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ph-ck button{height:52px;border-radius:26px;border:0;font-size:22px;background:#333;color:#fff;cursor:pointer}.ph-ck .op{background:#ff9f0a}.ph-ck .op.act{background:#fff;color:#ff9f0a}.ph-ck .fn{background:#a5a5a5;color:#000}.ph-ck .z{grid-column:span 2;text-align:left;padding-left:22px}
+.ph-camm{display:flex;gap:14px;font-size:11px;font-weight:800}.ph-camm button{border:0;background:none;color:rgba(255,255,255,.7);cursor:pointer;font:inherit}.ph-camm button.on{color:#ffd60a}
+.ph-camf{display:flex;gap:6px;overflow-x:auto;width:100%;scrollbar-width:none}.ph-camf button{flex:none;border:0;border-radius:999px;padding:6px 10px;background:rgba(0,0,0,.3);color:#fff;font:700 11.5px inherit;cursor:pointer}.ph-camf button.on{background:#ffd60a;color:#222}
 </style>
 </head>
 <body>
@@ -1293,7 +1313,7 @@ function render(dt){
  D.sort((a,b)=>a.k-b.k);
  for(const d of D){d.fn();if(d.hit)HITS.push(d.hit)}
  lightPass();
- drawProj();drawCrumbs();
+ drawProj();drawCrumbs();try{drawTorch()}catch(e){}
  if(!editing)drawSigns();
  for(const f of OVER)f();
  if(editing)drawEditOverlay();
@@ -1336,10 +1356,11 @@ function onMsg(m){
  case'go':{if(Math.hypot(m.x-pa.x,m.y-pa.y)>1.6||pa.seat){pa.seat=null;pa.pose='stand';pa.x=m.x;pa.y=m.y}const then=m.then;walkTo(pa,m.tx,m.ty,()=>{if(then?.seat)applySeat(pa,then.seat);if(then?.face){faceToward(pa,then.face[0],then.face[1])}});break}
  case'seat':pa.path=[];if(m.seat)applySeat(pa,m.seat);else{standUp(pa);pa.x=m.x;pa.y=m.y}break;
  case'emo':pa.emo={e:m.e,t:NOW+2600};if(m.burst)burst(pa,m.burst,6);sfx.pop();break;
+ case'torch':pa.torch=!!m.on;break;
  case'phone':pa.phoneT=m.ms?NOW+m.ms:0;break;
  case'ttpost':toast(`🎬 ${ctx.partnerName} vừa đăng clip TikTok: "${m.cap}"`,'📱 Xem',()=>openPhone('tt'));break;
  case'gift':burst(pa,'🎁',6);sfxChaching();toast(`🎁 ${ctx.partnerName} vừa tặng bạn ${m.n}! Mở 🎒 Đồ đã mua để dùng nhé`,'🎒 Xem',()=>openBag());break;
- case'say':chatLog(PA,m.text);try{voice(m.text,VOICE.pa)}catch(e){}pa.say={text:m.text,t:NOW+6500};UP.msg={text:m.text,at:Date.now()};lsSet('seenMsg-'+PA,UP.msg.at);sfx.pop();break;
+ case'say':chatLog(PA,m.text);try{phBanner(m.text)}catch(e){}try{voice(m.text,VOICE.pa)}catch(e){}pa.say={text:m.text,t:NOW+6500};UP.msg={text:m.text,at:Date.now()};lsSet('seenMsg-'+PA,UP.msg.at);sfx.pop();break;
  case'act':doAct(pa,m.a,true);break;
  case'throw':{const n=Math.min(12,m.n|0||1);for(let i=0;i<n;i++)setTimeout(()=>{RC=RC.k===m.k&&NOW-RC.t<1300?{k:m.k,n:RC.n+1,t:NOW}:{k:m.k,n:1,t:NOW};launch(pa,me,m.k);PROJ[PROJ.length-1].combo={...RC}},i*110);break}
  case'room':R=m.R;BM=blockedMap();petCache.k=-1;fixMe();syncDecorUI();updateAudio();break;
@@ -1842,16 +1863,74 @@ async function openPhone(app){const av=UM.av||avOf(ME);
  if(!av.phone){const P=await ownPhones();if(!P.length){toast('Bạn chưa có điện thoại 📵 · ghé Tầng 6 TTTM mua một chiếc nhé','🛍️ Đi mua',()=>nav('room.html?r=mall6'+(DEMO?'&demo':'')));return}
   AVD=Object.assign({},av);wearOn(wearOf(P[0]),true);setAv(AVD)}
  if(!MD&&!window.__MD){try{window.__MD=await import('./market.js')}catch(e){}}
- PHAPP=app||null;drawPhone();$('#mPhone').classList.add('on');phoneUse(true);ac();tone(1760,.06,'sine',.04);tone(2349,.08,'sine',.035,.06)}
+ PHAPP=app||null;PHLOCK=!app;drawPhone();$('#mPhone').classList.add('on');phoneUse(true);loadS('tiktok',{list:[]}).then(S=>{TT_PART=((S&&S.list)||[]).filter(c=>c.who===PA&&c.at>phLS('ttSeen',0)).length;if(!PHAPP)drawPhone()}).catch(()=>{});ac();tone(1760,.06,'sine',.04);tone(2349,.08,'sine',.035,.06)}
 function phoneUse(on){me.phoneT=on?NOW+36e5:0;send('phone',{ms:on?36e5:0})}
-function phClose(){$('#mPhone').classList.remove('on');phoneUse(false);PHAPP=null}
+function phClose(){$('#mPhone').classList.remove('on');phoneUse(false);PHAPP=null;if(SNAKE)clearInterval(SNAKE.tm)}
+/* ================= 📱 Điện thoại hoàn thiện: khoá màn hình, widget, dock, badge, app mới ================= */
+let PHLOCK=false,CAMF=phLS('camf','none'),CAMSELF=false,PHPIC=0,SNAKE=null,CALC={s:'0',acc:null,op:null,fresh:true},TT_PART=0;
+const DOCK=['msg','call','cam','tt'];
+const GRID=['pics','music','wallet','map','game','light','weather','cal','notes','calc','set'];
+const APPI=Object.fromEntries([['tt','🎵','TikTok','#111'],['msg','💬','Tin nhắn','#34c759'],['call','📞','Điện thoại','#30d158'],['cam','📷','Camera','#8e8e93'],['pics','🖼️','Ảnh','#ff9f0a'],['music','🎧','Nhạc','#ff375f'],['wallet','💳','Ví','#0a84ff'],['map','🗺️','Đi đâu','#64d2ff'],['game','🐍','Rắn săn mồi','#2e7d32'],['light','🔦','Đèn pin','#ffd60a'],['weather','🌦️','Thời tiết','#5ac8fa'],['cal','📅','Lịch','#ff3b30'],['notes','📝','Ghi chú','#ffcc00'],['calc','🧮','Máy tính','#3a3a3c'],['set','⚙️','Cài đặt','#636366']].map(a=>[a[0],a]));
+const unreadMsg=()=>phLS('chat',[]).filter(m=>m.who===PA&&m.at>phLS('readMsg',0)).length;
+function appIcon(k,badge){const a=APPI[k];if(!a)return'';return`<button data-app="${k}"><i style="background:${a[3]}">${a[1]}${badge?`<em>${badge>9?'9+':badge}</em>`:''}</i><span>${a[2]}</span></button>`}
+function phHome(av){const d=new Date(),[we,wn]=WXT[WX.k],dm=(()=>{const v=daysToMeet();return v!=null&&v>=0?v:null})(),um=unreadMsg();
+ return`<div class="ph-homew"><div class="ph-widgets"><div class="ph-wg"><b>${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</b><small>${d.toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'numeric'})}</small><span>${we} ${WX.t}° · ${wn}</span></div>
+  <div class="ph-wg love" data-app="cal"><b>💗 ${daysTogether()||0}</b><small>ngày bên nhau</small><span>${dm!=null?`Gặp nhau sau ${dm} ngày`:'Hẹn gặp nhau sớm nhé'}</span></div></div>
+  <div class="ph-grid">${GRID.map(k=>appIcon(k,0)).join('')}</div>
+  <div class="ph-dock">${DOCK.map(k=>appIcon(k,k==='msg'?um:k==='tt'?TT_PART:0)).join('')}</div></div>`}
+function phLockHTML(){const d=new Date(),um=phLS('chat',[]).filter(m=>m.who===PA&&m.at>phLS('readMsg',0)).slice(-3);
+ return`<div class="ph-lock"><div class="ph-lt">${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</div><div class="ph-ld">${d.toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'long'})}</div>
+  <div class="ph-notifs">${um.map(m=>`<div class="ph-nt" data-unlock="msg"><b>💬 ${esc(ctx.partnerName)}</b><span>${esc(m.text)}</span></div>`).join('')}${TT_PART?`<div class="ph-nt" data-unlock="tt"><b>🎵 TikTok</b><span>${esc(ctx.partnerName)} vừa đăng ${TT_PART} clip mới</span></div>`:''}<div class="ph-nt"><b>${WXT[WX.k][0]} Thời tiết</b><span>${WXT[WX.k][1]} · ${WX.t}°</span></div></div>
+  <button class="ph-unlock" data-unlock="home"><span class="ph-face">🙂</span>Chạm để mở khoá</button></div>`}
+function phUnlock(to){const f=document.querySelector('.ph-face');if(f){f.textContent='✅';f.classList.add('ok')}window.haptic&&window.haptic(12);tone(1568,.05,'sine',.03);setTimeout(()=>{PHLOCK=false;PHAPP=to&&to!=='home'?to:null;drawPhone()},380)}
+// thông báo trượt xuống trong điện thoại khi người ấy nhắn
+function phBanner(text){if(!$('#mPhone').classList.contains('on')||PHAPP==='msg')return;const s=$('#phS');const b=document.createElement('div');b.className='ph-banner';b.innerHTML=`<b>💬 ${esc(ctx.partnerName)}</b><span>${esc(text)}</span>`;b.onclick=()=>{PHLOCK=false;PHAPP='msg';drawPhone();b.remove()};s.append(b);
+ tone(1318,.08,'sine',.05);tone(1760,.12,'sine',.04,.1);window.haptic&&window.haptic([15,60,15]);setTimeout(()=>b.classList.add('out'),3200);setTimeout(()=>b.remove(),3700);if(!PHAPP&&!PHLOCK)drawPhone()}
+/* --- 🐍 Rắn săn mồi (kiểu Nokia) --- */
+function snakeStart(){const N=14;SNAKE={N,s:[[6,7],[5,7],[4,7]],d:[1,0],nd:[1,0],f:[10,7],sc:0,over:false,best:phLS('snakeBest',0)};clearInterval(SNAKE.tm);SNAKE.tm=setInterval(snakeStep,150);snakeDraw()}
+function snakeStep(){const S=SNAKE;if(!S||S.over)return;if(!$('#snk')){clearInterval(S.tm);return}S.d=S.nd;const h=[(S.s[0][0]+S.d[0]+S.N)%S.N,(S.s[0][1]+S.d[1]+S.N)%S.N];
+ if(S.s.some(p=>p[0]===h[0]&&p[1]===h[1])){S.over=true;clearInterval(S.tm);if(S.sc>S.best){S.best=S.sc;phSet('snakeBest',S.sc)}tone(220,.3,'square',.04);window.haptic&&window.haptic([40,40,80]);snakeDraw();return}
+ S.s.unshift(h);if(h[0]===S.f[0]&&h[1]===S.f[1]){S.sc++;tone(988,.05,'square',.03);window.haptic&&window.haptic(8);do{S.f=[Math.floor(Math.random()*S.N),Math.floor(Math.random()*S.N)]}while(S.s.some(p=>p[0]===S.f[0]&&p[1]===S.f[1]))}else S.s.pop();snakeDraw()}
+function snakeDraw(){const c=$('#snk');if(!c||!SNAKE)return;const x=c.getContext('2d'),S=SNAKE,k=c.width/S.N;x.fillStyle='#9bbc0f';x.fillRect(0,0,c.width,c.height);x.fillStyle='#0f380f';for(const[i,j]of S.s)x.fillRect(i*k+1,j*k+1,k-2,k-2);x.fillStyle='#306230';x.beginPath();x.arc(S.f[0]*k+k/2,S.f[1]*k+k/2,k/2-2,0,7);x.fill();
+ x.fillStyle='#0f380f';x.font='bold 13px monospace';x.fillText('Điểm '+S.sc+'  Cao nhất '+S.best,6,14);if(S.over){x.fillStyle='rgba(15,56,15,.75)';x.fillRect(0,c.height/2-26,c.width,52);x.fillStyle='#9bbc0f';x.font='bold 16px monospace';x.textAlign='center';x.fillText('THUA RỒI 😵 · chạm để chơi lại',c.width/2,c.height/2+5);x.textAlign='left'}}
+function snakeDir(dx,dy){if(!SNAKE)return;if(SNAKE.over){snakeStart();return}if(SNAKE.d[0]===-dx&&SNAKE.d[1]===-dy)return;SNAKE.nd=[dx,dy]}
+/* --- 🧮 Máy tính --- */
+function calcPress(k){const C=CALC,num=()=>parseFloat(C.s.replace(',','.'))||0,ap=(a,b,o)=>o==='+'?a+b:o==='−'?a-b:o==='×'?a*b:o==='÷'?(b===0?NaN:a/b):b;
+ if(/^[0-9]$/.test(k)){C.s=C.fresh||C.s==='0'?k:(C.s.length<12?C.s+k:C.s);C.fresh=false}
+ else if(k===','){if(C.fresh){C.s='0,';C.fresh=false}else if(!C.s.includes(','))C.s+=','}
+ else if(k==='AC'){CALC={s:'0',acc:null,op:null,fresh:true};return}
+ else if(k==='±'){C.s=C.s.startsWith('-')?C.s.slice(1):(C.s==='0'?'0':'-'+C.s)}
+ else if(k==='%'){C.s=String(num()/100).replace('.',',')}
+ else{if(C.op&&!C.fresh){C.acc=ap(C.acc,num(),C.op)}else if(C.acc==null||!C.op)C.acc=num();if(k==='='){C.s=Number.isFinite(C.acc)?String(+C.acc.toPrecision(10)).replace('.',','):'Lỗi';C.op=null;C.acc=null}else{C.op=k;C.s=Number.isFinite(C.acc)?String(+C.acc.toPrecision(10)).replace('.',','):'Lỗi'}C.fresh=true}}
+/* --- 📷 bộ lọc màu cho ảnh chụp (xử lý điểm ảnh, chạy được cả trên Safari) --- */
+const CAMFS=[['none','Gốc'],['pink','Hồng'],['bw','Đen trắng'],['vintage','Cổ điển'],['cool','Lạnh'],['warm','Ấm']];
+function camFilter(c,f){if(f==='none')return;const x=c.getContext('2d'),im=x.getImageData(0,0,c.width,c.height),d=im.data;for(let i=0;i<d.length;i+=4){let r=d[i],g2=d[i+1],b=d[i+2];
+ if(f==='bw'){const l=.3*r+.59*g2+.11*b;r=g2=b=Math.min(255,(l-128)*1.15+128)}else if(f==='vintage'){const nr=.393*r+.769*g2+.189*b,ng=.349*r+.686*g2+.168*b,nb=.272*r+.534*g2+.131*b;r=nr*.8+r*.2;g2=ng*.8+g2*.2;b=nb*.8+b*.2}
+ else if(f==='pink'){r=r*1.06+14;g2=g2*.96+4;b=b*1.02+16}else if(f==='cool'){r*=.92;b=b*1.1+10}else if(f==='warm'){r=r*1.08+10;b*=.88}d[i]=Math.min(255,r);d[i+1]=Math.min(255,g2);d[i+2]=Math.min(255,b)}x.putImageData(im,0,0)}
+function shoot(w){// chụp: cả phòng hoặc selfie (cận cảnh hai đứa), có bộ lọc
+ const sx=cv.width/W;let X=0,Y=0,Wd=cv.width,Hd=cv.height;if(CAMSELF){const a=charScreen(me),b=livePa()?charScreen(pa):a,cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2-28,ww=Math.max(130,Math.abs(a[0]-b[0])+90),hh=ww*.85;X=Math.max(0,(cx-ww/2)*sx);Y=Math.max(0,(cy-hh/2)*sx);Wd=Math.min(cv.width-X,ww*sx);Hd=Math.min(cv.height-Y,hh*sx)}
+ const c=document.createElement('canvas');c.width=w;c.height=Math.round(w*Hd/Wd);const x=c.getContext('2d');x.drawImage(cv,X,Y,Wd,Hd,0,0,c.width,c.height);camFilter(c,CAMF);
+ if(CAMSELF){x.font='bold 12px sans-serif';x.fillStyle='rgba(255,255,255,.9)';x.fillText('💗 '+new Date().toLocaleDateString('vi-VN'),8,c.height-10)}return c.toDataURL('image/jpeg',.75)}
+// đèn pin: vệt sáng trước mặt nhân vật trong phòng
+function drawTorch(){for(const c of[me,pa]){if(!c.torch||(c===pa&&!livePa()))continue;const[sx,sy]=charScreen(c),dir=(c.face==='f'?1:-1)*(c.flip?-1:1),ph=dayPhase(),k=ph==='night'?1:.5;
+ g.save();g.globalCompositeOperation='lighter';const gx=sx+dir*44,gy=sy-8+(c.face==='f'?14:-14),gr=g.createRadialGradient(gx,gy,4,gx,gy,70);gr.addColorStop(0,`rgba(255,240,190,${.55*k})`);gr.addColorStop(1,'rgba(255,240,190,0)');g.fillStyle=gr;g.beginPath();g.moveTo(sx+dir*6,sy-22);g.lineTo(gx+dir*40,gy-40);g.lineTo(gx+dir*40,gy+40);g.closePath();g.fill();g.beginPath();g.arc(gx,gy,70,0,7);g.fill();g.restore()}}
+
 const APPS=[['tt','🎵','TikTok','#111'],['msg','💬','Tin nhắn','#34c759'],['call','📞','Gọi','#30d158'],['cam','📷','Camera','#8e8e93'],['pics','🖼️','Ảnh','#ff9f0a'],['music','🎧','Nhạc','#ff375f'],['wallet','💳','Ví','#0a84ff'],['map','🗺️','Đi đâu','#64d2ff'],['game','🎮','Game','#bf5af2'],['light','🔦','Đèn','#ffd60a'],['weather','🌦️','Thời tiết','#5ac8fa'],['set','⚙️','Cài đặt','#636366']];
 function drawPhone(){const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_WALL[0],d=new Date();
- $('#phF').style.setProperty('--frame',av.phone||'#222');$('#phS').style.background=wall[1];
+ $('#phF').style.setProperty('--frame',av.phone||'#222');const wimg=phLS('wallImg','');$('#phS').style.background=wimg?`center/cover no-repeat url(${wimg})`:wall[1];if(PHAPP!==window.__lastApp){window.__lastApp=PHAPP;const bd=$('#phBody');bd.classList.remove('anim');void bd.offsetWidth;bd.classList.add('anim')}
+ if(PHAPP==='msg')phSet('readMsg',Date.now());if(PHAPP==='tt'){phSet('ttSeen',Date.now());TT_PART=0}
  $('#phBar').innerHTML=`<b>${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</b><span>Tomortle 5G ▂▄▆ 🔋${80+((d.getMinutes()*7)%20)}%</span>`;
- const B=$('#phBody');if(!PHAPP){B.innerHTML=`<div class="ph-model">${esc(av.phoneN||'Điện thoại')}</div><div class="ph-grid">${APPS.map(([k,e,n,c])=>`<button data-app="${k}"><i style="background:${c}">${e}</i><span>${n}</span></button>`).join('')}</div>`;return}
+ const B=$('#phBody');if(PHLOCK){B.innerHTML=phLockHTML();return}if(!PHAPP){B.innerHTML=phHome(av);return}
  const head=t=>`<div class="ph-head"><button data-app="">‹</button><b>${t}</b></div>`;
  if(PHAPP==='tt'){ttDraw();return}
+ if(PHAPP==='game'){B.innerHTML=head('🐍 Rắn săn mồi')+`<div class="ph-center"><canvas id="snk" width="252" height="252" class="ph-snk"></canvas><div class="ph-pad"><button data-sd="0,-1">▲</button><div><button data-sd="-1,0">◀</button><button data-sd="1,0">▶</button></div><button data-sd="0,1">▼</button></div><p class="ph-note">Vuốt trên màn hình hoặc bấm nút để điều khiển</p><button class="ph-big g" data-go2="games">🎮 Mở trang Game của hai đứa</button></div>`;
+  snakeStart();const c=$('#snk');let t0=null;c.ontouchstart=e=>{const t=e.touches[0];t0=[t.clientX,t.clientY]};c.ontouchend=e=>{if(!t0)return;const t=e.changedTouches[0],dx=t.clientX-t0[0],dy=t.clientY-t0[1];t0=null;if(Math.max(Math.abs(dx),Math.abs(dy))<15){if(SNAKE&&SNAKE.over)snakeStart();return}Math.abs(dx)>Math.abs(dy)?snakeDir(Math.sign(dx),0):snakeDir(0,Math.sign(dy))};c.onclick=()=>{if(SNAKE&&SNAKE.over)snakeStart()};return}
+ if(PHAPP==='light'){B.innerHTML=head('🔦 Đèn pin')+`<div class="ph-center"><button class="ph-torch ${me.torch?'on':''}" data-act="torch">${me.torch?'💡':'🔦'}</button><b>${me.torch?'Đang bật':'Đang tắt'}</b><p class="ph-note">Đèn pin chiếu sáng trước mặt nhân vật · ban đêm nhìn rõ nhất</p><button class="ph-big g" data-act="roomlight">${R.light?'🌙 Tắt đèn phòng':'💡 Bật đèn phòng'}</button></div>`;return}
+ if(PHAPP==='cal'){const d=new Date(),y=d.getFullYear(),mo=d.getMonth(),first=(new Date(y,mo,1).getDay()+6)%7,days=new Date(y,mo+1,0).getDate(),meet=ctx.couple.next_meet?new Date(String(ctx.couple.next_meet).slice(0,10)+'T00:00:00'):null,dm=(()=>{const v=daysToMeet();return v!=null&&v>=0?v:null})();let cells='';for(let i=0;i<first;i++)cells+='<span></span>';for(let i=1;i<=days;i++){const isM=meet&&meet.getFullYear()===y&&meet.getMonth()===mo&&meet.getDate()===i;cells+=`<span class="${i===d.getDate()?'td':''} ${isM?'mt':''}">${i}</span>`}
+  B.innerHTML=head('📅 Lịch')+`<div class="ph-center"><div class="ph-money">💗 ${daysTogether()||0} ngày</div><p class="ph-note" style="margin:0">bên nhau kể từ ${(()=>{try{return new Date(ctx.couple.started_on).toLocaleDateString('vi-VN')}catch(e){return''}})()}</p>${dm!=null?`<b>✈️ Còn ${dm} ngày nữa gặp nhau</b>`:''}<div class="ph-cal"><b>Tháng ${mo+1}/${y}</b><div>${['T2','T3','T4','T5','T6','T7','CN'].map(x=>`<i>${x}</i>`).join('')}${cells}</div></div><button class="ph-big g" data-go2="calendar">📅 Mở Lịch hẹn của hai đứa</button></div>`;return}
+ if(PHAPP==='notes'){const N=phLS('notes',[]);B.innerHTML=head('📝 Ghi chú')+`<form id="phNoteF" class="ph-in"><input id="phNoteI" maxlength="140" placeholder="Viết ghi chú…" autocomplete="off"><button>＋</button></form><div class="ph-notes">${N.length?N.map((n,i)=>`<div><span>${esc(n.t)}</span><small>${new Date(n.at).toLocaleDateString('vi-VN')}</small><button data-ndel="${i}">✕</button></div>`).join(''):'<p class="ph-note">Chưa có ghi chú · ghi lại điều muốn nói, món muốn ăn, nơi muốn đi cùng nhau 💭</p>'}</div><p class="ph-note">Ghi chú chỉ lưu trên máy này</p>`;return}
+ if(PHAPP==='calc'){const K=['AC','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0',',','='];B.innerHTML=head('🧮 Máy tính')+`<div class="ph-calc"><div class="ph-cd">${esc(CALC.s)}</div><div class="ph-ck">${K.map(k=>`<button data-ck="${k}" class="${/[÷×−+=]/.test(k)?'op':/AC|±|%/.test(k)?'fn':''} ${k==='0'?'z':''} ${CALC.op===k&&CALC.fresh?'act':''}">${k}</button>`).join('')}</div></div>`;return}
+ if(PHAPP==='pic'){const P=phLS('pics',[]),u=P[PHPIC];if(!u){PHAPP='pics';drawPhone();return}B.innerHTML=head('🖼️ Ảnh '+(PHPIC+1)+'/'+P.length)+`<div class="ph-center"><img class="ph-shot" src="${u}" alt=""><div style="display:flex;gap:6px;width:100%"><button class="ph-big" data-pact="save">💾 Lưu</button><button class="ph-big g" data-pact="wall">🖼️ Hình nền</button><button class="ph-big g" data-pact="del">🗑️ Xoá</button></div></div>`;return}
  if(PHAPP==='ttadd'){B.innerHTML=`<div class="ph-head"><button data-app="tt">‹</button><b>＋ Thêm vào TikTok</b></div>
   <p class="ph-note" style="text-align:left">🔗 <b>Xem TikTok thật:</b> mở TikTok, bấm <b>Chia sẻ → Sao chép liên kết</b>, rồi dán vào đây. Video sẽ phát ngay trong điện thoại này và người ấy cũng xem được.</p>
   <form id="ttLinkF" class="ph-in"><input id="ttLinkI" placeholder="Dán link TikTok…" autocomplete="off" inputmode="url"><button>＋</button></form><p class="ph-note" id="ttLinkMsg"></p>
@@ -1859,8 +1938,8 @@ function drawPhone(){const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_W
   <a class="ph-big g" style="display:block;text-align:center;text-decoration:none;margin-top:8px" href="https://www.tiktok.com/foryou" target="_blank" rel="noopener">🌐 Mở app TikTok thật</a>`;return}
  if(PHAPP==='msg'){const L=phLS('chat',[]);B.innerHTML=head('💬 '+esc(ctx.partnerName))+`<div class="ph-chat" id="phChat">${L.length?L.map(m=>`<div class="${m.who===ME?'me':''}"><span>${esc(m.text)}</span></div>`).join(''):'<p class="ph-note">Chưa có tin nhắn · gửi gì đó cho người ấy nhé 💌</p>'}</div><form id="phMsgF" class="ph-in"><input id="phMsgI" maxlength="80" placeholder="Nhắn tin…" autocomplete="off"><button>➤</button></form>`;const c=$('#phChat');c.scrollTop=c.scrollHeight;return}
  if(PHAPP==='call'){B.innerHTML=head('📞 Gọi')+`<div class="ph-center"><div class="ph-av">💗</div><b>${esc(ctx.partnerName)}</b><p class="ph-note">${livePa()?'đang ở trong phòng với bạn':'đang không ở phòng'}</p><button class="ph-big" data-go="call">📹 Gọi video</button><button class="ph-big g" data-go="callv">📞 Gọi thoại</button></div>`;return}
- if(PHAPP==='cam'){B.innerHTML=head('📷 Camera')+`<div class="ph-center"><img id="phShot" class="ph-shot" alt=""><button class="ph-snap" data-act="snap" aria-label="Chụp"></button><p class="ph-note">Chụp lại khung cảnh phòng đang có hai đứa</p></div>`;camShot(false);return}
- if(PHAPP==='pics'){const P=phLS('pics',[]);B.innerHTML=head('🖼️ Ảnh')+(P.length?`<div class="ph-pics">${P.map((u,i)=>`<img src="${u}" data-pic="${i}" alt="">`).join('')}</div><p class="ph-note">Chạm ảnh để lưu về máy thật</p>`:'<p class="ph-note">Chưa có ảnh · mở 📷 Camera để chụp</p>');return}
+ if(PHAPP==='cam'){B.innerHTML=head('📷 Camera')+`<div class="ph-center"><div class="ph-camm"><button data-self="0" class="${CAMSELF?'':'on'}">CẢNH PHÒNG</button><button data-self="1" class="${CAMSELF?'on':''}">SELFIE</button></div><img id="phShot" class="ph-shot" alt=""><div class="ph-camf">${CAMFS.map(([k,n])=>`<button data-camf="${k}" class="${k===CAMF?'on':''}">${n}</button>`).join('')}</div><button class="ph-snap" data-act="snap" aria-label="Chụp"></button></div>`;camShot(false);return}
+ if(PHAPP==='pics'){const P=phLS('pics',[]);B.innerHTML=head('🖼️ Ảnh')+(P.length?`<div class="ph-pics">${P.map((u,i)=>`<img src="${u}" data-pic="${i}" alt="">`).join('')}</div><p class="ph-note">Chạm ảnh để xem lớn, lưu, đặt làm hình nền</p>`:'<p class="ph-note">Chưa có ảnh · mở 📷 Camera để chụp</p>');return}
  if(PHAPP==='music'){const on=R.music&&soundOn,T=LOFI[LOFI_I];B.innerHTML=head('🎧 Lofi cho hai đứa')+`<div class="ph-center"><div class="ph-disc ${on?'spin':''}">💿</div><b>${T.e} ${esc(T.n)}</b><p class="ph-note">${on?'Đang phát trong phòng · '+T.bpm+' BPM':'Đang tạm dừng'}${raining()?' · 🌧️ kèm tiếng mưa':''}</p>
   <div style="display:flex;gap:8px;width:100%"><button class="ph-big g" data-act="lprev">⏮</button><button class="ph-big" data-act="music">${on?'⏸ Dừng':'▶ Phát'}</button><button class="ph-big g" data-act="lnext">⏭</button></div></div>
   <div class="ph-list" style="margin-top:10px">${LOFI.map((x,i)=>`<button data-lofi="${i}" class="${i===LOFI_I&&on?'on':''}">${x.e} ${esc(x.n)} <small style="opacity:.7">· ${x.bpm} BPM</small></button>`).join('')}</div>`;return}
@@ -1869,7 +1948,7 @@ function drawPhone(){const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_W
  if(PHAPP==='weather'){const[e,n]=WXT[WX.k],now=Date.now();B.innerHTML=head('🌦️ Thời tiết')+`<div class="ph-center"><div style="font-size:58px">${e}</div><div class="ph-money">${WX.t}°</div><b>${n}</b><p class="ph-note">${WX_AUTO?'Thời tiết tự đổi mỗi 25 phút · hai đứa thấy giống nhau':'Đang chỉnh tay'}</p>
   <div class="ph-list" style="width:100%">${[1,2,3,4,5,6].map(i=>{const ts=now+i*WX_SLOT,k=wxAt(ts);return`<button>${new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})} · ${WXT[k][0]} ${WXT[k][1]} · ${wxTemp(ts,k)}°</button>`}).join('')}</div>
   <div style="display:flex;gap:6px;width:100%"><button class="ph-big ${WX_AUTO?'':'g'}" data-act="wxauto">🔄 Tự chạy</button><button class="ph-big g" data-act="rain">🌧️ Mưa</button><button class="ph-big g" data-act="wxsun">☀️ Nắng</button></div></div>`;return}
- if(PHAPP==='set'){const cur=phLS('wall',0);B.innerHTML=head('⚙️ Cài đặt')+`<p class="ph-note">Hình nền</p><div class="ph-walls">${PH_WALL.map(([n,bg],i)=>`<button data-wall="${i}" class="${i===cur?'on':''}" style="background:${bg}"><span>${n}</span></button>`).join('')}</div><p class="ph-note">Máy: ${esc(av.phoneN||'')}</p><button class="ph-big g" data-act="haptic" style="margin-bottom:8px">📳 Rung phản hồi: ${(()=>{try{return localStorage.getItem('haptic')==='off'?'Tắt':'Bật'}catch(e){return'Bật'}})()}</button><button class="ph-big g" data-act="unequip">📴 Cất điện thoại vào túi</button>`;return}}
+ if(PHAPP==='set'){const cur=phLS('wall',0);B.innerHTML=head('⚙️ Cài đặt')+`<p class="ph-note">Hình nền</p><div class="ph-walls">${PH_WALL.map(([n,bg],i)=>`<button data-wall="${i}" class="${i===cur?'on':''}" style="background:${bg}"><span>${n}</span></button>`).join('')}</div><p class="ph-note">Máy: ${esc(av.phoneN||'')}</p>${phLS('wallImg','')?'<button class="ph-big g" data-act="wallclr" style="margin-bottom:8px">🧹 Bỏ hình nền từ ảnh</button>':''}<button class="ph-big g" data-act="haptic" style="margin-bottom:8px">📳 Rung phản hồi: ${(()=>{try{return localStorage.getItem('haptic')==='off'?'Tắt':'Bật'}catch(e){return'Bật'}})()}</button><button class="ph-big g" data-act="unequip">📴 Cất điện thoại vào túi</button>`;return}}
 /* --- TikTok: video ngắn tự tạo + clip hai đứa tự đăng --- */
 const TT_GEN=[['🐱','Mèo nhà ai mà dễ thương vậy 😭','#ffb703,#fb8500','bounce','#meow #cute'],['💃','Trend nhảy mới nè, học liền!','#7209b7,#f72585','dance','#dance #trend'],['🍜','Phở 3h sáng ở Hà Nội ✨','#e76f51,#f4a261','zoom','#food #hanoi'],['🌊','Biển Nha Trang hôm nay xanh quá','#00b4d8,#90e0ef','float','#travel'],
  ['💄','Test son Dior 999 trên môi hồng','#c9184a,#ff758f','zoom','#makeup #review'],['🐶','Chó nhà tui khi thấy tui về','#8d6e63,#d7ccc8','bounce','#dog'],['🎂','Bánh kem tự làm, xấu nhưng ngon','#ffafcc,#ffc8dd','spin','#baking'],['🌸','Đà Lạt mùa hoa mai anh đào','#ff8fab,#fbb1bd','float','#dalat'],
@@ -1903,16 +1982,24 @@ async function ttPost(){const cap=prompt('Viết caption cho clip của hai đ�
  send('emo',{e:'🎬',burst:'✨'});send('ttpost',{cap});toast('🎬 Đã đăng clip lên TikTok của hai đứa!');sfxChaching();TT.list=[];await ttLoad();ttDraw()}
 // chụp lại khung cảnh phòng (canvas chính) thu nhỏ
 function snapRoom(w=360,q=.7){const k=w/cv.width,c=document.createElement('canvas');c.width=w;c.height=Math.round(cv.height*k);c.getContext('2d').drawImage(cv,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q)}
-function camShot(take){const img=$('#phShot');if(img)img.src=snapRoom(300,.6);if(!take)return;const u=snapRoom(360,.7);const P=phLS('pics',[]);P.unshift(u);phSet('pics',P.slice(0,8));
+function camShot(take){const img=$('#phShot');if(img)img.src=shoot(300);if(!take)return;const u=shoot(CAMSELF?320:360);const P=phLS('pics',[]);P.unshift(u);phSet('pics',P.slice(0,8));
  noise(.05,.3,4000,'highpass');tone(1800,.04,'square',.04,.05);me.emo={e:'📸',t:NOW+1500};send('emo',{e:'📸',burst:'✨'});const f=document.createElement('div');f.className='ph-flash';$('#phS').append(f);setTimeout(()=>f.remove(),400);toast('📸 Đã lưu vào 🖼️ Ảnh trong điện thoại')}
 function savePic(u){const a=document.createElement('a');a.href=u;a.download='tomortle-'+Date.now()+'.jpg';document.body.append(a);a.click();a.remove()}
-$('#phBody').onclick=async e=>{const t=e.target.closest('[data-app],[data-act],[data-go],[data-room],[data-wall],[data-pic],[data-lofi]');if(!t)return;ac();
+$('#phBody').onclick=async e=>{const t=e.target.closest('[data-app],[data-act],[data-go],[data-room],[data-wall],[data-pic],[data-lofi],[data-unlock],[data-camf],[data-self],[data-sd],[data-ck],[data-ndel],[data-pact],[data-go2]');if(!t)return;ac();
+ if(t.dataset.unlock){phUnlock(t.dataset.unlock);return}
+ if(t.dataset.camf){CAMF=t.dataset.camf;phSet('camf',CAMF);drawPhone();return}
+ if(t.dataset.self){CAMSELF=t.dataset.self==='1';drawPhone();return}
+ if(t.dataset.sd){const[a,b]=t.dataset.sd.split(',').map(Number);snakeDir(a,b);return}
+ if(t.dataset.ck){calcPress(t.dataset.ck);drawPhone();return}
+ if(t.dataset.ndel){const N=phLS('notes',[]);N.splice(+t.dataset.ndel,1);phSet('notes',N);drawPhone();return}
+ if(t.dataset.go2){nav(t.dataset.go2+'.html');return}
+ if(t.dataset.pact){const P=phLS('pics',[]),u=P[PHPIC];if(t.dataset.pact==='save')savePic(u);else if(t.dataset.pact==='wall'){phSet('wallImg',u);toast('🖼️ Đã đặt làm hình nền điện thoại');PHAPP=null;drawPhone()}else if(t.dataset.pact==='del'){P.splice(PHPIC,1);phSet('pics',P);PHPIC=Math.max(0,PHPIC-1);PHAPP=P.length?'pic':'pics';drawPhone()}return}
  if(t.dataset.lofi){lofiSet(+t.dataset.lofi);setTimeout(drawPhone,100);return}
  if(t.dataset.app!==undefined){PHAPP=t.dataset.app||null;tone(1320,.04,'sine',.03);drawPhone();return}
  if(t.dataset.go){location.href=t.dataset.go==='callv'?'call.html?audio=1':'call.html';return}
  if(t.dataset.room){if(t.dataset.room!==KIND)nav((t.dataset.room==='room'?'room.html':'room.html?r='+t.dataset.room)+(DEMO?(t.dataset.room==='room'?'?':'&')+'demo':''));return}
  if(t.dataset.wall){phSet('wall',+t.dataset.wall);drawPhone();return}
- if(t.dataset.pic){savePic(phLS('pics',[])[+t.dataset.pic]);return}
+ if(t.dataset.pic){PHPIC=+t.dataset.pic;PHAPP='pic';drawPhone();return}
  const a=t.dataset.act;
  if(a==='snap')camShot(true);
  else if(a==='music'){R.music=!(R.music&&soundOn);if(R.music&&!soundOn){soundOn=true;lsSet('room-sound',true);syncHud()}saveRoom();updateAudio();drawPhone();if(R.music)toast(`🎧 Đang phát: ${LOFI[LOFI_I].e} ${LOFI[LOFI_I].n}`)}
@@ -1922,6 +2009,9 @@ $('#phBody').onclick=async e=>{const t=e.target.closest('[data-app],[data-act],[
  else if(a==='lnext'){lofiSet(LOFI_I+1);setTimeout(drawPhone,100)}
  else if(a==='lprev'){lofiSet(LOFI_I-1);setTimeout(drawPhone,100)}
  else if(a==='tiers'){phClose();openTiers()}
+ else if(a==='torch'){me.torch=!me.torch;send('torch',{on:me.torch});tone(me.torch?1200:700,.05,'square',.03);drawPhone()}
+ else if(a==='roomlight'){R.light=!R.light;saveRoom();syncHud();drawPhone()}
+ else if(a==='wallclr'){phSet('wallImg','');drawPhone()}
  else if(a==='haptic'){const off=localStorage.getItem('haptic')==='off';try{localStorage.setItem('haptic',off?'on':'off')}catch(e){}if(off)window.haptic&&window.haptic([20,40,20]);drawPhone();toast(off?'📳 Đã bật rung phản hồi':'🔕 Đã tắt rung phản hồi')}
  else if(a==='unequip'){AVD=Object.assign({},UM.av);AVD.phone='';AVD.phoneN='';setAv(AVD);phClose();toast('📴 Đã cất điện thoại vào túi')}
  else if(a==='like'){const c=TT.list[TT.i%TT.list.length];TT.liked[c.id]=!TT.liked[c.id];phSet('liked',TT.liked);if(TT.liked[c.id]){burst(me,'❤️',3);if(c.own&&c.who!==ME)send('emo',{e:'❤️',burst:'💗'})}ttDraw()}
@@ -1931,7 +2021,7 @@ $('#phBody').onclick=async e=>{const t=e.target.closest('[data-app],[data-act],[
  else if(a==='prev'){TT.i=(TT.i+TT.list.length-1)%TT.list.length;ttDraw()}
  else if(a==='ttroom'){ttPost()}
  else if(a==='ttlink'){ttAddLink()}};
-$('#phBody').addEventListener('submit',e=>{if(e.target.id==='ttLinkF'){e.preventDefault();ttAddLink();return}if(e.target.id!=='phMsgF')return;e.preventDefault();const v=$('#phMsgI').value.trim();if(!v)return;say(v);tone(1568,.06,'sine',.04);drawPhone()});
+$('#phBody').addEventListener('submit',e=>{if(e.target.id==='phNoteF'){e.preventDefault();const v=$('#phNoteI').value.trim();if(!v)return;const N=phLS('notes',[]);N.unshift({t:v,at:Date.now()});phSet('notes',N.slice(0,40));drawPhone();return}if(e.target.id==='ttLinkF'){e.preventDefault();ttAddLink();return}if(e.target.id!=='phMsgF')return;e.preventDefault();const v=$('#phMsgI').value.trim();if(!v)return;say(v);tone(1568,.06,'sine',.04);drawPhone()});
 window.openPhone=openPhone;window.phClose=phClose;
 $('#mPhone').addEventListener('click',e=>{if(e.target.id==='mPhone'||e.target.classList.contains('ph-sheet'))phClose()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#mPhone').classList.contains('on'))phClose()});
