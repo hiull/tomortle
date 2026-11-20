@@ -129,6 +129,7 @@ header .sp{flex:1}
 .preview{padding:14px;background:var(--soft)}
 #cv{display:block;margin:0 auto;max-width:100%;max-height:62vh;touch-action:none;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.15);cursor:grab;background:#fff}
 @media(min-width:900px){#cv{max-height:calc(100vh - 170px)}}
+.cloudst{font-size:13px;text-align:center;margin:6px 0;padding:6px 10px;border-radius:10px;background:var(--soft)}.cloudst.ok{color:#1b7f4b}.cloudst.bad{color:#c0392b}.cloudst a{color:inherit;font-weight:700}
 .hint{font-size:12px;color:var(--muted);text-align:center;margin:8px 0 0}
 .panel{padding:0;overflow:hidden}@media(min-width:900px){.panel{overflow-y:auto;overscroll-behavior:contain}}
 .tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:2}
@@ -468,8 +469,9 @@ input[type=color]{width:42px;height:34px;border:1px solid var(--line);border-rad
 <div class="modal" id="viewModal"><div class="sheet card">
   <h3><span id="viewTitle">Ảnh</span><span class="sp"></span><button class="btn small" data-close>Đóng</button></h3>
   <img class="viewimg" id="viewImg" alt="">
-  <div class="crow" style="justify-content:center"><button class="btn primary" id="viewSave">Tải về</button><button class="btn" id="viewShare">Chia sẻ</button><button class="btn ghost danger" id="viewDel">Xoá</button></div>
-  <p class="note">Trên iPhone có thể nhấn giữ ảnh rồi chọn "Lưu vào Ảnh".</p>
+  <p class="cloudst" id="viewCloud"></p>
+  <div class="crow" style="justify-content:center"><button class="btn primary" id="viewSave">📲 Lưu vào điện thoại</button><button class="btn" id="viewShare">Chia sẻ</button><button class="btn ghost danger" id="viewDel">Xoá</button></div>
+  <p class="note">iPhone: bấm "Lưu vào điện thoại" rồi chọn <b>Lưu hình ảnh</b>, ảnh sẽ vào app Ảnh.</p>
 </div></div>
 
 <div class="modal" id="gifModal"><div class="sheet card">
@@ -1420,7 +1422,11 @@ function printReveal(blob){if(printing)return printing;ensureAudio();
   printing=new Promise(res=>{const end=()=>{timers.forEach(clearTimeout);P.classList.remove('on');setTimeout(()=>URL.revokeObjectURL(url),1000);printing=null;res()};
     $('#pSkip').onclick=end;at(1100+steps.length*330+3400,end)});
   return printing}
-$('#btnSave').onclick=async()=>{if(printing)return;const b=await exportBlob();downloadBlob(b,fname());const it=addAlbum(b,'me');await printReveal(b);viewItem(it);toast('Đã lưu ảnh ♡')};
+async function saveCloudUI(b,pending){const st=$('#viewCloud');if(!window.TMX||!window.TMX.toAlbum){st.innerHTML='💾 Ảnh đã lưu trong Album của Booth trên máy này. <small>(Đăng nhập app để lưu vào Album chung)</small>';return}
+  st.className='cloudst busy';st.textContent='☁️ Đang lưu vào Album chung…';const ok=await (pending||cloudSave(b,true));
+  if(ok){st.className='cloudst ok';st.innerHTML='✓ Đã lưu vào Album chung <a href="album.html">Xem ›</a>'}
+  else{st.className='cloudst bad';st.innerHTML=`⚠️ Chưa lưu được vào Album chung<br><small>${String(lastCloudErr).replace(/[&<>"]/g,c=>"&#"+c.charCodeAt(0)+";")}</small> <button class="btn small" id="cloudRetry">Thử lại</button>`;$('#cloudRetry').onclick=()=>saveCloudUI(null)}}
+$('#btnSave').onclick=async()=>{if(printing)return;const b=await exportBlob();const it=addAlbum(b,'me',false);const up=window.TMX&&window.TMX.toAlbum?cloudSave(b,true):null;await printReveal(b);viewItem(it);saveCloudUI(b,up)};
 async function sendBlob(b){if(!connected()){toast('Người ấy chưa kết nối');return false}if(CM){try{const path=await CM.upload(b,'booth');send({t:'photo',path,type:b.type});toast('Đã gửi cho '+(partnerName||'người ấy')+' ♡');return true}catch(e){toast('Gửi không được, thử lại nhé');return false}}const buf=await b.arrayBuffer();if(send({t:'photo',buf,type:b.type})){toast('Đã gửi cho '+(partnerName||'người ấy')+' ♡');return true}toast('Gửi không được, thử lại nhé');return false}
 $('#btnShare').onclick=async()=>{const b=await exportBlob();addAlbum(b,'me');shareBlob(b)};
 $('#btnSend').onclick=async()=>{if(!connected()){toast('Người ấy chưa kết nối');return}const b=await exportBlob();if(await sendBlob(b))addAlbum(b,'me')};
@@ -1428,23 +1434,25 @@ $('#btnSend').onclick=async()=>{if(!connected()){toast('Người ấy chưa kế
 const album=[];
 /* Tự lưu vào Album chung: sau khi chụp, ảnh trong trình chỉnh được đưa lên album khi ngừng chỉnh 12 giây, khi bấm Chụp lại hoặc khi rời trang.
    Mỗi lần chỉnh mới (đổi khung, filter, sticker…) thì bản đã lưu được thay bằng bản mới, không sinh ảnh trùng. */
-let editVer=0,cloudBusy=null,autoT=null;
+let editVer=0,cloudBusy=null,autoT=null,lastCloudErr='';
 function cloudSave(blob,quiet){if(!window.TMX||!window.TMX.toAlbum||!ED)return Promise.resolve(false);const ed=ED,ver=editVer;
   if(ed.cloudVer===ver&&ed.cloudId)return Promise.resolve(true);
-  const run=async()=>{const b=blob||await exportBlob();const r=await window.TMX.toAlbum(b,ed.cloudId);if(r){ed.cloudId=r.id;ed.cloudVer=ver;if(!quiet)toast('Đã lưu vào Album chung ♡','Xem',()=>location.href='album.html');else showSaved()}else toast('Chưa lưu được vào Album chung, kiểm tra mạng nhé','Thử lại',()=>cloudSave(null,false));return !!r};
+  const run=async()=>{const b=blob||await exportBlob();const r=await window.TMX.toAlbum(b,ed.cloudId);if(r&&r.id){ed.cloudId=r.id;ed.cloudVer=ver;if(!quiet)toast('Đã lưu vào Album chung ♡','Xem',()=>location.href='album.html');else showSaved();return true}lastCloudErr=(r&&r.error)||'không rõ';if(!quiet)toast('Chưa lưu được vào Album chung: '+lastCloudErr,'Thử lại',()=>cloudSave(null,false));return false};
   cloudBusy=(cloudBusy||Promise.resolve()).then(run,run);return cloudBusy}
 function showSaved(){const h=$('#autoSaved');if(h){h.textContent='✓ Đã tự lưu vào Album chung';h.classList.remove('hidden')}}
 function editedNow(){editVer++;const h=$('#autoSaved');if(h)h.classList.add('hidden');clearTimeout(autoT);autoT=setTimeout(()=>{if($('#editor').classList.contains('active'))cloudSave(null,true)},12000)}
 addEventListener('pagehide',()=>{if(ED&&ED.cloudVer!==editVer)cloudSave(null,true)});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&ED&&ED.cloudVer!==editVer)cloudSave(null,true)});
-function addAlbum(blob,from){if(from==='me'&&blob.type!=='image/gif')cloudSave(blob,false);const it={blob,url:URL.createObjectURL(blob),from,t:new Date(),partner:partnerName};album.unshift(it);$('#albumCount').textContent=album.length;renderAlbum();
+function addAlbum(blob,from,cloud=true){if(cloud&&from==='me'&&blob.type!=='image/gif')cloudSave(blob,false);const it={blob,url:URL.createObjectURL(blob),from,t:new Date(),partner:partnerName};album.unshift(it);$('#albumCount').textContent=album.length;renderAlbum();
   idb('album','readwrite',s=>s.add({blob,from,t:+it.t,partner:partnerName})).then(id=>{if(id!=null)it.id=id});return it}
 (async()=>{const rows=await idb('album','readonly',s=>s.getAll());if(!rows||!rows.length)return;rows.sort((a,b)=>b.t-a.t).forEach(r=>album.push({id:r.id,blob:r.blob,url:URL.createObjectURL(r.blob),from:r.from,t:new Date(r.t),partner:r.partner||''}));$('#albumCount').textContent=album.length;renderAlbum()})();
 function renderAlbum(){const g=$('#albumGrid');g.innerHTML='';$('#albumEmpty').classList.toggle('hidden',album.length>0);
   album.forEach(it=>{const f=document.createElement('figure');f.innerHTML=`<img src="${it.url}" alt=""><figcaption>${it.from==='me'?'Của bạn':(it.partner||partnerName||'Người ấy')+' gửi'}${it.blob.type==='image/gif'?' · GIF':''} · ${it.t.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})} ${it.t.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</figcaption>`;f.onclick=()=>viewItem(it);g.appendChild(f)})}
 let viewing=null;
-function viewItem(it){viewing=it;$('#viewImg').src=it.url;$('#viewTitle').textContent=it.from==='me'?'Ảnh của bạn':'Ảnh '+(it.partner||partnerName||'người ấy')+' gửi';const d=$('#viewDel');d.textContent='Xoá';d.dataset.arm='';$('#albumModal').classList.remove('on');openModal('viewModal')}
-$('#viewSave').onclick=()=>viewing&&downloadBlob(viewing.blob,fname(extOf(viewing.blob)));
+function viewItem(it){viewing=it;const vc=$('#viewCloud');if(vc){vc.className='cloudst';vc.textContent=''}$('#viewImg').src=it.url;$('#viewTitle').textContent=it.from==='me'?'Ảnh của bạn':'Ảnh '+(it.partner||partnerName||'người ấy')+' gửi';const d=$('#viewDel');d.textContent='Xoá';d.dataset.arm='';$('#albumModal').classList.remove('on');openModal('viewModal')}
+$('#viewSave').onclick=async()=>{if(!viewing)return;const b=viewing.blob,f=new File([b],fname(extOf(b)),{type:b.type||'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})&&/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)){try{await navigator.share({files:[f]});return}catch(e){if(e.name==='AbortError')return}}
+  downloadBlob(b,f.name);toast('Đã tải ảnh về máy ♡')};
 $('#viewDel').onclick=()=>{const d=$('#viewDel');if(!viewing)return;if(!d.dataset.arm){d.dataset.arm='1';d.textContent='Bấm lần nữa để xoá';return}
   const it=viewing;const i=album.indexOf(it);if(i>=0)album.splice(i,1);if(it.id!=null)idb('album','readwrite',s=>s.delete(it.id));URL.revokeObjectURL(it.url);viewing=null;$('#albumCount').textContent=album.length;renderAlbum();$('#viewModal').classList.remove('on');toast('Đã xoá ảnh')};
 $('#viewShare').onclick=()=>viewing&&shareBlob(viewing.blob);
@@ -1496,7 +1504,7 @@ try {
       toAlbum: async (blob, replaceId) => { try { const b2 = await compressImage(blob, 2400, .92); const { path } = await uploadMedia(ctx, b2, 'album');
         if (replaceId) { const { data: old } = await sb.from('album').select('path').eq('id', replaceId).maybeSingle(); const { error } = await sb.from('album').update({ path }).eq('id', replaceId); if (!error) { if (old && old.path) sb.storage.from('media').remove([old.path]).catch(() => { }); return { id: replaceId } } }
         const { data, error } = await sb.from('album').insert({ path, source: 'booth', taken_at: new Date().toISOString() }).select('id').single(); if (error) throw error;
-        ctx.main && ctx.main.send({ type: 'broadcast', event: 'hey', payload: { page: 'booth', text: 'vừa thêm ảnh photobooth vào Album chung 📸', url: 'album.html' } }); return { id: data.id } } catch (e) { console.warn('toAlbum', e); return null } },
+        ctx.main && ctx.main.send({ type: 'broadcast', event: 'hey', payload: { page: 'booth', text: 'vừa thêm ảnh photobooth vào Album chung 📸', url: 'album.html' } }); return { id: data.id } } catch (e) { console.warn('toAlbum', e); return { error: (e && (e.message || e.error_description || e.statusCode)) || String(e) } } },
       invite: () => { const url = location.origin + location.pathname + '?go=1'; ctx.main && ctx.main.send({ type: 'broadcast', event: 'booth', payload: { url } }); }
     };
   } };
