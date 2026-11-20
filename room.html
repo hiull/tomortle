@@ -73,7 +73,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
       <form class="row" id="sayForm" style="margin-top:6px"><input class="input" id="sayIn" placeholder="Nói gì đó… 💬" maxlength="80" style="margin:0" autocomplete="off"><button class="btn primary">Nói</button></form>
     </div>
     <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap">
-      <button class="btn small primary hidden" id="bCart">🛒 Giỏ chung</button><button class="btn small hidden" id="bList">📝 Danh sách đi chợ</button><button class="btn small hidden" id="bDeals">🔥 Giá sốc · Tìm món</button><button class="btn small" id="bAvatar">👗 Thay đồ</button>
+      <button class="btn small primary hidden" id="bCart">🛒 Giỏ chung</button><button class="btn small hidden" id="bList">📝 Danh sách đi chợ</button><button class="btn small hidden" id="bDir">📋 Danh mục</button><button class="btn small hidden" id="bDeals">🔥 Giá sốc · Tìm món</button><button class="btn small" id="bAvatar">👗 Thay đồ</button>
       <button class="btn small" id="bInvite">💌 Rủ người ấy vào</button>
       <button class="btn small" id="bDecor">✏️ Trang trí phòng</button>
     </div>
@@ -135,6 +135,8 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .tg{text-decoration:none;background:#e63946;color:#fff;font-size:10px;font-weight:800;border-radius:6px;padding:1px 4px}.cl.done span{text-decoration:line-through;opacity:.5}.cl button[data-t]{border-radius:6px}.cl a{color:var(--accent)}
 .ctabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.ctabs::-webkit-scrollbar{display:none}.ctabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--ink);white-space:nowrap}.ctabs button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .rcp{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}.rcp>b{font-size:30px;width:40px;text-align:center}.rcp span{flex:1;font-size:14px}.rcp small{display:block;font-size:12px;color:var(--muted)}.rcp small i{font-style:normal}.rcp small i.no{color:#e63946;text-decoration:line-through}.rcp button{white-space:nowrap}
+.dirf{margin:10px 0 6px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:6px}.dirf small{font-weight:600;color:var(--muted)}.dirg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.dirg button{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 10px;cursor:pointer;color:var(--ink);font-weight:700;font-size:13px}.dirg button b{font-size:22px}.dirg button small{display:block;font-weight:600;color:var(--muted);font-size:11px}.dirg button.here{border-color:var(--accent)}
+.payl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.payl button{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:7px 10px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}.payl button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 .rc .scan{border-radius:4px}.rc .scan.hit{animation:scanhit .35s}@keyframes scanhit{0%{background:#b9f6ca}100%{background:transparent}}.rc .big b{font-size:17px}.rc #rcL,.rc #rcT{display:block}#rcL{max-height:40vh;overflow:auto}
 .rc{font-family:'Courier New',monospace;text-align:left;background:#fffdf6;color:#333;border-radius:8px;padding:12px;font-size:13px;line-height:1.6}.rc div{display:flex;justify-content:space-between;gap:8px}</style>
 <div class="modal" id="mShop"><div class="sheet">
@@ -151,6 +153,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <label class="note hidden" id="mkVoucherRow" style="display:flex;align-items:center;gap:6px;margin-top:6px"><input type="checkbox" id="mkVoucher"> Dùng 100 điểm để giảm 50.000đ</label>
   <p id="cartTot" style="font-weight:700;margin:8px 0"></p>
   <p class="note" id="cartHist" style="margin:0 0 8px"></p>
+  <p class="note" style="margin:4px 0">Thanh toán bằng</p><div class="payl" id="payL"></div>
   <div class="row" style="gap:8px"><button class="btn" id="cartClear">Bỏ hết</button><button class="btn primary" id="cartPay" style="flex:1">🧾 Ra quầy thanh toán</button></div>
   <button class="btn block" style="margin-top:8px" onclick="this.closest('.modal').classList.remove('on')">Đóng</button>
 </div></div>
@@ -159,6 +162,12 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <div id="listL" style="max-height:42vh;overflow:auto"></div>
   <form class="row" id="listForm" style="gap:6px;margin-top:8px"><input class="input" id="listIn" placeholder="Cần mua gì? VD: trứng, sữa tươi, Hảo Hảo…" maxlength="40" style="margin:0;flex:1" autocomplete="off"><button class="btn primary">Thêm</button></form>
   <select class="input" id="listRecipe" style="margin-top:8px;width:100%"></select>
+  <button class="btn block" style="margin-top:8px" onclick="this.closest('.modal').classList.remove('on')">Đóng</button>
+</div></div>
+<div class="modal" id="mDir"><div class="sheet">
+  <h3>📋 Danh mục Tomortle Mart</h3>
+  <input class="input" id="dirQ" placeholder="🔎 Tìm món: phô mai, Sting, sầu riêng…" style="margin:0 0 8px;width:100%" autocomplete="off">
+  <div id="dirL" style="max-height:60vh;overflow:auto"></div>
   <button class="btn block" style="margin-top:8px" onclick="this.closest('.modal').classList.remove('on')">Đóng</button>
 </div></div>
 <div class="modal" id="mFind"><div class="sheet">
@@ -924,7 +933,7 @@ let MK={cart:[],budget:500000,hist:[],list:[],points:0,life:0};
 // giỏ hàng dùng chung mọi tầng → kênh riêng 'market-cart'
 let mkch=null;function sendMk(t,p={}){if(mkch)mkch.send({type:'broadcast',event:'m',payload:Object.assign({t},p)})}
 if(IS_MK){MK=Object.assign(MK,await loadS('market',{}));MK.list=MK.list||[];MK.points=MK.points||0;MK.life=MK.life||0;
- ['#bCart','#bList','#bDeals'].forEach(s=>$(s).classList.remove('hidden'));
+ ['#bCart','#bDir','#bList','#bDeals'].forEach(s=>$(s).classList.remove('hidden'));
  $('#hint').textContent=MD.FLOORS[KIND].n+' · chạm quầy để chọn đồ · giỏ dùng chung mọi tầng · đi thang máy 🛗 lên tầng khác';
  if(!DEMO){mkch=C.featureChannel(ctx,'market-cart');mkch.on('broadcast',{event:'m'},({payload})=>onMsg(payload)).subscribe(s=>{if(s==='SUBSCRIBED')sendMk('mkhello')})}}
 const tierOf=life=>{let t=MD?MD.TIERS[0]:[0,'',''];for(const x of(MD?MD.TIERS:[]))if(life>=x[0])t=x;return t};
@@ -933,7 +942,7 @@ function mkBill(){const sub=mkSub(),t=tierOf(MK.life),tierOff=Math.round(sub*t[3
 function mkSave(){saveS('market',MK,600);sendMk('mk',{MK});drawMk()}
 let shopKind=null;
 function openShop(t){shopKind=t;$('#shopT').textContent=CAT[t].e+' '+CAT[t].n;drawMk();$('#shopG').scrollTop=0;$('#mShop').classList.add('on')}
-function openCart(){drawMk();$('#mCart').classList.add('on')}
+function openCart(){drawMk();drawPays();$('#mCart').classList.add('on')}
 function mkApply(o,d){let it=MK.cart.find(i=>i.n===o.n);if(!it){if(d<0)return;it={e:o.e,n:o.n,p:o.p,o:o.o,b2g1:o.b2g1,tag:o.tag,by:o.by,q:0};MK.cart.push(it)}it.q+=d;if(it.q<=0)MK.cart=MK.cart.filter(i=>i!==it)}
 function mkAdd(o,d=1){o=Object.assign({},o,{by:ME});mkApply(o,d);sendMk('mkop',{o,d});if(d>0){me.emo={e:o.e,t:NOW+1500};send('emo',{e:o.e});sfx.pop();vib(15);if(tickList(o))return}saveS('market',MK,800);drawMk()}
 /* danh sách đi chợ: mua món nào thì tự gạch món đó */
@@ -965,8 +974,33 @@ $('#cartClear').onclick=()=>{if(!MK.cart.length||!confirm('Bỏ hết đồ tron
 $('#cartPay').onclick=()=>{$('#mCart').classList.remove('on');const co=R.items.find(i=>i.t==='checkout');if(co)useItem(co);checkout()};
 $('#bCart').onclick=openCart;
 /* thanh toán: quét từng món kêu "tít", xong tất cả thì "cha-ching" như máy tính tiền */
-const sfxBeep=()=>{tone(2350,.09,'square',.05);tone(2350,.05,'sine',.04,.01)};
-const sfxChaching=()=>{noise(.12,.25,2500,'highpass');tone(1318,.12,'triangle',.09,.14);tone(1760,.5,'triangle',.1,.24);tone(2637,.6,'sine',.06,.24);for(let k=0;k<7;k++)tone(3200+Math.random()*1800,.07,'sine',.035,.3+k*.06)};
+/* ===== âm thanh tổng hợp (không dùng file): máy quét, máy tính tiền, máy in nhiệt, ví điện tử ===== */
+const sfxBeep=()=>{tone(1760,.11,'sine',.07);tone(3520,.06,'sine',.02)};
+const sfxChaching=()=>{noise(.07,.3,1800,'bandpass');noise(.18,.12,600,'lowpass',.05);// ngăn kéo bật ra
+ [[2093,.0],[2637,.0],[3136,.0],[2093,.16],[2637,.16],[3951,.16]].forEach(([f,w])=>{tone(f,.9,'sine',.05,.12+w);tone(f*2.01,.35,'sine',.012,.12+w)});
+ for(let k=0;k<9;k++)tone(4200+Math.random()*2200,.05,'triangle',.025,.45+k*.045)};// leng keng xu
+const sfxPrint=(sec=1.6)=>{const n=Math.floor(sec/.032);for(let k=0;k<n;k++)noise(.02,.09+Math.random()*.04,2800+Math.random()*900,'bandpass',k*.032);tone(95,sec,'sawtooth',.012);noise(.16,.22,1800,'highpass',sec+.05)};// rè rè + xé giấy
+const sfxCardIn=()=>{noise(.18,.12,900,'bandpass');tone(880,.08,'square',.03,.25);tone(1320,.1,'square',.03,.4)};
+const sfxWallet=()=>{tone(1568,.18,'sine',.08);tone(2093,.32,'sine',.08,.15)};// "ting ting"
+const sfxApplePay=()=>{tone(1318,.12,'sine',.06);tone(1975,.25,'sine',.06,.1)};
+const PAYS=[['cash','💵','Tiền mặt'],['card','💳','Thẻ Visa/Master'],['momo','🟪','MoMo'],['zalo','🟦','ZaloPay'],['qr','🏦','Chuyển khoản QR'],['apple','','Apple Pay']];
+let payMethod=lsGet('payMethod','cash');
+function drawPays(){const el=$('#payL');if(!el)return;el.innerHTML=PAYS.map(([k,e,n])=>`<button data-p="${k}" class="${k===payMethod?'on':''}">${e} ${n}</button>`).join('')}
+$('#payL').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;payMethod=b.dataset.p;lsSet('payMethod',payMethod);drawPays();ac();if(payMethod==='cash')noise(.05,.2,1500,'bandpass');else sfxApplePay()};
+// mã QR giả (chỉ để trang trí) vẽ bằng canvas
+function fakeQR(seed){const c=document.createElement('canvas'),n=25,z=6;c.width=c.height=n*z+16;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.fillStyle='#111';let a=seed>>>0;
+ const fin=(i,j)=>{x.fillRect(8+i*z,8+j*z,7*z,7*z);x.fillStyle='#fff';x.fillRect(8+(i+1)*z,8+(j+1)*z,5*z,5*z);x.fillStyle='#111';x.fillRect(8+(i+2)*z,8+(j+2)*z,3*z,3*z)};
+ for(let i=0;i<n;i++)for(let j=0;j<n;j++){a=(a*1664525+1013904223)>>>0;if((i<8&&j<8)||(i>n-9&&j<8)||(i<8&&j>n-9))continue;if(a%3===0)x.fillRect(8+i*z,8+j*z,z,z)}fin(0,0);fin(n-7,0);fin(0,n-7);return c.toDataURL()}
+// bước trả tiền theo từng cách, hiện trong hoá đơn trước khi in
+async function payStep(total){const box=$('#rcPay');if(!box)return;const m=PAYS.find(p=>p[0]===payMethod)||PAYS[0];const wait=ms=>new Promise(r=>setTimeout(r,ms));
+ if(payMethod==='cash'){const step=total>200000?100000:total>50000?50000:10000,give=Math.ceil(total/step)*step;const pick=[];let r=give;for(const v of [500000,200000,100000,50000,20000,10000])while(r>=v){pick.push(v);r-=v}
+  box.innerHTML=`💵 Khách đưa: <b>${pick.map(v=>v>=1000?v/1000+'k':v).join(' + ')}</b>`;for(let k=0;k<pick.length;k++){noise(.05,.18,1400,'bandpass');await wait(160)}await wait(250);
+  box.innerHTML+=`<br>Tiền thối: <b>${vnd(give-total)}</b>`;if(give>total)for(let k=0;k<4;k++)tone(4000+Math.random()*1500,.05,'triangle',.03,k*.07);await wait(500);return 'Tiền mặt'}
+ if(payMethod==='card'){box.innerHTML='💳 Đang đọc thẻ…';sfxCardIn();await wait(900);box.innerHTML='💳 Đang kết nối ngân hàng…';await wait(800);tone(1500,.09,'square',.03);await wait(120);tone(1500,.09,'square',.03);box.innerHTML='💳 Giao dịch thành công ✓';await wait(400);return 'Thẻ '+(Math.random()<.5?'Visa':'Mastercard')+' ****'+String(1000+Math.floor(Math.random()*9000))}
+ if(payMethod==='apple'){box.innerHTML=' Nhấn đúp nút sườn để thanh toán…';await wait(900);sfxApplePay();box.innerHTML=' Apple Pay ✓ Xong';await wait(500);return 'Apple Pay'}
+ const brand={momo:['MoMo','#a50064'],zalo:['ZaloPay','#0068ff'],qr:['VietQR','#00a651']}[payMethod];
+ box.innerHTML=`<div style="text-align:center"><b style="color:${brand[1]}">${m[1]} ${brand[0]}</b> · quét mã để trả ${vnd(total)}<br><img src="${fakeQR(total+Date.now())}" style="width:120px;margin:6px auto;display:block;border:3px solid ${brand[1]};border-radius:8px"></div>`;
+ await wait(1600);sfxWallet();vib([40,60,40]);box.innerHTML=`<div style="text-align:center;color:${brand[1]};font-weight:800">🔔 ${brand[0]}: Đã nhận ${vnd(total)} ✓</div>`;await wait(700);return brand[0]}
 let paying=false;
 async function checkout(){if(paying)return;ac();
  try{
@@ -977,14 +1011,15 @@ async function checkout(){if(paying)return;ac();
  const before=tierOf(MK.life);MK.points=MK.points-(b.useV?100:0)+earn;MK.life+=earn;if($('#mkVoucher'))$('#mkVoucher').checked=false;
  MK.hist=[...(MK.hist||[]),{at:Date.now(),total:b.total,n:mkCount(),by:ME}].slice(-30);MK.budget-=b.total;MK.cart=[];MK.list=MK.list.filter(l=>!l.done);mkSave();stockPantry(cart);
  $('#infoT').textContent='🧾 Đang tính tiền…';
- $('#infoB').innerHTML=`<div class="rc"><div><b>TOMORTLE MART</b><span>${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span></div><div id="rcL"></div><div id="rcT"></div></div>`;
+ $('#infoB').innerHTML=`<div class="rc"><div><b>TOMORTLE MART</b><span>${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span></div><div id="rcL"></div><div id="rcPay" style="margin-top:6px"></div><div id="rcT"></div></div>`;
  $('#mInfo').classList.add('on');
  const units=cart.reduce((a,i)=>a+i.q,0),gap=units>14?190:units>7?280:380;let beeps=0;
  for(const i of cart){const row=document.createElement('div');row.className='scan';row.innerHTML=`<span>${icoH(i.e,'ico s')} ${esc(i.n)} <b class="q">×0</b></span><span class="v">0đ</span>`;$('#rcL').append(row);row.scrollIntoView({block:'nearest'});
   for(let k=1;k<=i.q;k++){if(beeps<30){sfxBeep();vib(12)}beeps++;row.querySelector('.q').textContent='×'+k+(i.b2g1&&k>=3&&k%3===0?' 🎁':'');row.querySelector('.v').textContent=vnd(i.p*(k-(i.b2g1?Math.floor(k/3):0)));row.classList.remove('hit');void row.offsetWidth;row.classList.add('hit');await new Promise(r=>setTimeout(r,beeps<30?gap:40))}}
- await new Promise(r=>setTimeout(r,350));
+ await new Promise(r=>setTimeout(r,300));
+ $('#infoT').textContent='💳 Thanh toán…';const how=await payStep(b.total);$('#infoT').textContent='🖨️ Đang in hoá đơn…';sfxPrint(1.4);await new Promise(r=>setTimeout(r,1500));MK.hist[MK.hist.length-1].pay=how;
  $('#rcT').innerHTML=`<div style="border-top:1px dashed #999;margin-top:4px;padding-top:4px"><span>Tạm tính</span><span>${vnd(b.sub)}</span></div>${b.tierOff?`<div><span>Thẻ ${b.t[1]} -${b.t[3]}%</span><span>-${vnd(b.tierOff)}</span></div>`:''}${b.vou?`<div><span>Voucher 100 điểm</span><span>-${vnd(b.vou)}</span></div>`:''}
-  <div class="big"><b>TỔNG</b><b>${vnd(b.total)}</b></div>${save>0?`<div><span>🎉 Tiết kiệm</span><span>${vnd(save)}</span></div>`:''}<div><span>Điểm thưởng</span><span>+${earn} điểm</span></div><div><span>Ví chung còn</span><span>${vnd(MK.budget)}</span></div><div style="justify-content:center">Cảm ơn hai bạn, hẹn gặp lại 💗</div>`;
+  <div class="big"><b>TỔNG</b><b>${vnd(b.total)}</b></div>${save>0?`<div><span>🎉 Tiết kiệm</span><span>${vnd(save)}</span></div>`:''}<div><span>Thanh toán</span><span>${how}</span></div><div><span>Điểm thưởng</span><span>+${earn} điểm</span></div><div><span>Ví chung còn</span><span>${vnd(MK.budget)}</span></div><div style="justify-content:center">Cảm ơn hai bạn, hẹn gặp lại 💗</div>`;
  $('#infoT').textContent='🧾 Hoá đơn siêu thị hai đứa';sfxChaching();vib([30,40,80]);burst(me,'💰',4);setTimeout(()=>burst(me,'🛍️',3),250);send('emo',{e:'🧾',burst:'💸'});
  const after=tierOf(MK.life);if(after!==before)setTimeout(()=>toast(`Lên hạng thẻ ${after[2]} ${after[1]}! Từ giờ giảm ${after[3]}% mọi hoá đơn 🎉`),1800);
  }catch(e){console.error(e);toast('Thanh toán bị lỗi: '+(e.message||e)+' · chụp màn hình gửi mình nhé')}finally{paying=false}}
@@ -1008,6 +1043,12 @@ function drawFind(){const w=norm($('#findIn').value);const res=w?findProd(w).sli
 $('#bDeals').onclick=()=>{$('#findIn').value='';openFind()};
 $('#findIn').oninput=drawFind;
 $('#findL').onclick=e=>{const g=e.target.closest('[data-go]');if(g){e.preventDefault();goCounter(g.dataset.go);return}const b=e.target.closest('[data-add]');if(!b)return;const a=MD.ALL.find(x=>x.n===b.dataset.add);if(a){mkAdd(prodObj([a.e,a.n,a.p,a.tag]));drawFind()}};
+/* danh mục: mọi quầy theo tầng, chạm để tới quầy (khác tầng thì đi thang máy) */
+function openDir(){const L=$('#dirL');L.innerHTML=Object.entries(MD.FLOORS).map(([fk,f])=>`<div class="dirf">🛗 ${esc(f.n)} ${fk===KIND?'<small>· bạn đang ở đây</small>':''}</div><div class="dirg">${Object.entries(MD.COUNTERS).filter(([k,c])=>floorOf(k)===fk).map(([k,c])=>{const n=PROD[k].length,dl=PROD[k].filter(p=>DEALS[p[1]]).length;return`<button data-k="${k}" class="${fk===KIND?'here':''}"><b>${c.e}</b><span>${esc(c.n)}<small>${n} món${dl?` · 🔥${dl}`:''}</small></span></button>`}).join('')}</div>`).join('');$('#dirQ').value='';$('#mDir').classList.add('on')}
+$('#bDir').onclick=openDir;
+$('#dirL').onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;$('#mDir').classList.remove('on');goCounter(b.dataset.k)};
+$('#dirQ').onkeydown=e=>{if(e.key==='Enter'&&e.target.value.trim()){$('#mDir').classList.remove('on');$('#findIn').value=e.target.value;openFind()}};
+$('#dirQ').oninput=e=>{if(e.target.value.trim().length>=2){$('#mDir').classList.remove('on');$('#findIn').value=e.target.value;openFind();setTimeout(()=>{const f=$('#findIn');f.focus();f.setSelectionRange(f.value.length,f.value.length)},50)}};
 /* quầy ăn thử: mỗi người được ăn thử 6 lần/ngày */
 const SAMPLES=MD?MD.samplesToday():[];window.SAMPLE_E=SAMPLES.map(s=>s.e);
 const sampleKey='sample-'+new Date().toISOString().slice(0,10)+'-'+ME;

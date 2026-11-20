@@ -508,6 +508,11 @@ async function fileToCanvas(file,max){const u=URL.createObjectURL(file);try{retu
 async function bufToCanvas(buf,type='image/jpeg'){const b=new Blob([buf],{type});const u=URL.createObjectURL(b);try{return toCanvas(await loadImage(u),2000)}finally{URL.revokeObjectURL(u)}}
 function thumbOf(c){if(!c)return '';if(c._t)return c._t;const t=document.createElement('canvas');t.width=90;t.height=Math.round(90*c.height/c.width);t.getContext('2d').drawImage(c,0,0,t.width,t.height);return c._t=t.toDataURL('image/jpeg',.7)}
 let AC;function ensureAudio(){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}}
+// tiếng ồn có lọc: dùng cho màn trập, máy in, xé giấy
+let NB=null;function bnoise(d=.1,v=.1,f=2000,type='bandpass',when=0){if(!AC)return;try{if(!NB){NB=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);const a=NB.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1}
+  const t=AC.currentTime+when,src=AC.createBufferSource(),fl=AC.createBiquadFilter(),g=AC.createGain();src.buffer=NB;fl.type=type;fl.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);src.connect(fl);fl.connect(g);g.connect(AC.destination);src.start(t,Math.random()*.5);src.stop(t+d+.02)}catch(e){}}
+function shutter(){bnoise(.035,.35,3500,'highpass');bnoise(.06,.25,700,'lowpass',.045);bnoise(.03,.2,3000,'highpass',.11)}
+function printBurst(sec=.3){const n=Math.floor(sec/.03);for(let k=0;k<n;k++)bnoise(.018,.08+Math.random()*.04,3000+Math.random()*800,'bandpass',k*.03)}
 function beep(f=880,d=.09,v=.07){if(!AC)return;try{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d+.02)}catch(e){}}
 
 /* ============ UI theme ============ */
@@ -821,7 +826,7 @@ function countdown(sec,label){return new Promise(res=>{const box=$('#countdown')
 const SHOT_PAUSE=.6; // nghỉ giữa 2 kiểu (giây) để kịp đổi dáng sau tiếng chụp
 function countdownTo(target,label){return new Promise(res=>{const box=$('#countdown'),num=box.querySelector('.num');box.classList.remove('hidden');box.querySelector('.sub').textContent=label;let shown=null;
   const tick=()=>{const left=target-Date.now();if(left<=0){num.textContent='';res();return}const n=Math.ceil(left/1000);if(n!==shown){shown=n;num.textContent=n;num.classList.remove('pop');void num.offsetWidth;num.classList.add('pop');beep(n===1?1320:880)}setTimeout(tick,Math.min(left,left%1000||1000,50))};tick()})}
-function flash(){const f=$('#flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');beep(1800,.05,.05);setTimeout(()=>beep(600,.12,.04),60)}
+function flash(){const f=$('#flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');shutter()}
 function sendShot(sid,i,c){if(!c||!connected())return;c.toBlob(async b=>{if(!b)return;if(CM){try{const path=await CM.upload(b,'booth');send({t:'shot',sid,i,path})}catch(e){console.warn(e);toast('Gửi ảnh cho người ấy bị lỗi')}}else b.arrayBuffer().then(buf=>send({t:'shot',sid,i,buf}))},'image/jpeg',.95)}
 function renderThumbs(){const box=$('#thumbs');box.innerHTML='';if(!SESS)return;
   for(let i=0;i<SESS.cfg.shots;i++){const d=document.createElement('div');d.className='tp';
@@ -1416,8 +1421,8 @@ function printReveal(blob){if(printing)return printing;ensureAudio();
   // in từng nấc, kèm tiếng máy in lạch cạch
   const steps=[18,34,48,61,73,84,93,100];
   at(900,()=>say('🖨️ Đang in ảnh…','Đừng giật ảnh ra nha'));
-  steps.forEach((pc,k)=>at(1100+k*330,()=>{im.style.transition='transform .32s ease-out';im.style.transform=`translateY(${pc-102}%)`;beep(140+k*6,.12,.05);beep(95,.18,.035)}));
-  at(1100+steps.length*330,()=>{im.style.transform='translateY(0)';im.classList.add('dev');say('🌬️ Chờ ảnh khô một chút…','Phẩy phẩy cho màu hiện lên');requestAnimationFrame(()=>im.classList.add('done'))});
+  steps.forEach((pc,k)=>at(1100+k*330,()=>{im.style.transition='transform .32s ease-out';im.style.transform=`translateY(${pc-102}%)`;printBurst(.3);beep(90,.3,.012)}));
+  at(1100+steps.length*330,()=>{im.style.transform='translateY(0)';im.classList.add('dev');bnoise(.18,.25,1800,'highpass');say('🌬️ Chờ ảnh khô một chút…','Phẩy phẩy cho màu hiện lên');requestAnimationFrame(()=>im.classList.add('done'))});
   at(1100+steps.length*330+2300,()=>{say('Xong rồi! ♡','Ảnh đẹp quá trời');beep(1320,.12,.06);setTimeout(()=>beep(1760,.16,.05),120)});
   printing=new Promise(res=>{const end=()=>{timers.forEach(clearTimeout);P.classList.remove('on');setTimeout(()=>URL.revokeObjectURL(url),1000);printing=null;res()};
     $('#pSkip').onclick=end;at(1100+steps.length*330+3400,end)});
