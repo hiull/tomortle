@@ -16,6 +16,16 @@
 .roomwrap{position:relative;border-radius:22px;overflow:hidden;background:linear-gradient(180deg,#fff0f6,#ffe3ee 60%,#fbd5e4);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;border:1px solid var(--line);box-shadow:var(--shadow)}
 .roomwrap.edit{background:linear-gradient(180deg,#f3f0ff,#e7e1ff)}
 #room{display:block;width:100%;height:auto;cursor:pointer}
+/* phòng chung vừa khít một màn hình: không cuộn trang, khung phòng tự co giãn */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body>.app{height:100vh;height:100dvh;display:flex;flex-direction:column;box-sizing:border-box;padding-top:calc(8px + env(safe-area-inset-top));padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+body>.app>*{flex:none}body>.app>.roomwrap{flex:1 1 0;min-height:150px;display:flex;align-items:center;justify-content:center}
+#room{width:auto;height:auto;max-width:100%}
+.hint2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px 4px 0!important}
+#playUI .card{margin-top:6px!important;padding:8px 10px!important}
+#playUI>.row{flex-wrap:nowrap!important;justify-content:flex-start!important;overflow-x:auto;padding:6px 2px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}#playUI>.row::-webkit-scrollbar{display:none}#playUI>.row .btn{flex:none;white-space:nowrap}
+#decorUI{max-height:46vh;overflow-y:auto;overscroll-behavior:contain}
+
 .hud{position:absolute;left:8px;top:8px;z-index:4;display:flex;gap:6px}
 .hud button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.88);font-size:18px;cursor:pointer;display:grid;place-items:center;padding:0}
 .hud button.off{opacity:.45}
@@ -460,7 +470,10 @@ const avOf=id=>(id===ME?UM.av:UP.av)||((id===ctx.couple.user_a)?DEF_AV_A:DEF_AV_
 const N=8,TW=64,TH=32,WH=150,LT=Math.hypot(TW/2,TH/2),LA=N*LT;
 const OX=N*TW/2+16,OY=WH+30,W=N*TW+32,H=OY+N*TH+30;
 const cv=$('#room');let g=cv.getContext('2d');let DPR=1;const EMJC={};
-function fit(){DPR=Math.min(2,window.devicePixelRatio||1);for(const k in EMJC)delete EMJC[k];cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR)}fit();addEventListener('resize',fit);
+function fit(){DPR=Math.min(2,window.devicePixelRatio||1);for(const k in EMJC)delete EMJC[k];cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);sizeCv()}
+// co khung phòng vừa chỗ trống còn lại (giữ đúng tỉ lệ) để cả trang không phải cuộn
+function sizeCv(){const wr=$('#wrap');if(!wr)return;const r=wr.getBoundingClientRect();if(!r.width||!r.height)return;const k=Math.min(r.width/W,r.height/H);cv.style.width=Math.floor(W*k)+'px';cv.style.height=Math.floor(H*k)+'px'}
+fit();addEventListener('resize',fit);try{new ResizeObserver(()=>sizeCv()).observe($('#wrap'))}catch(e){}
 const iso=(x,y,z=0)=>[OX+(x-y)*TW/2,OY+(x+y)*TH/2-z];
 const unIso=(sx,sy)=>{const dx=(sx-OX)/(TW/2),dy=(sy-OY)/(TH/2);return[(dx+dy)/2,(dy-dx)/2]};
 const EDGE='rgba(110,60,80,.22)';
