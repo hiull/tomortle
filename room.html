@@ -445,21 +445,40 @@ const goodsCache={};function goodsOf(k,n){const key=k+n;if(!goodsCache[key]){con
 const SHOPX=new Set(['consult','checkout','cartrack','lift','sample','promo','fitting','rtable','host','waiter','bar','piano','balloon']);
 /* biển tên quầy: thẻ treo phía trên quầy, vẽ sau cùng nên không bị đồ khác che; ảnh biển được cache */
 const SIGNC={};let SIGNQ=[];
-function signImg(t,c){const key=t+'|'+DPR;if(SIGNC[key])return SIGNC[key];const lux=IS_MALL||IS_RT,name=CAT[t].n,e=CAT[t].e;
- const m=document.createElement('canvas'),x=m.getContext('2d'),F='700 8.5px "Be Vietnam Pro",sans-serif';x.font=F;let txt=name;while(x.measureText(txt).width>104&&txt.length>4)txt=txt.slice(0,-2).trim()+'…';
- const tw=x.measureText(txt).width,w=Math.ceil(tw+30),h=19;m.width=w*DPR;m.height=(h+3)*DPR;x.scale(DPR,DPR);
- const path=()=>{x.beginPath();x.roundRect?x.roundRect(1,1,w-2,h-2,8):x.rect(1,1,w-2,h-2)};
+/* logo từng quầy: [hình (c tròn · s vuông · d thoi · h lục giác), nền, màu chữ, dấu (chữ hoặc emoji), kiểu chữ] */
+const LOGOS={veg:['c','#43a047','#fff','🥬'],fruit:['c','#fb8c00','#fff','🍉'],meat:['s','#c62828','#fff','🥩'],seafood:['c','#0288d1','#fff','🦐'],dairy:['s','#1976d2','#fff','🥛'],frozen:['h','#29b6f6','#fff','❄️'],
+ bakery:['c','#a1662f','#fff','🥐'],deli:['s','#e91e63','#fff','🍱'],snacks:['c','#8e24aa','#fff','🍫'],junk:['s','#fbc02d','#fff','🍿'],noodles:['c','#f57c00','#fff','🍜'],spice:['d','#bf360c','#fff','🧂'],
+ rice:['s','#795548','#fff','🍚'],drinks:['c','#039be5','#fff','🥤'],beer:['h','#ef6c00','#fff','🍺'],coffee:['c','#4e342e','#fff','☕'],florist:['c','#ab47bc','#fff','💐'],
+ north:['s','#b71c1c','#ffd54f','BẮC','sans'],central:['c','#ef6c00','#fff','TRUNG','sans'],south:['c','#00897b','#fff','NAM','sans'],street:['d','#ff6f00','#fff','🛵'],gifts:['s','#c62828','#ffd54f','TẾT','sans'],
+ dior:['s','#ffffff','#111','DIOR','serif'],chanel:['s','#111','#fff','CHANEL','serif'],ysl:['s','#111','#d4af37','YSL','serif'],lancome:['c','#f8bbd0','#7a1f3d','L·EL','serif'],perfume:['d','#6d4c41','#f6e7c1','N°5','serif'],
+ jpk:['c','#b71c1c','#fff','🌸'],mactf:['s','#000','#fff','MAC','sans'],lux2:['h','#1b1b1b','#d4af37','LUXE','serif'],
+ kbeauty:['c','#ff8a80','#fff','K','sans'],drug:['s','#ffd54f','#c2185b','💋'],skin:['c','#00acc1','#fff','🧪'],vnb:['s','#2e7d32','#ffeb3b','VN','sans'],body:['c','#29b6f6','#fff','🫧'],mini:['c','#66bb6a','#fff','250K','sans'],
+ luxury:['d','#3e2723','#d4af37','LUX','serif'],fast:['s','#111','#fff','Z·H·U','sans'],local:['c','#e64a19','#fff','VIỆT','sans'],sport:['s','#1565c0','#fff','👟'],acc:['d','#8e24aa','#fff','💍'],
+ dresses:['c','#d81b60','#fff','👗'],outer:['s','#5d4037','#fff','🧥'],kmake2:['c','#ec407a','#fff','K♥','sans'],kskin:['c','#4fc3f7','#fff','K','serif'],jbeauty:['c','#ffffff','#d32f2f','●','sans'],
+ eumake:['s','#5e35b1','#fff','EU','sans'],euskin:['s','#43a047','#fff','🧴'],pharma:['s','#1e88e5','#fff','✚','sans'],hairbody:['c','#8d6e63','#fff','💆']};
+function logoOf(t){return LOGOS[t]||['c',(CAT[t]&&CAT[t].c)||'#ff8fab','#fff',(CAT[t]&&CAT[t].e)||'⭐']}
+function drawLogo(x,t,cx,cy,r){const[sh,bg,fg,mk,ft]=logoOf(t);x.save();x.beginPath();
+ if(sh==='s'){x.roundRect?x.roundRect(cx-r,cy-r,2*r,2*r,r*.35):x.rect(cx-r,cy-r,2*r,2*r)}else if(sh==='d'){x.moveTo(cx,cy-r*1.15);x.lineTo(cx+r*1.15,cy);x.lineTo(cx,cy+r*1.15);x.lineTo(cx-r*1.15,cy);x.closePath()}
+ else if(sh==='h'){for(let k=0;k<6;k++){const a=Math.PI/6+k*Math.PI/3;x[k?'lineTo':'moveTo'](cx+Math.cos(a)*r*1.08,cy+Math.sin(a)*r*1.08)}x.closePath()}else x.arc(cx,cy,r,0,7);
+ x.shadowColor='rgba(40,20,30,.3)';x.shadowBlur=3;x.shadowOffsetY=1;x.fillStyle=bg;x.fill();x.shadowColor='transparent';x.lineWidth=1.8;x.strokeStyle='#fff';x.stroke();x.lineWidth=.8;x.strokeStyle='rgba(0,0,0,.18)';x.stroke();
+ x.textAlign='center';x.textBaseline='middle';x.fillStyle=fg;
+ if(!ft){x.font=Math.round(r*1.15)+'px sans-serif';x.fillText(mk,cx,cy+r*.06)}
+ else{let fs=r*1.05;const fam=ft==='serif'?'"Playfair Display",Georgia,"Times New Roman",serif':'"Be Vietnam Pro",sans-serif';do{x.font=`800 ${fs}px ${fam}`;fs-=.5}while(x.measureText(mk).width>r*1.62&&fs>4);x.fillText(mk,cx,cy+r*.05)}
+ x.restore()}
+function signImg(t,c){const key=t+'|'+DPR;if(SIGNC[key])return SIGNC[key];const lux=IS_MALL||IS_RT,name=CAT[t].n;
+ const m=document.createElement('canvas'),x=m.getContext('2d'),F='700 8.5px "Be Vietnam Pro",sans-serif';x.font=F;let txt=name;while(x.measureText(txt).width>100&&txt.length>4)txt=txt.slice(0,-2).trim()+'…';
+ const tw=x.measureText(txt).width,R0=12,w=Math.ceil(tw+R0*2+14),h=R0*2+4;m.width=w*DPR;m.height=h*DPR;x.scale(DPR,DPR);
+ const py=h/2-9,path=()=>{x.beginPath();x.roundRect?x.roundRect(R0,py,w-R0-1,18,8):x.rect(R0,py,w-R0-1,18)};
  x.shadowColor='rgba(60,30,40,.28)';x.shadowBlur=3;x.shadowOffsetY=1.5;path();x.fillStyle=lux?'#2b2228':'#ffffff';x.fill();x.shadowColor='transparent';
- x.lineWidth=1.4;x.strokeStyle=lux?'#d4af37':shade(c,-.25);path();x.stroke();
- x.fillStyle=lux?'#d4af37':c;x.beginPath();x.arc(11,h/2,7,0,7);x.fill();
- x.font='10px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(e,11,h/2+.5);
- x.font=F;x.textAlign='left';x.fillStyle=lux?'#f6e7c1':'#3a2430';x.fillText(txt,21,h/2+.5);
+ x.lineWidth=1.3;x.strokeStyle=lux?'#d4af37':shade(c,-.25);path();x.stroke();
+ x.font=F;x.textAlign='left';x.textBaseline='middle';x.fillStyle=lux?'#f6e7c1':'#3a2430';x.fillText(txt,R0*2+5,h/2+.5);
+ drawLogo(x,t,R0+1,h/2,R0-.5);
  return SIGNC[key]={m,w,h}}
 function queueSign(it,c,h){const p=lp3(it,.5,.5,h+20),b=lp3(it,.5,.5,h);SIGNQ.push({it,c,x:p[0],y:p[1],b})}
 // xếp biển: biển nào đè lên biển đã đặt thì đẩy lên trên cho khỏi chồng chữ
 function drawSigns(){const placed=[];SIGNQ.sort((a,b)=>b.y-a.y);
  for(const q of SIGNQ){const S=signImg(q.it.t,q.c);q.x=Math.max(S.w/2+4,Math.min(W-S.w/2-4,q.x));let y=q.y;for(let k=0;k<6;k++){const hit=placed.find(r=>Math.abs(r.x-q.x)<(r.w+S.w)/2+2&&Math.abs(r.y-y)<S.h+2);if(!hit)break;y=hit.y-S.h-3}
-  placed.push({x:q.x,y,w:S.w});g.strokeStyle='rgba(120,100,90,.45)';g.lineWidth=.8;g.beginPath();g.moveTo(q.x-S.w*.3,y);g.lineTo(q.b[0]-S.w*.3,q.b[1]);g.moveTo(q.x+S.w*.3,y);g.lineTo(q.b[0]+S.w*.3,q.b[1]);g.stroke();g.drawImage(S.m,q.x-S.w/2,y-S.h/2,S.w,S.h+3)}}
+  placed.push({x:q.x,y,w:S.w});g.strokeStyle='rgba(120,100,90,.45)';g.lineWidth=.8;g.beginPath();g.moveTo(q.x-S.w*.3,y);g.lineTo(q.b[0]-S.w*.3,q.b[1]);g.moveTo(q.x+S.w*.3,y);g.lineTo(q.b[0]+S.w*.3,q.b[1]);g.stroke();g.drawImage(S.m,q.x-S.w/2,y-S.h/2,S.w,S.h)}}
 function drawShop(it,c){const t=it.t,C2=MD&&MD.COUNTERS[t],h=CAT[t].h;if(C2)queueSign(it,c,h);
  if(t==='checkout'){parts(it,[[0,1,.2,.9,0,34,c],[.62,.92,.3,.7,34,12,'#6d6875']]);const p=lp3(it,.3,.55,38);emj('🧾',p[0],p[1],12);const q=lp3(it,.77,.5,52);emj('💳',q[0],q[1],10);const s=lp3(it,.5,.5,70);if(frontVis(it)){g.save();g.font='700 8px "Be Vietnam Pro",sans-serif';g.textAlign='center';g.fillStyle='#e63946';g.fillText('THU NGÂN',s[0],s[1]);g.restore()}return}
  if(t==='cartrack'){const p=lp3(it,.5,.5,14);const G2=(window.MKC||[]).flatMap(i=>Array(Math.min(i.q,3)).fill(i.e)).slice(0,8);G2.forEach((e,k)=>emj(e,p[0]-8+(k%4)*5,p[1]-12-Math.floor(k/4)*6,10));emj('🛒',p[0],p[1],28);return}
@@ -1112,7 +1131,8 @@ function mkBill(){const sub=mkSub(),t=tierOf(MK.life),tierOff=Math.round(sub*t[3
 function mkSave(){saveS('market',MK,600);sendMk('mk',{MK});drawMk()}
 let shopKind=null,shopSeg='all';
 $('#shopSeg').onclick=e=>{const b=e.target.closest('[data-sg]');if(!b)return;shopSeg=b.dataset.sg;sfx.pop();drawMk()};
-function openShop(t){shopKind=t;$('#shopT').textContent=CAT[t].e+' '+CAT[t].n;drawMk();$('#shopG').scrollTop=0;$('#mShop').classList.add('on')}
+const LOGOU={};function logoURL(t){if(!LOGOU[t]){const m=document.createElement('canvas');m.width=m.height=64;const x=m.getContext('2d');x.scale(2,2);drawLogo(x,t,16,16,13);LOGOU[t]=m.toDataURL()}return LOGOU[t]}
+function openShop(t){shopKind=t;$('#shopT').innerHTML=`<img src="${logoURL(t)}" alt="" style="width:30px;height:30px;vertical-align:middle;margin-right:6px">${esc(CAT[t].n)}`;drawMk();$('#shopG').scrollTop=0;$('#mShop').classList.add('on')}
 function openCart(){drawMk();drawPays();$('#mCart').classList.add('on')}
 function mkApply(o,d){let it=MK.cart.find(i=>i.n===o.n);if(!it){if(d<0)return;it={e:o.e,n:o.n,p:o.p,o:o.o,b2g1:o.b2g1,tag:o.tag,by:o.by,q:0};MK.cart.push(it)}it.q+=d;if(it.q<=0)MK.cart=MK.cart.filter(i=>i!==it)}
 function mkAdd(o,d=1){o=Object.assign({},o,{by:ME});mkApply(o,d);sendMk('mkop',{o,d});if(d>0){me.emo={e:o.e,t:NOW+1500};send('emo',{e:o.e});sfx.pop();vib(15);if(tickList(o))return}saveS('market',MK,800);drawMk()}
