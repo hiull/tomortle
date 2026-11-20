@@ -53,6 +53,7 @@ const G = {
   glasses: (a) => `<circle cx="18" cy="34" r="12" fill="${a}" opacity=".85" stroke="#212121" stroke-width="3"/><circle cx="46" cy="34" r="12" fill="${a}" opacity=".85" stroke="#212121" stroke-width="3"/><path d="M30 32q2-3 4 0M6 30l-4-6M58 30l4-6" stroke="#212121" stroke-width="3" fill="none"/><path d="M12 30l4-4M40 30l4-4" stroke="#fff" stroke-width="2" opacity=".6"/>`,
   watch: (a, b) => `<rect x="24" y="2" width="16" height="60" rx="4" fill="${b === '#ffffff' ? '#8d6e63' : b}"/><circle cx="32" cy="32" r="15" fill="${a}" stroke="#bdbdbd" stroke-width="3"/><circle cx="32" cy="32" r="11" fill="#fafafa"/><path d="M32 32V24M32 32l6 3" stroke="#212121" stroke-width="2" stroke-linecap="round"/>`,
   jewel: (a, b) => `<circle cx="32" cy="38" r="16" fill="none" stroke="${b === '#ffffff' ? '#c9a227' : b}" stroke-width="5"/><path d="M26 22l6-12 6 12-6 6z" fill="${a}" stroke="#fff" stroke-width="1.5"/><path d="M30 14l2-3" stroke="#fff" stroke-width="2"/>`,
+  nail: (a, b, t) => `<rect x="24" y="4" width="16" height="22" rx="3" fill="${b === '#ffffff' ? '#212121' : b}"/><path d="M18 28q0-4 4-4h20q4 0 4 4v26a6 6 0 0 1-6 6H24a6 6 0 0 1-6-6z" fill="${a}"/><rect x="21" y="30" width="4" height="22" rx="2" fill="#fff" opacity=".45"/>${label(t, 32, 45, 22, ink(a), 7)}`,
   clam: a => `<path d="M8 40q24-36 48 0z" fill="${a}" stroke="${dk(a, .3)}" stroke-width="2"/><path d="M32 40V14M20 40l6-22M44 40l-6-22" stroke="${dk(a, .25)}" stroke-width="1.5"/><path d="M8 40q24 12 48 0" fill="${dk(a, .15)}"/>`,
 };
 const genCache = {};
@@ -329,6 +330,158 @@ export const MALL_PROD = {
     ['@watch/212121/212121', 'Đồng hồ Casio G-Shock', 3200000], ['@jewel/f8bbd0/c9a227', 'Nhẫn PNJ', 5900000], ['@jewel/ffffff/c9a227', 'Nhẫn cặp đôi PNJ', 8900000], ['🎀', 'Nơ cài tóc', 59000, '', 'acc:bow'],
     ['🌸', 'Kẹp hoa', 49000, '', 'acc:flower'], ['🧶', 'Mũ len', 199000, '', 'acc:beanie']],
 };
+/* ================= Thêm ~100 hãng mỹ phẩm: Tầng 4 K/J-beauty · Tầng 5 Âu Mỹ & chuyên sâu =================
+   B('Hãng', 'màu bao bì', 'màu phụ', [[kiểu, 'tên', giá, 'màu son/má/móng/mùi' (tuỳ chọn)], ...])
+   kiểu: lip tint cushion palette blush drop tube jar pet perfume nail mascara */
+const ICONT = { lip: 'lip', tint: 'lip', cushion: 'cushion', palette: 'palette', blush: 'palette', drop: 'drop', tube: 'tube', jar: 'jar', pet: 'pet', perfume: 'perfume', nail: 'nail', mascara: 'tube' };
+const WEART = { lip: 'lip', tint: 'lip', blush: 'blush', perfume: 'scent', nail: 'nail' };
+function B(brand, a, b, items) {
+  const short = brand.length > 11 ? brand.split(/[\s-]/)[0] : brand;
+  return items.map(([t, n, p, wc]) => {
+    const ic = ICONT[t] || 'tube', c1 = (t === 'lip' || t === 'tint' || t === 'nail') && wc ? wc.slice(1) : t === 'blush' && wc ? wc.slice(1) : a, c2 = t === 'blush' ? a : b;
+    const w = WEART[t] && wc ? `${WEART[t]}:${wc}` : '';
+    return [`@${ic}/${c1}/${c2}/${short}`, `${n} ${brand}`.replace(/\s+/g, ' ').trim(), p, '', w];
+  });
+}
+Object.assign(MALL_COUNTERS, {
+  kmake2: { n: 'Makeup Hàn Quốc', e: '🍓', w: 2, h: 30, c: '#f8bbd0', s: 'low', f: 7 }, kskin: { n: 'Dưỡng da Hàn Quốc', e: '🫧', w: 2, h: 62, c: '#e1f5fe', s: 'tall', f: 7 },
+  jbeauty: { n: 'Mỹ phẩm Nhật Bản', e: '🗾', w: 2, h: 62, c: '#fff3e0', s: 'tall', f: 7 },
+  eumake: { n: 'Makeup Âu Mỹ', e: '💅', w: 2, h: 30, c: '#d1c4e9', s: 'low', f: 8 }, euskin: { n: 'Dưỡng da Âu Mỹ', e: '🧴', w: 2, h: 62, c: '#e8f5e9', s: 'tall', f: 8 },
+  pharma: { n: 'Dược mỹ phẩm & sơn móng', e: '💊', w: 2, h: 62, c: '#e3f2fd', s: 'tall', f: 8 }, hairbody: { n: 'Tóc & body cao cấp', e: '💆', w: 2, h: 62, c: '#fbe9e7', s: 'tall', f: 8 },
+});
+Object.assign(MALL_FLOORS, { mall4: { n: 'Tầng 4 · K-beauty & J-beauty', s: 'T4' }, mall5: { n: 'Tầng 5 · Âu Mỹ & chuyên sâu', s: 'T5' } });
+Object.assign(MALL_PROD, {
+  kmake2: [
+    ...B('Hince', 'd7ccc8', '5d4037', [['lip', 'Son Mood Enhancer', 450000, '#b5655b'], ['palette', 'Bảng mắt New Depth', 690000], ['cushion', 'Cushion Second Skin', 650000]]),
+    ...B('Amuse', 'f8bbd0', 'fafafa', [['tint', 'Son Dew Tint', 380000, '#e57373'], ['blush', 'Má hồng Lip & Cheek', 350000, '#f48fb1']]),
+    ...B('Fwee', 'fce4ec', '212121', [['cushion', 'Cushion Glow', 590000], ['blush', 'Má hồng Pudding Pot', 390000, '#f8a5c2']]),
+    ...B('Dasique', 'e1bee7', 'fafafa', [['palette', 'Bảng mắt Shadow Palette', 590000], ['tint', 'Son Juicy Dewy Tint', 320000, '#ec407a']]),
+    ...B('Wakemake', 'ffccbc', '212121', [['palette', 'Bảng mắt Soft Blurring', 550000], ['tint', 'Son Dewy Gel Glow', 290000, '#ff7043']]),
+    ...B('Too Cool For School', 'eceff1', '212121', [['palette', 'Tạo khối Art Class', 420000], ['tube', 'Kem lót Egg Mellow', 380000]]),
+    ...B('Moonshot', '212121', 'fafafa', [['cushion', 'Cushion Micro', 620000], ['tint', 'Son Performance Lip', 350000, '#c2185b']]),
+    ...B('Laneige', '64b5f6', 'fafafa', [['jar', 'Mặt nạ ngủ môi', 390000], ['cushion', 'Cushion Neo', 790000], ['drop', 'Serum Water Bank', 990000], ['tint', 'Son dưỡng Glowy Balm', 320000, '#f48fb1']]),
+    ...B('Holika Holika', 'ffe082', '212121', [['tube', 'Kem BB Petit', 250000], ['palette', 'Bảng mắt My Fave', 280000]]),
+    ...B('Tony Moly', 'ffcdd2', 'fafafa', [['jar', 'Kem tay quả đào', 180000], ['tint', 'Son Petite Bunny', 190000, '#ef5350']]),
+    ...B('Missha', 'e53935', 'fafafa', [['tube', 'Kem BB M Perfect Cover', 290000], ['drop', 'Tinh chất Time Revolution', 650000]]),
+    ...B('Unleashia', 'f3e5f5', '212121', [['tint', 'Son Non-Sticky Dazzle', 290000, '#ad1457'], ['palette', 'Phấn mắt Glitterpedia', 320000]]),
+    ...B('Lilybyred', 'ce93d8', 'fafafa', [['tint', 'Son Glassy Layer', 230000, '#e91e63'], ['mascara', 'Mascara Am9 to Pm9', 260000]]),
+    ...B('Bbia', 'fafafa', 'e91e63', [['lip', 'Son Last Velvet', 220000, '#c62828'], ['blush', 'Má hồng Bbia', 230000, '#ff8a80']]),
+    ...B('Colorgram', 'ffe0b2', 'f06292', [['tint', 'Son Fruity Glass', 210000, '#ff5252'], ['palette', 'Bảng mắt Pin-Point', 250000]]),
+    ...B('Hera', 'b0bec5', '212121', [['cushion', 'Cushion Black', 1150000], ['lip', 'Son Sensual Powder Matte', 750000, '#a1594a']]),
+    ...B('Banila Co', 'f8bbd0', 'fafafa', [['jar', 'Sáp tẩy trang Clean It Zero', 390000], ['cushion', 'Cushion Covericious', 590000]]),
+    ...B('Etude', 'f48fb1', 'fafafa', [['palette', 'Bảng mắt Play Color Eyes', 420000], ['tint', 'Son Fixing Tint', 250000, '#d81b60']]),
+  ],
+  kskin: [
+    ...B('Beauty of Joseon', 'fff8e1', 'c62828', [['tube', 'Kem chống nắng Relief Sun', 350000], ['drop', 'Serum Glow Deep', 360000]]),
+    ...B('Anua', 'c8e6c9', '212121', [['pet', 'Toner diếp cá Heartleaf', 420000], ['pet', 'Dầu tẩy trang Heartleaf', 450000]]),
+    ...B('Torriden', 'b3e5fc', '1565c0', [['drop', 'Serum Dive-In HA', 420000], ['tube', 'Kem chống nắng Dive-In', 380000]]),
+    ...B('Round Lab', 'e3f2fd', '1565c0', [['pet', 'Toner Dokdo 1025', 350000], ['tube', 'Kem chống nắng Birch', 380000]]),
+    ...B('Isntree', 'dcedc8', '33691e', [['tube', 'Gel chống nắng Hyaluronic', 390000], ['pet', 'Toner Green Tea', 360000]]),
+    ...B('Axis-Y', 'fff9c4', '212121', [['drop', 'Serum Dark Spot', 390000]]),
+    ...B('Mediheal', 'e1f5fe', '1565c0', [['jar', 'Mặt nạ Teatree (hộp)', 290000], ['jar', 'Mặt nạ N.M.F', 290000]]),
+    ...B('Dr.Jart+', 'fafafa', '2e7d32', [['jar', 'Kem Cicapair', 790000], ['tube', 'Kem BB Every Sun Day', 690000]]),
+    ...B('Purito', 'a5d6a7', '1b5e20', [['tube', 'Kem chống nắng Centella', 350000], ['drop', 'Serum Centella', 380000]]),
+    ...B('Pyunkang Yul', 'fafafa', '6d4c41', [['pet', 'Nước hoa hồng Essence Toner', 390000]]),
+    ...B('Abib', 'c5e1a5', '212121', [['jar', 'Pad Heartleaf', 450000], ['tube', 'Kem chống nắng Quick Sunstick', 420000]]),
+    ...B('Mixsoon', 'fafafa', '212121', [['drop', 'Tinh chất Bean Essence', 520000]]),
+    ...B('Numbuzin', 'f8bbd0', '212121', [['jar', 'Pad No.5 Vitamin', 490000], ['drop', 'Serum No.3', 520000]]),
+    ...B('Ma:nyo', 'ffe0b2', '5d4037', [['pet', 'Dầu tẩy trang Pure Cleansing', 420000]]),
+    ...B('Goodal', 'ffb74d', '212121', [['drop', 'Serum quýt xanh Vita C', 450000]]),
+    ...B('Medicube', 'f8bbd0', 'c62828', [['drop', 'Serum Collagen', 590000], ['pet', 'Toner Zero Pore', 450000]]),
+    ...B('Aestura', 'e3f2fd', '1565c0', [['jar', 'Kem Atobarrier 365', 590000]]),
+    ...B('Sulwhasoo', 'c9a227', 'fafafa', [['jar', 'Mặt nạ ngủ Overnight', 1250000]]),
+  ],
+  jbeauty: [
+    ...B('DHC', 'a5d6a7', 'fafafa', [['pet', 'Dầu tẩy trang Olive', 450000], ['lip', 'Son dưỡng DHC Lip Cream', 150000, '#f8bbd0']]),
+    ...B('Kosé Sekkisei', 'b3e5fc', 'fafafa', [['pet', 'Nước hoa hồng Sekkisei', 890000]]),
+    ...B('Kanebo', 'fafafa', 'c62828', [['jar', 'Kem Kanebo Cream in Day', 1650000], ['lip', 'Son Kanebo N', 750000, '#c62828']]),
+    ...B('Curél', 'fafafa', '1565c0', [['jar', 'Kem dưỡng Intensive', 450000], ['tube', 'Sữa rửa mặt Foaming', 320000]]),
+    ...B('Bioré', 'b3e5fc', '1565c0', [['tube', 'Kem chống nắng UV Aqua Rich', 220000], ['tube', 'Sữa rửa mặt Bioré', 120000]]),
+    ...B('Melano CC', 'ffeb3b', '212121', [['drop', 'Serum Vitamin C', 290000]]),
+    ...B('Muji', 'fafafa', '212121', [['pet', 'Nước hoa hồng Light', 320000], ['pet', 'Sữa dưỡng Muji', 350000]]),
+    ...B('Canmake', 'f8bbd0', 'fafafa', [['blush', 'Má hồng Cream Cheek', 230000, '#ff8a80'], ['palette', 'Phấn mắt Perfect Stylist', 320000], ['tint', 'Son Mermaid Skin Gel', 220000, '#ff8a65']]),
+    ...B('Cezanne', 'fafafa', 'e91e63', [['blush', 'Má hồng Cheek Color', 180000, '#f48fb1'], ['tube', 'Kem che khuyết điểm', 180000]]),
+    ...B('Kate', '212121', 'fafafa', [['palette', 'Bảng mắt Designing Eyebrow', 320000], ['lip', 'Son Kate Lip Monster', 320000, '#a1594a']]),
+    ...B('Majolica Majorca', 'ad1457', 'c9a227', [['mascara', 'Mascara Lash Expander', 290000]]),
+    ...B('Shu Uemura', '212121', 'fafafa', [['pet', 'Dầu tẩy trang Ultime8', 1250000], ['lip', 'Son Rouge Unlimited', 750000, '#d32f2f']]),
+    ...B('Decorté', 'fafafa', 'c9a227', [['pet', 'Nước dưỡng Liposome', 2900000], ['palette', 'Phấn phủ Face Powder', 1750000]]),
+    ...B('SUQQU', 'd7ccc8', 'c9a227', [['palette', 'Bảng mắt Signature Color Eyes', 1650000]]),
+    ...B('Kiss Me Heroine', 'f8bbd0', '212121', [['mascara', 'Mascara Long & Curl', 280000]]),
+    ...B('Rohto', 'fafafa', '1565c0', [['pet', 'Lotion Hada Labo Gokujyun', 220000], ['tube', 'Kem chống nắng Skin Aqua', 160000]]),
+    ...B('Fino', 'c62828', 'fafafa', [['jar', 'Ủ tóc Fino Premium Touch', 190000]]),
+  ],
+  eumake: [
+    ...B('Fenty Beauty', '212121', 'f8bbd0', [['lip', 'Son bóng Gloss Bomb', 590000, '#d48a85'], ['palette', 'Highlight Killawatt', 890000], ['cushion', 'Kem nền Pro Filt’r', 990000]]),
+    ...B('Rare Beauty', 'fafafa', 'e91e63', [['blush', 'Má hồng Soft Pinch', 690000, '#f06292'], ['tint', 'Son Kind Words', 590000, '#c97a72']]),
+    ...B('Huda Beauty', 'c9a227', '212121', [['palette', 'Bảng mắt Nude Obsessions', 890000], ['lip', 'Son Power Bullet', 590000, '#b71c1c']]),
+    ...B('Benefit', 'f8bbd0', '212121', [['mascara', 'Mascara They’re Real', 690000], ['blush', 'Má hồng Benetint', 650000, '#e53935']]),
+    ...B('Too Faced', 'f8bbd0', 'c9a227', [['mascara', 'Mascara Better Than Sex', 690000], ['palette', 'Bảng mắt Born This Way', 990000]]),
+    ...B('Urban Decay', '5e35b1', 'fafafa', [['palette', 'Bảng mắt Naked3', 1350000], ['pet', 'Xịt khoá nền All Nighter', 850000]]),
+    ...B('Anastasia Beverly Hills', 'bcaaa4', '212121', [['palette', 'Bảng mắt Soft Glam', 1290000], ['tube', 'Gel chân mày Brow Wiz', 590000]]),
+    ...B('Laura Mercier', 'fafafa', '212121', [['palette', 'Phấn phủ Translucent', 1150000]]),
+    ...B('Make Up For Ever', '212121', 'fafafa', [['cushion', 'Kem nền HD Skin', 1250000], ['palette', 'Phấn phủ HD', 990000]]),
+    ...B('Hourglass', '212121', 'c9a227', [['palette', 'Phấn má Ambient', 1590000], ['lip', 'Son Confession', 990000, '#ad1457']]),
+    ...B('Pat McGrath', '212121', 'c9a227', [['lip', 'Son MatteTrance', 1050000, '#b71c1c'], ['palette', 'Bảng mắt Mothership', 3200000]]),
+    ...B('Glossier', 'fce4ec', 'fafafa', [['tube', 'Son dưỡng Balm Dotcom', 390000], ['blush', 'Má hồng Cloud Paint', 490000, '#f48fb1']]),
+    ...B('e.l.f.', '212121', 'fafafa', [['tube', 'Kem lót Power Grip', 290000], ['lip', 'Son Glow Reviver', 220000, '#e57373']]),
+    ...B('Milani', 'fafafa', 'e91e63', [['blush', 'Má hồng Baked Blush', 290000, '#ff8a80']]),
+    ...B('Rimmel', '212121', 'e53935', [['lip', 'Son Lasting Finish', 220000, '#c62828'], ['mascara', 'Mascara Wonder’Volume', 220000]]),
+    ...B('Max Factor', '212121', 'c9a227', [['mascara', 'Mascara False Lash Effect', 290000]]),
+    ...B('Sephora Collection', '212121', 'fafafa', [['lip', 'Son Cream Lip Stain', 290000, '#c2185b'], ['palette', 'Bảng mắt Colorful', 290000]]),
+    ...B('Kylie Cosmetics', 'f8bbd0', '212121', [['lip', 'Son Matte Liquid', 590000, '#a1594a']]),
+    ...B('Bourjois', 'fafafa', 'e91e63', [['lip', 'Son Rouge Velvet', 290000, '#e91e63'], ['palette', 'Má hồng Little Round Pot', 290000]]),
+  ],
+  euskin: [
+    ...B('Kiehl’s', 'fafafa', '212121', [['jar', 'Kem Ultra Facial', 790000], ['drop', 'Serum Midnight Recovery', 1450000], ['tube', 'Sữa rửa mặt Calendula', 590000]]),
+    ...B('Clinique', 'b2dfdb', 'fafafa', [['pet', 'Gel dưỡng Dramatically Different', 790000], ['tube', 'Kem dưỡng Moisture Surge', 890000], ['lip', 'Son Almost Lipstick Black Honey', 590000, '#7b2d3b']]),
+    ...B('Clarins', 'fafafa', 'c62828', [['drop', 'Serum Double Serum', 2350000], ['pet', 'Dầu dưỡng Lip Comfort Oil', 690000]]),
+    ...B('Origins', 'c8e6c9', '33691e', [['jar', 'Mặt nạ đất sét Clear Improvement', 690000]]),
+    ...B('Drunk Elephant', 'fafafa', 'ff7043', [['drop', 'Serum C-Firma', 1950000], ['jar', 'Kem Protini', 1650000]]),
+    ...B('Paula’s Choice', 'fafafa', '1565c0', [['pet', 'Tẩy da chết BHA 2%', 890000], ['drop', 'Serum Niacinamide 10%', 1250000]]),
+    ...B('SkinCeuticals', 'fafafa', '212121', [['drop', 'Serum C E Ferulic', 4200000]]),
+    ...B('Murad', 'fafafa', '6a1b9a', [['drop', 'Serum Retinal ReSculpt', 2650000]]),
+    ...B('Neutrogena', 'b3e5fc', '1565c0', [['tube', 'Kem chống nắng Ultra Sheer', 320000], ['jar', 'Kem Hydro Boost', 420000]]),
+    ...B('Olay', '212121', 'e53935', [['jar', 'Kem Regenerist', 590000]]),
+    ...B('Avène', 'fafafa', 'ef6c00', [['pet', 'Xịt khoáng Avène', 320000], ['tube', 'Kem Cicalfate+', 390000]]),
+    ...B('Vichy', 'fafafa', '1565c0', [['drop', 'Serum Mineral 89', 690000]]),
+    ...B('Eucerin', 'fafafa', '1565c0', [['tube', 'Kem chống nắng Oil Control', 520000]]),
+    ...B('Caudalie', 'fafafa', '2e7d32', [['pet', 'Xịt khoáng Beauty Elixir', 690000]]),
+    ...B('Fresh', 'ffe0b2', '212121', [['tube', 'Son dưỡng Sugar Lip', 590000], ['pet', 'Toner Rose Deep', 1150000]]),
+    ...B('Sunday Riley', 'fafafa', '6a1b9a', [['drop', 'Tinh chất Good Genes', 2350000]]),
+    ...B('Glow Recipe', 'f8bbd0', '2e7d32', [['drop', 'Serum dưa hấu Dew Drops', 990000]]),
+    ...B('Tatcha', 'e1bee7', 'c9a227', [['jar', 'Kem The Dewy Skin', 1950000]]),
+    ...B('First Aid Beauty', 'fafafa', 'c62828', [['jar', 'Kem Ultra Repair', 690000]]),
+  ],
+  pharma: [
+    ...B('Uriage', 'fafafa', '1565c0', [['tube', 'Kem Bariéderm Cica', 390000], ['pet', 'Xịt khoáng Uriage', 290000]]),
+    ...B('A-Derma', 'fafafa', '33691e', [['tube', 'Kem Exomega', 450000]]),
+    ...B('Noreva', 'fafafa', 'ef6c00', [['drop', 'Serum Bright Vitamin C', 590000]]),
+    ...B('Ducray', 'fafafa', '1565c0', [['tube', 'Gel Keracnyl', 390000]]),
+    ...B('Obagi', 'fafafa', '212121', [['drop', 'Serum Vitamin C 20%', 2250000]]),
+    ...B('ZO Skin Health', 'fafafa', '212121', [['tube', 'Kem Retinol', 2650000]]),
+    ...B('Dr.Ci:Labo', 'fafafa', '1565c0', [['jar', 'Gel Aqua Collagen', 1250000]]),
+    ...B('OPI', 'c62828', '212121', [['nail', 'Sơn móng Big Apple Red', 290000, '#c62828'], ['nail', 'Sơn móng Bubble Bath', 290000, '#f8d7d5'], ['nail', 'Sơn móng Lincoln Park', 290000, '#4a1c2c']]),
+    ...B('Essie', 'e91e63', 'fafafa', [['nail', 'Sơn móng Ballet Slippers', 250000, '#f6d6d9'], ['nail', 'Sơn móng Wicked', 250000, '#6a1b2a']]),
+    ...B('Sally Hansen', 'fafafa', '212121', [['nail', 'Sơn móng Miracle Gel Hồng', 220000, '#f06292'], ['nail', 'Sơn móng Miracle Gel Đỏ', 220000, '#d32f2f']]),
+    ...B('Chanel Le Vernis', '212121', 'fafafa', [['nail', 'Sơn móng Le Vernis Rouge Noir', 790000, '#3e0f17']]),
+    ...B('Dior Vernis', 'fafafa', 'c9a227', [['nail', 'Sơn móng Dior Vernis Hồng', 750000, '#f48fb1']]),
+  ],
+  hairbody: [
+    ...B('Olaplex', '212121', 'fafafa', [['pet', 'Dưỡng tóc No.3', 790000], ['pet', 'Dầu gội No.4', 790000]]),
+    ...B('Moroccanoil', '1e88e5', 'ef6c00', [['pet', 'Dầu dưỡng tóc Treatment', 990000]]),
+    ...B('Kérastase', '212121', 'c9a227', [['pet', 'Dầu dưỡng Elixir Ultime', 1450000], ['jar', 'Mặt nạ tóc Nutritive', 1250000]]),
+    ...B('L’Occitane', 'ffeb3b', 'c62828', [['tube', 'Kem tay Shea Butter', 290000], ['perfume', 'Nước hoa Cherry Blossom', 1450000, '#f8bbd0']]),
+    ...B('The Body Shop', '2e7d32', 'fafafa', [['jar', 'Bơ dưỡng thể Strawberry', 450000], ['pet', 'Sữa tắm White Musk', 290000]]),
+    ...B('Sol de Janeiro', 'ffca28', 'c62828', [['jar', 'Kem Bum Bum', 990000], ['perfume', 'Xịt thơm Cheirosa 62', 790000, '#ffe082']]),
+    ...B('Aesop', '6d4c41', 'fafafa', [['pet', 'Rửa tay Resurrection', 990000], ['perfume', 'Nước hoa Hwyl', 4200000, '#a1887f']]),
+    ...B('Ouai', 'fafafa', '212121', [['pet', 'Dầu gội Ouai', 790000], ['perfume', 'Xịt thơm tóc Ouai', 690000, '#f8bbd0']]),
+    ...B('Davines', 'fafafa', '33691e', [['pet', 'Dầu gội OI', 790000]]),
+    ...B('Herbal Essences', 'ab47bc', 'fafafa', [['pet', 'Dầu gội Bio:Renew', 220000]]),
+    ...B('Sunsilk', 'fdd835', 'c62828', [['pet', 'Dầu gội Sunsilk', 110000]]),
+    ...B('Rejoice', 'e91e63', 'fafafa', [['pet', 'Dầu gội Rejoice', 99000]]),
+    ...B('Lux', 'ad1457', 'c9a227', [['pet', 'Sữa tắm Lux', 120000]]),
+  ],
+});
 Object.assign(COUNTERS, MALL_COUNTERS); Object.assign(PROD, MALL_PROD); for (const [k, v] of Object.entries(MALL_FLOORS)) FLOORS[k] = Object.assign({ b: 'mall' }, v);
 export const ALL = Object.entries(PROD).flatMap(([k, list]) => list.map(p => ({ k, e: p[0], n: p[1], p: p[2], tag: p[3] || '', w: p[4] || '' })));
 export function dealsToday(d = new Date()) {
