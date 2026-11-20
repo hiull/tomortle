@@ -120,6 +120,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
       <button id="hEdit" title="Trang trí">✏️</button>
     </div>
     <div class="loveb" id="loveB" title="Điểm yêu thương">💗 0</div>
+    <button class="wxchip" id="wxChip" onclick="window.wxMenu()" title="Thời tiết">☀️</button>
     <div class="scene" id="scene"></div>
   </div>
   <p class="hint2" id="hint">Chạm sàn để đi · chạm đồ vật, thú cưng hay người ấy để tương tác</p>
@@ -194,6 +195,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .ctabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.ctabs::-webkit-scrollbar{display:none}.ctabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--ink);white-space:nowrap}.ctabs button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .rcp{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}.rcp>b{font-size:30px;width:40px;text-align:center}.rcp span{flex:1;font-size:14px}.rcp small{display:block;font-size:12px;color:var(--muted)}.rcp small i{font-style:normal}.rcp small i.no{color:#e63946;text-decoration:line-through}.rcp button{white-space:nowrap}
 .dirf{margin:10px 0 6px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:6px}.dirf small{font-weight:600;color:var(--muted)}.dirg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.dirg button{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 10px;cursor:pointer;color:var(--ink);font-weight:700;font-size:13px}.dirg button b{font-size:22px}.dirg button small{display:block;font-weight:600;color:var(--muted);font-size:11px}.dirg button.here{border-color:var(--accent)}
+.wxchip{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:4;border:1px solid var(--line);background:rgba(255,255,255,.88);border-radius:999px;padding:5px 11px;font:800 13px "Be Vietnam Pro",sans-serif;color:#3a2430;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .loveb{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.88);border-radius:999px;padding:5px 11px;font-weight:800;font-size:13px;color:#e0457b;box-shadow:0 2px 8px rgba(224,69,123,.2);pointer-events:none}
 .scene{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:20px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4);z-index:5;padding:20px}.scene.on{display:flex;animation:scfade .6s}.scene small{font-size:14px;font-weight:600;display:block;margin-top:6px}
 .scene.steam{background:radial-gradient(circle at 50% 60%,rgba(255,255,255,.85),rgba(190,230,255,.92));color:#2a6f97;text-shadow:none;backdrop-filter:blur(6px)}
@@ -600,6 +602,73 @@ function drawShop(it,c){const t=it.t,C2=MD&&MD.COUNTERS[t],h=CAT[t].h;if(C2)queu
 /* ================= time / env ================= */
 const T0=performance.now();let NOW=0;
 function dayPhase(){const h=new Date().getHours()+new Date().getMinutes()/60;if(h>=6.5&&h<17)return'day';if(h>=17&&h<19)return'dusk';if(h>=5&&h<6.5)return'dawn';return'night'}
+/* ================= 🌦️ Thời tiết tự chạy: đổi mỗi 25 phút theo giờ thật, hai đứa thấy giống nhau ================= */
+const WXT={sun:['☀️','Nắng đẹp'],cloud:['⛅','Nhiều mây'],drizzle:['🌦️','Mưa phùn'],rain:['🌧️','Mưa rào'],storm:['⛈️','Giông bão'],fog:['🌫️','Sương mù'],rainbow:['🌈','Cầu vồng sau mưa'],snow:['❄️','Tuyết rơi (Giáng sinh)']};
+const WX_SLOT=25*60e3;
+function wxAt(ts){const d=new Date(ts),slot=Math.floor(ts/WX_SLOT),m=d.getMonth()+1,h=d.getHours();let a=(slot*2654435761)>>>0;const r=()=>{a=(a+0x6D2B79F5)|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};r();r();
+ if(m===12&&d.getDate()>=24&&d.getDate()<=25&&r()<.6)return'snow';
+ const wet=m>=5&&m<=10;const x=r();
+ if(h>=5&&h<8&&x<.25)return'fog';
+ const prevWet=(()=>{const p=wxBase(ts-WX_SLOT);return p==='rain'||p==='storm'})();
+ const k=wxBase(ts);if(k==='sun'&&prevWet&&h>=7&&h<18)return'rainbow';return k}
+function wxBase(ts){const d=new Date(ts),slot=Math.floor(ts/WX_SLOT),m=d.getMonth()+1,h=d.getHours();let a=((slot*40503)^0x9e3779b9)>>>0;a=Math.imul(a^a>>>16,0x45d9f3b)>>>0;a=Math.imul(a^a>>>16,0x45d9f3b)>>>0;const x=((a^a>>>16)>>>0)/4294967296;
+ const wet=m>=5&&m<=10,aft=h>=13&&h<19;const P=wet?[['sun',.34],['cloud',.24],['drizzle',.12],['rain',.2],['storm',aft?.1:.04]]:[['sun',.42],['cloud',.32],['drizzle',.14],['rain',.1],['storm',.02]];
+ let s=0,tot=P.reduce((q,p)=>q+p[1],0);for(const[k,w]of P){s+=w/tot;if(x<s)return k}return'sun'}
+function wxTemp(ts,k){const d=new Date(ts),m=d.getMonth()+1,h=d.getHours()+d.getMinutes()/60;const base=[18,19,22,26,29,31,31,30,29,27,23,20][m-1];const day=Math.cos((h-14)/24*Math.PI*2)*4;const adj={rain:-3,storm:-4,drizzle:-2,fog:-2,cloud:-1,snow:-14}[k]||0;return Math.round(base+day+adj)}
+let WX={k:'sun',t:0},WX_AUTO=lsGet('wx-auto',true),FLASH=0;
+function wxUpdate(first){const k=WX_AUTO?wxAt(Date.now()):(R.rain?'rain':'sun');const ch=k!==WX.k;WX={k,t:wxTemp(Date.now(),k)};if(ch&&!first&&R.kind!=='market'){const[e,n]=WXT[k];toast(`${e} Trời chuyển ${n.toLowerCase()} rồi${k==='rain'||k==='storm'?', ở trong nhà nghe lofi thôi 🎧':k==='rainbow'?', ra cửa sổ ngắm đi!':''}`)}if(ch){try{SHELL&&(SHELL.k='')}catch(e){}try{if(AC)updateAudio()}catch(e){}}const c=$('#wxChip');if(c)c.textContent=`${WXT[k][0]} ${WX.t}°`}
+const raining=()=>R.rain||WX.k==='rain'||WX.k==='storm'||WX.k==='drizzle';
+const wxDim=()=>({rain:.14,storm:.22,drizzle:.08,fog:.06,cloud:.05}[WX.k]||0);
+setInterval(()=>wxUpdate(false),60e3);
+// bầu trời theo thời tiết (dùng cho cửa sổ và ban công)
+function wxSky(sky,ph){const k=WX.k;if(ph==='night')return false;if(k==='rain'||k==='storm'||k==='drizzle'||k==='fog'||k==='snow'){const dk=k==='storm';sky.addColorStop(0,dk?'#4b5363':k==='fog'?'#cfd6dc':'#8795a6');sky.addColorStop(1,dk?'#7d8796':k==='fog'?'#eef1f3':'#c4cdd6');return true}return false}
+function wxExtras(X,Y,Wd,Hh,t,ph){const k=WX.k;
+ if(k==='cloud'||k==='rain'||k==='storm'||k==='drizzle'){g.fillStyle=k==='storm'?'rgba(90,95,110,.9)':k==='cloud'?'rgba(255,255,255,.95)':'rgba(200,205,215,.95)';for(const[c0,cy,s]of[[0,.25,1],[.45,.12,1.2],[.8,.3,.9]]){const cx=X+((c0*Wd+t*4*s)%(Wd+50))-25;[[0,0,9],[9,-4,11],[19,0,8]].forEach(([dx,dy,r])=>{g.beginPath();g.arc(cx+dx*s,Y+Hh*cy+dy*s,r*s,0,7);g.fill()})}}
+ if(k==='fog'){g.fillStyle='rgba(255,255,255,.45)';for(let i=0;i<3;i++)g.fillRect(X,Y+Hh*(.3+i*.22)+Math.sin(t+i)*3,Wd,6)}
+ if(k==='rainbow'&&ph!=='night'){const cx=X+Wd*.45,cy=Y+Hh+10;['#ff5252','#ffab40','#ffeb3b','#69f0ae','#40c4ff','#7c4dff'].forEach((c,i)=>{g.strokeStyle=c;g.globalAlpha=.55;g.lineWidth=3;g.beginPath();g.arc(cx,cy,Hh*.8-i*3,Math.PI*1.05,Math.PI*1.95);g.stroke()});g.globalAlpha=1}
+ if(k==='snow'){g.fillStyle='#fff';for(let i=0;i<26;i++){const sx=X+((i*17.3+Math.sin(t+i)*6)%Wd),sy=Y+((i*23+t*25)%Hh);g.beginPath();g.arc(sx,sy,1.4,0,7);g.fill()}}
+ if(k==='storm'&&NOW<FLASH){g.fillStyle='rgba(255,255,255,.7)';g.fillRect(X,Y,Wd,Hh);g.strokeStyle='#fffbe0';g.lineWidth=1.6;const lx=X+Wd*.35;g.beginPath();g.moveTo(lx,Y);g.lineTo(lx+6,Y+Hh*.35);g.lineTo(lx-2,Y+Hh*.4);g.lineTo(lx+5,Y+Hh*.8);g.stroke()}}
+// giông: thỉnh thoảng có chớp + sấm
+setInterval(()=>{if(WX.k!=='storm'||document.hidden)return;if(Math.random()<.35){FLASH=NOW+260;try{SHELL&&(SHELL.k='')}catch(e){}if(AC&&soundOn){const d=.8+Math.random()*1.2;setTimeout(()=>{noise(2.4,.22,180,'lowpass');noise(1.4,.12,90,'lowpass',.3)},d*1000)}}},4500);
+function wxMenu(){const[e,n]=WXT[WX.k];const now=Date.now();const fc=[1,2,3,4].map(i=>{const ts=now+i*WX_SLOT,k=wxAt(ts);return`${new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})} ${WXT[k][0]} ${wxTemp(ts,k)}°`}).join(' · ');
+ const r=cv.getBoundingClientRect();menu(W/2,40,`${e} ${n} · ${WX.t}°`,`Sắp tới: ${fc}`,[[WX_AUTO?'✓ Thời tiết tự chạy':'🔄 Bật thời tiết tự chạy',()=>{WX_AUTO=true;lsSet('wx-auto',true);R.rain=false;saveRoom();wxUpdate(false)},1],['🌧️ Cho mưa',()=>{WX_AUTO=false;lsSet('wx-auto',false);R.rain=true;saveRoom();wxUpdate(false)}],['☀️ Trời nắng',()=>{WX_AUTO=false;lsSet('wx-auto',false);R.rain=false;saveRoom();wxUpdate(false)}],['🎧 Mở nhạc lofi',()=>openPhone('music')]])}
+
+/* ================= 🎧 Nhạc lofi tự sáng tác: Rhodes, bass, trống boom-bap, tiếng đĩa than ================= */
+const LOFI=[
+ {n:'Chiều mưa Hà Nội',e:'🌧️',bpm:72,prog:[[53,57,60,64,67],[52,55,59,62],[50,53,57,60,64],[48,52,55,59,62]],sc:[60,62,64,67,69,72,74,76]},
+ {n:'Cà phê sáng chủ nhật',e:'☕',bpm:80,prog:[[50,53,57,60,64],[55,59,62,65,69],[48,52,55,59,62],[57,60,64,67]],sc:[62,64,67,69,71,74,76]},
+ {n:'Đêm nhớ người thương',e:'🌙',bpm:66,prog:[[51,55,58,62],[50,53,57,60],[48,51,55,58],[46,50,53,57]],sc:[63,65,67,70,72,75,77]},
+ {n:'Đạp xe ven hồ Tây',e:'🚲',bpm:84,prog:[[48,52,55,59,62],[45,48,52,55,59],[50,53,57,60],[55,59,62,65]],sc:[60,62,64,67,69,72,74]},
+ {n:'Học bài cùng nhau',e:'📚',bpm:76,prog:[[57,60,64,67],[53,57,60,64],[48,52,55,59],[55,59,62,65]],sc:[64,67,69,71,74,76,79]},
+ {n:'Hẹn hò dưới mưa',e:'☂️',bpm:70,prog:[[54,58,61,65],[53,56,60,63],[51,54,58,61],[49,53,56,60]],sc:[61,63,66,68,70,73,75]}];
+let LOFI_I=lsGet('lofi-i',0)%LOFI.length,lofiBus=null,crackle=null;
+function lofiKeys(f,t,dur,vol){// Rhodes: sine + bội âm nhẹ, lọc thấp
+ const o=AC.createOscillator(),o2=AC.createOscillator(),gn=AC.createGain(),g2=AC.createGain(),lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1700;o.type='sine';o2.type='sine';o.frequency.value=f;o2.frequency.value=f*2.003;g2.gain.value=.18;
+ gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(vol,t+.02);gn.gain.exponentialRampToValueAtTime(vol*.35,t+.6);gn.gain.exponentialRampToValueAtTime(.0005,t+dur);
+ o.connect(lp);o2.connect(g2);g2.connect(lp);lp.connect(gn);gn.connect(lofiBus);o.start(t);o2.start(t);o.stop(t+dur+.05);o2.stop(t+dur+.05)}
+function lofiKick(t){const o=AC.createOscillator(),gn=AC.createGain();o.type='sine';o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(42,t+.18);gn.gain.setValueAtTime(.32,t);gn.gain.exponentialRampToValueAtTime(.001,t+.32);o.connect(gn);gn.connect(lofiBus);o.start(t);o.stop(t+.35)}
+function lofiNoise(t,dur,vol,ft,fq){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();s.buffer=noiseBuf;f.type=ft;f.frequency.value=fq;gn.gain.setValueAtTime(vol,t);gn.gain.exponentialRampToValueAtTime(.0005,t+dur);s.connect(f);f.connect(gn);gn.connect(lofiBus);s.start(t,Math.random()*1.5);s.stop(t+dur+.02)}
+function startMusic(){if(musicTimer||!AC)return;musicGain=AC.createGain();musicGain.gain.value=0;musicGain.gain.setTargetAtTime(.75,AC.currentTime,.6);
+ const warm=AC.createBiquadFilter();warm.type='lowpass';warm.frequency.value=3200;lofiBus=AC.createGain();lofiBus.gain.value=1;lofiBus.connect(warm);warm.connect(musicGain);musicGain.connect(master);
+ // tiếng đĩa than rè rè
+ {const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();s.buffer=noiseBuf;s.loop=true;f.type='bandpass';f.frequency.value=2500;f.Q.value=.6;gn.gain.value=.012;s.connect(f);f.connect(gn);gn.connect(musicGain);s.start();crackle=s}
+ const T=LOFI[LOFI_I],spb=60/T.bpm,sw=spb*.5*1.16;let nt=AC.currentTime+.2,step=0;// step = nốt móc đơn (8 bước mỗi ô nhịp)
+ musicTimer=setInterval(()=>{while(nt<AC.currentTime+.5){const bar=Math.floor(step/8),pos=step%8,ch=T.prog[bar%T.prog.length],t=nt+(pos%2?sw-spb*.5:0);
+   if(pos===0){ch.forEach((m,i)=>lofiKeys(mtof(m),t+i*.03,spb*4.2,.035))}
+   if(pos===5&&Math.random()<.5)ch.slice(1).forEach((m,i)=>lofiKeys(mtof(m),t+i*.02,spb*1.6,.022));
+   // bass
+   if(pos===0)mnote(mtof(ch[0]-12),t,spb*1.6,'sine',.13,280);if(pos===3&&Math.random()<.7)mnote(mtof(ch[0]-12+7),t,spb*.8,'sine',.09,280);if(pos===6)mnote(mtof(ch[0]-12),t,spb*.9,'sine',.1,280);
+   // trống
+   if(pos===0||(pos===5&&Math.random()<.6))lofiKick(t);if(pos===2||pos===6)lofiNoise(t,.16,.11,'bandpass',1800);lofiNoise(t,.04,pos%2?.025:.04,'highpass',7500);
+   // giai điệu thưa
+   if(Math.random()<(pos%2?.12:.28)){const n=T.sc[Math.floor(Math.random()*T.sc.length)];mnote(mtof(n),t,spb*1.5,'triangle',.032,2200)}
+   // tiếng lách tách đĩa than
+   if(Math.random()<.18)lofiNoise(t+Math.random()*spb*.5,.012,.05,'highpass',3000);
+   nt+=spb*.5;step++}},100)}
+function stopMusic(){if(!musicTimer)return;clearInterval(musicTimer);musicTimer=null;const m=musicGain,c=crackle;m.gain.setTargetAtTime(0,AC.currentTime,.3);setTimeout(()=>{try{c&&c.stop()}catch(e){}m.disconnect()},2000)}
+function lofiSet(i){LOFI_I=(i+LOFI.length)%LOFI.length;lsSet('lofi-i',LOFI_I);ac();if(musicTimer){stopMusic()}if(!R.music){R.music=true;saveRoom()}if(!soundOn){soundOn=true;lsSet('room-sound',true);syncHud()}setTimeout(updateAudio,musicTimer?60:0);toast(`🎧 Đang phát: ${LOFI[LOFI_I].e} ${LOFI[LOFI_I].n}`)}
+
+wxUpdate(true);window.wxMenu=()=>wxMenu();
 function daysTogether(){const s=ctx.couple.started_on;if(!s)return null;return Math.floor((Date.now()-new Date(s+'T00:00:00'))/864e5)+1}
 function daysToMeet(){const s=ctx.couple.next_meet;if(!s)return null;const d=Math.ceil((new Date(String(s).slice(0,10)+'T00:00:00')-new Date().setHours(0,0,0,0))/864e5);return d}
 const petHungry=()=>R.pet?(Date.now()-(R.pet.fed||0))/36e5:0;
@@ -635,16 +704,17 @@ function drawWall(w){
  g.restore();
 }
 function drawSkyRail(){const t=NOW/1000,ph=dayPhase();const sky=g.createLinearGradient(0,0,0,WH);
- if(ph==='day'){sky.addColorStop(0,'#7cc4f2');sky.addColorStop(1,'#d9f1ff')}else if(ph==='dusk'||ph==='dawn'){sky.addColorStop(0,'#6b5bb5');sky.addColorStop(.6,'#f39bb0');sky.addColorStop(1,'#ffd29a')}else{sky.addColorStop(0,'#0b1236');sky.addColorStop(1,'#2a3570')}
+ if(wxSky(sky,ph)){}else if(ph==='day'){sky.addColorStop(0,'#7cc4f2');sky.addColorStop(1,'#d9f1ff')}else if(ph==='dusk'||ph==='dawn'){sky.addColorStop(0,'#6b5bb5');sky.addColorStop(.6,'#f39bb0');sky.addColorStop(1,'#ffd29a')}else{sky.addColorStop(0,'#0b1236');sky.addColorStop(1,'#2a3570')}
  g.fillStyle=sky;g.fillRect(0,0,LA,WH);
  if(ph==='night'){const r2=rnd(11);for(let i=0;i<60;i++){g.globalAlpha=.35+.65*Math.abs(Math.sin(t*1.5+i));g.fillStyle='#fff';const x=r2()*LA,y=r2()*(WH-60);g.fillRect(x,y,1.5,1.5)}g.globalAlpha=1;circ(LA*.72,30,13,'#fff6d5');circ(LA*.72+5,26,11,'#0b1236');
   if(Math.floor(t)%9===0){const f=(t%1);g.strokeStyle='rgba(255,255,255,'+(1-f)+')';g.lineWidth=1.5;g.beginPath();g.moveTo(LA*.2+f*80,20+f*30);g.lineTo(LA*.2+f*80-14,20+f*30-7);g.stroke()}}
- else if(ph==='day'){circ(LA*.8,28,12,'#ffe27a');g.fillStyle='rgba(255,255,255,.9)';for(const[cx0,cy,k]of[[40,40,1],[150,25,.8],[230,55,1.1]]){const cx=(cx0+t*5*k)%(LA+60)-30;[[0,0,9],[10,-4,11],[21,0,8]].forEach(([dx,dy,r])=>{g.beginPath();g.arc(cx+dx*k,cy+dy*k,r*k,0,7);g.fill()})}}
+ else if(ph==='day'&&!['rain','storm','drizzle','fog','snow'].includes(WX.k)){circ(LA*.8,28,12,'#ffe27a');g.fillStyle='rgba(255,255,255,.9)';for(const[cx0,cy,k]of[[40,40,1],[150,25,.8],[230,55,1.1]]){const cx=(cx0+t*5*k)%(LA+60)-30;[[0,0,9],[10,-4,11],[21,0,8]].forEach(([dx,dy,r])=>{g.beginPath();g.arc(cx+dx*k,cy+dy*k,r*k,0,7);g.fill()})}}
  else circ(LA*.3,WH-50,16,'#ffcf7a');
  // distant city/trees silhouette
  g.fillStyle=ph==='night'?'#1a2350':'rgba(90,120,110,.55)';for(let x=0;x<LA;x+=16){const h=20+((x*37)%23);g.fillRect(x,WH-48-h,14,h+20)}
  if(ph==='night'){g.fillStyle='#ffe08a';const r3=rnd(5);for(let i=0;i<30;i++){g.fillRect(r3()*LA,WH-48-r3()*30,2,2)}}
- if(R.rain){g.strokeStyle='rgba(220,235,255,.7)';g.lineWidth=1;for(let i=0;i<70;i++){const rx=(i*23.7+t*40)%LA,ry=(i*41+t*260)%WH;g.beginPath();g.moveTo(rx,ry);g.lineTo(rx-3,ry+8);g.stroke()}}
+ wxExtras(0,0,LA,WH-50,t,ph);
+ if(raining()){g.strokeStyle='rgba(220,235,255,.7)';g.lineWidth=1;for(let i=0;i<(WX.k==='storm'?110:70);i++){const rx=(i*23.7+t*40)%LA,ry=(i*41+t*260)%WH;g.beginPath();g.moveTo(rx,ry);g.lineTo(rx-3,ry+8);g.stroke()}}
  // railing
  g.fillStyle='#fffaf7';g.fillRect(0,WH-52,LA,5);g.fillRect(0,WH-30,LA,3);for(let x=4;x<LA;x+=13)g.fillRect(x,WH-48,3,48);g.fillStyle='rgba(0,0,0,.08)';g.fillRect(0,WH-47,LA,2)}
 function drawFloor(){
@@ -671,7 +741,7 @@ function drawFloor(){
 // tường + sàn không đổi giữa các khung hình → vẽ sẵn một lần rồi dùng lại (trừ ban công có trời động & lúc mưa)
 const SHELL={c:null,k:''};
 function drawShell(){
- if(R.kind==='balcony'||R.rain){drawShellBase();for(const wi of R.walls)drawWallItem(wi);return}
+ if(R.kind==='balcony'||raining()){drawShellBase();for(const wi of R.walls)drawWallItem(wi);return}
  const k=JSON.stringify([R.wall,R.floor,R.kind,DPR,cv.width,cv.height]);
  if(SHELL.k!==k){if(!SHELL.c)SHELL.c=document.createElement('canvas');SHELL.c.width=cv.width;SHELL.c.height=cv.height;const old=g;g=SHELL.c.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);g.clearRect(0,0,W,H);drawShellBase();g=old;SHELL.k=k}
  g.drawImage(SHELL.c,0,0,W,H);for(const wi of R.walls)drawWallItem(wi);
@@ -698,12 +768,13 @@ function drawWallItem(wi){
   const X=x0+6,Y=24,Wd=L-12,Hh=70;
   rr(X-3,Y-3,Wd+6,Hh+6,6,'#fffaf7','rgba(120,70,90,.3)');
   const ph=dayPhase();const sky=g.createLinearGradient(0,Y,0,Y+Hh);
-  if(ph==='day'){sky.addColorStop(0,'#8ecdf5');sky.addColorStop(1,'#d8f0ff')}else if(ph==='dusk'||ph==='dawn'){sky.addColorStop(0,'#7b6cc4');sky.addColorStop(.6,'#f6a6b2');sky.addColorStop(1,'#ffd6a0')}else{sky.addColorStop(0,'#141b3f');sky.addColorStop(1,'#33407a')}
+  if(wxSky(sky,ph)){}else if(ph==='day'){sky.addColorStop(0,'#8ecdf5');sky.addColorStop(1,'#d8f0ff')}else if(ph==='dusk'||ph==='dawn'){sky.addColorStop(0,'#7b6cc4');sky.addColorStop(.6,'#f6a6b2');sky.addColorStop(1,'#ffd6a0')}else{sky.addColorStop(0,'#141b3f');sky.addColorStop(1,'#33407a')}
   rr(X,Y,Wd,Hh,4,sky);g.save();g.beginPath();g.rect(X,Y,Wd,Hh);g.clip();
   if(ph==='night'){const r2=rnd(5);g.fillStyle='#fff';for(let i=0;i<14;i++){g.globalAlpha=.5+.5*Math.sin(t*2+i);g.fillRect(X+r2()*Wd,Y+r2()*Hh*.7,1.4,1.4)}g.globalAlpha=1;circ(X+Wd*.72,Y+16,7,'#fff6d5');circ(X+Wd*.72+3,Y+14,6,'#141b3f')}
-  else if(ph==='day'){circ(X+Wd*.75,Y+14,7,'#ffe27a');const cx=X+((t*6)%(Wd+40))-20;g.fillStyle='rgba(255,255,255,.9)';[[0,0,8],[8,-3,9],[16,0,7]].forEach(([dx,dy,r])=>{g.beginPath();g.arc(cx+dx,Y+34+dy,r,0,7);g.fill()})}
+  else if(ph==='day'&&!['rain','storm','drizzle','fog','snow'].includes(WX.k)){circ(X+Wd*.75,Y+14,7,'#ffe27a');const cx=X+((t*6)%(Wd+40))-20;g.fillStyle='rgba(255,255,255,.9)';[[0,0,8],[8,-3,9],[16,0,7]].forEach(([dx,dy,r])=>{g.beginPath();g.arc(cx+dx,Y+34+dy,r,0,7);g.fill()})}
   else circ(X+Wd*.3,Y+Hh*.8,10,'#ffcf7a');
-  if(R.rain){g.strokeStyle='rgba(220,235,255,.8)';g.lineWidth=1;for(let i=0;i<22;i++){const rx=X+((i*13.7+t*30)%Wd),ry=Y+((i*29+t*220)%Hh);g.beginPath();g.moveTo(rx,ry);g.lineTo(rx-2,ry+6);g.stroke()}}
+  wxExtras(X,Y,Wd,Hh,t,ph);
+  if(raining()){g.strokeStyle='rgba(220,235,255,.8)';g.lineWidth=1;for(let i=0;i<(WX.k==='drizzle'&&!R.rain?10:WX.k==='storm'?34:22);i++){const rx=X+((i*13.7+t*30)%Wd),ry=Y+((i*29+t*220)%Hh);g.beginPath();g.moveTo(rx,ry);g.lineTo(rx-2,ry+6);g.stroke()}}
   g.restore();
   g.fillStyle='#fffaf7';g.fillRect(X+Wd/2-1.5,Y,3,Hh);g.fillRect(X,Y+Hh/2-1.5,Wd,3);
   // curtains
@@ -801,6 +872,7 @@ function drawBear(x,y,c,s){g.save();g.translate(x,y);g.scale(s,s);ell(0,0,12,5,'
 
 /* glow pass for lamps & tv at night */
 function lightPass(){
+ {const d=wxDim();if(d){g.save();g.globalCompositeOperation='multiply';g.fillStyle=`rgba(110,120,150,${d})`;g.fillRect(0,0,W,H);g.restore()}if(NOW<FLASH){g.fillStyle='rgba(255,255,255,.22)';g.fillRect(0,0,W,H)}}
  const ph=dayPhase();if(ph==='day')return;const k=ph==='night'?1:.55;
  g.save();g.globalCompositeOperation='multiply';g.fillStyle=R.light?`rgba(150,140,210,${.55*k})`:`rgba(70,60,140,${.85*k})`;g.fillRect(0,0,W,H);g.restore();
  g.save();g.globalCompositeOperation='lighter';
@@ -1118,7 +1190,7 @@ setInterval(()=>{try{autoTick()}catch(e){}},1200);
 
 /* ================= scene compose ================= */
 let HITS=[],OVER=[];
-window.__dbg={free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
+window.__dbg={wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
 window.__meScreen=()=>{const r=cv.getBoundingClientRect(),[x,y]=charScreen(me);return[r.x+x*r.width/W,r.y+y*r.width/W]};
 function charScreen(c){const z=c.pose==='sit'?16:c.pose==='lie'?24:0;return iso(c.x,c.y,z)}
 function itemKey(it){const f=fp(it);return f.x+f.y+f.w+f.d-1}
@@ -1305,7 +1377,7 @@ function itemMenu(it,sx,sy){const c=CAT[it.t];const B=[];let sub='';
  menu(sx,sy,c.n,sub,B);return true}
 function wallMenu(wi,sx,sy){const c=WCAT[wi.t];const B=[];let sub='';const front=wi.w==='A'?[wi.p,0]:[0,wi.p];const tiles=new Set();for(let i=0;i<c.s;i++){const t=wi.w==='A'?[wi.p+i,0]:[0,wi.p+i];if(!BM[t[0]][t[1]])tiles.add(t.join(','))}
  const go=fn=>()=>{if(!tiles.size){fn();return}goNear(tiles,null,()=>{me.face='b';me.flip=wi.w==='B';fn()})};
- if(wi.t==='window'){B.push([R.rain?'☀️ Cho tạnh mưa':'🌧️ Cho trời mưa',go(()=>{R.rain=!R.rain;saveRoom();updateAudio()}),1])}
+ if(wi.t==='window'){B.push([raining()?'☀️ Cho tạnh mưa':'🌧️ Cho trời mưa',go(()=>{const on=!raining();R.rain=on;WX_AUTO=false;lsSet('wx-auto',false);saveRoom();wxUpdate(false)}),1]);B.push([WX_AUTO?'✓ Thời tiết tự chạy':'🔄 Thời tiết tự chạy',go(()=>{WX_AUTO=true;lsSet('wx-auto',true);R.rain=false;saveRoom();wxUpdate(false)})]);B.push(['🎧 Nghe lofi ngắm trời',go(()=>openPhone('music'))])}
  else if(wi.t==='door'){if(R.kind!=='room'){B.push(['🛏️ Về phòng chung',go(()=>nav('room.html')),1]);if(R.kind==='kitchen')B.push(['🛒 Đi siêu thị mua đồ',go(()=>nav('room.html?r=market'))]);if(R.kind==='market')B.push(['🍳 Mang đồ về bếp',go(()=>nav('room.html?r=kitchen'))])}else{B.push(['🍳 Vào bếp nấu ăn',go(()=>nav('room.html?r=kitchen')),1]);B.push(['🍽️ Đi ăn nhà hàng',go(()=>nav('room.html?r=resto'))]);B.push(['🛒 Đi siêu thị cùng nhau',go(()=>nav('room.html?r=market'))]);B.push([LOVE>=UNLOCK?'🌙 Ra ban công':`🔒 Ban công (${LOVE}/${UNLOCK} điểm)`,go(()=>{if(LOVE>=UNLOCK)nav('room.html?r=balcony');else toast(`Cần ${UNLOCK} điểm yêu thương để mở ban công. Điểm có từ thư, ảnh, câu hỏi mỗi ngày, quà…`)})])}B.push(['🏠 Về trang Nhà',go(()=>nav('./'))])}
  else if(wi.t==='mirror'){B.push(['👗 Ngắm & thay đồ',go(openAvatar),1])}
  else if(wi.t==='calendar'){const d=daysToMeet();sub=d==null?'Chưa hẹn ngày gặp, đặt ở trang Nhà nhé':d<=0?'Hôm nay gặp nhau!':`Còn ${d} ngày nữa là gặp nhau`;B.push(['📅 Mở Lịch chung',go(()=>nav('calendar.html')),1])}
@@ -1697,10 +1769,14 @@ function drawPhone(){const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_W
  if(PHAPP==='call'){B.innerHTML=head('📞 Gọi')+`<div class="ph-center"><div class="ph-av">💗</div><b>${esc(ctx.partnerName)}</b><p class="ph-note">${livePa()?'đang ở trong phòng với bạn':'đang không ở phòng'}</p><button class="ph-big" data-go="call">📹 Gọi video</button><button class="ph-big g" data-go="callv">📞 Gọi thoại</button></div>`;return}
  if(PHAPP==='cam'){B.innerHTML=head('📷 Camera')+`<div class="ph-center"><img id="phShot" class="ph-shot" alt=""><button class="ph-snap" data-act="snap" aria-label="Chụp"></button><p class="ph-note">Chụp lại khung cảnh phòng đang có hai đứa</p></div>`;camShot(false);return}
  if(PHAPP==='pics'){const P=phLS('pics',[]);B.innerHTML=head('🖼️ Ảnh')+(P.length?`<div class="ph-pics">${P.map((u,i)=>`<img src="${u}" data-pic="${i}" alt="">`).join('')}</div><p class="ph-note">Chạm ảnh để lưu về máy thật</p>`:'<p class="ph-note">Chưa có ảnh · mở 📷 Camera để chụp</p>');return}
- if(PHAPP==='music'){B.innerHTML=head('🎧 Nhạc')+`<div class="ph-center"><div class="ph-disc ${R.music&&soundOn?'spin':''}">💿</div><b>Lofi cho hai đứa</b><p class="ph-note">${R.music&&soundOn?'Đang phát trong phòng':'Đang tắt'}</p><button class="ph-big" data-act="music">${R.music&&soundOn?'⏸ Tạm dừng':'▶ Phát nhạc'}</button></div>`;return}
+ if(PHAPP==='music'){const on=R.music&&soundOn,T=LOFI[LOFI_I];B.innerHTML=head('🎧 Lofi cho hai đứa')+`<div class="ph-center"><div class="ph-disc ${on?'spin':''}">💿</div><b>${T.e} ${esc(T.n)}</b><p class="ph-note">${on?'Đang phát trong phòng · '+T.bpm+' BPM':'Đang tạm dừng'}${raining()?' · 🌧️ kèm tiếng mưa':''}</p>
+  <div style="display:flex;gap:8px;width:100%"><button class="ph-big g" data-act="lprev">⏮</button><button class="ph-big" data-act="music">${on?'⏸ Dừng':'▶ Phát'}</button><button class="ph-big g" data-act="lnext">⏭</button></div></div>
+  <div class="ph-list" style="margin-top:10px">${LOFI.map((x,i)=>`<button data-lofi="${i}" class="${i===LOFI_I&&on?'on':''}">${x.e} ${esc(x.n)} <small style="opacity:.7">· ${x.bpm} BPM</small></button>`).join('')}</div>`;return}
  if(PHAPP==='wallet'){B.innerHTML=head('💳 Ví chung')+'<div class="ph-center"><p class="ph-note">Đang tải…</p></div>';loadS('market',{}).then(W=>{if(PHAPP!=='wallet')return;const life=(W&&W.life)||0;B.querySelector('.ph-center').innerHTML=`<p class="ph-note">Số dư ví chung</p><div class="ph-money">${vnd((W&&W.budget)??500000)}</div>${tileHTML(tierIdx(life),'cur')}<p class="ph-note">Hạng ${esc(tierOf(life)[1])} · ${life.toLocaleString('vi-VN')} điểm</p><button class="ph-big" data-act="tiers">⚛️ Xem bảng hạng thẻ</button>`});return}
  if(PHAPP==='map'){const R2=[['room','🛏️ Phòng ngủ'],['kitchen','🍳 Bếp'],['spa','🧴 Skincare'],['balcony','🌙 Ban công'],['market','🛒 Siêu thị'],['mall','🛍️ TTTM'],['mall6','📱 Cửa hàng điện thoại'],['resto','🍽️ Nhà hàng']];B.innerHTML=head('🗺️ Đi đâu')+`<div class="ph-list">${R2.map(([k,n])=>`<button data-room="${k}" class="${k===KIND?'on':''}">${n}${k===KIND?' · đang ở đây':''}</button>`).join('')}</div>`;return}
- if(PHAPP==='weather'){const w=['☀️ Nắng đẹp 31°','⛅ Có mây 28°','🌧️ Mưa rào 26°','🌈 Vừa tạnh mưa 27°'][d.getDate()%4];B.innerHTML=head('🌦️ Thời tiết')+`<div class="ph-center"><div style="font-size:54px">${w.split(' ')[0]}</div><b>${w.slice(3)}</b><p class="ph-note">Hà Nội ⇄ nơi người ấy · độ ẩm tình yêu 100%</p><button class="ph-big" data-act="rain">${R.rain?'☀️ Tắt mưa trong phòng':'🌧️ Cho mưa ngoài cửa sổ'}</button></div>`;return}
+ if(PHAPP==='weather'){const[e,n]=WXT[WX.k],now=Date.now();B.innerHTML=head('🌦️ Thời tiết')+`<div class="ph-center"><div style="font-size:58px">${e}</div><div class="ph-money">${WX.t}°</div><b>${n}</b><p class="ph-note">${WX_AUTO?'Thời tiết tự đổi mỗi 25 phút · hai đứa thấy giống nhau':'Đang chỉnh tay'}</p>
+  <div class="ph-list" style="width:100%">${[1,2,3,4,5,6].map(i=>{const ts=now+i*WX_SLOT,k=wxAt(ts);return`<button>${new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})} · ${WXT[k][0]} ${WXT[k][1]} · ${wxTemp(ts,k)}°</button>`}).join('')}</div>
+  <div style="display:flex;gap:6px;width:100%"><button class="ph-big ${WX_AUTO?'':'g'}" data-act="wxauto">🔄 Tự chạy</button><button class="ph-big g" data-act="rain">🌧️ Mưa</button><button class="ph-big g" data-act="wxsun">☀️ Nắng</button></div></div>`;return}
  if(PHAPP==='set'){const cur=phLS('wall',0);B.innerHTML=head('⚙️ Cài đặt')+`<p class="ph-note">Hình nền</p><div class="ph-walls">${PH_WALL.map(([n,bg],i)=>`<button data-wall="${i}" class="${i===cur?'on':''}" style="background:${bg}"><span>${n}</span></button>`).join('')}</div><p class="ph-note">Máy: ${esc(av.phoneN||'')}</p><button class="ph-big g" data-act="unequip">📴 Cất điện thoại vào túi</button>`;return}}
 /* --- TikTok: video ngắn tự tạo + clip hai đứa tự đăng --- */
 const TT_GEN=[['🐱','Mèo nhà ai mà dễ thương vậy 😭','#ffb703,#fb8500','bounce','#meow #cute'],['💃','Trend nhảy mới nè, học liền!','#7209b7,#f72585','dance','#dance #trend'],['🍜','Phở 3h sáng ở Hà Nội ✨','#e76f51,#f4a261','zoom','#food #hanoi'],['🌊','Biển Nha Trang hôm nay xanh quá','#00b4d8,#90e0ef','float','#travel'],
@@ -1738,7 +1814,8 @@ function snapRoom(w=360,q=.7){const k=w/cv.width,c=document.createElement('canva
 function camShot(take){const img=$('#phShot');if(img)img.src=snapRoom(300,.6);if(!take)return;const u=snapRoom(360,.7);const P=phLS('pics',[]);P.unshift(u);phSet('pics',P.slice(0,8));
  noise(.05,.3,4000,'highpass');tone(1800,.04,'square',.04,.05);me.emo={e:'📸',t:NOW+1500};send('emo',{e:'📸',burst:'✨'});const f=document.createElement('div');f.className='ph-flash';$('#phS').append(f);setTimeout(()=>f.remove(),400);toast('📸 Đã lưu vào 🖼️ Ảnh trong điện thoại')}
 function savePic(u){const a=document.createElement('a');a.href=u;a.download='tomortle-'+Date.now()+'.jpg';document.body.append(a);a.click();a.remove()}
-$('#phBody').onclick=async e=>{const t=e.target.closest('[data-app],[data-act],[data-go],[data-room],[data-wall],[data-pic]');if(!t)return;ac();
+$('#phBody').onclick=async e=>{const t=e.target.closest('[data-app],[data-act],[data-go],[data-room],[data-wall],[data-pic],[data-lofi]');if(!t)return;ac();
+ if(t.dataset.lofi){lofiSet(+t.dataset.lofi);setTimeout(drawPhone,100);return}
  if(t.dataset.app!==undefined){PHAPP=t.dataset.app||null;tone(1320,.04,'sine',.03);drawPhone();return}
  if(t.dataset.go){location.href=t.dataset.go==='callv'?'call.html?audio=1':'call.html';return}
  if(t.dataset.room){if(t.dataset.room!==KIND)nav((t.dataset.room==='room'?'room.html':'room.html?r='+t.dataset.room)+(DEMO?(t.dataset.room==='room'?'?':'&')+'demo':''));return}
@@ -1746,8 +1823,12 @@ $('#phBody').onclick=async e=>{const t=e.target.closest('[data-app],[data-act],[
  if(t.dataset.pic){savePic(phLS('pics',[])[+t.dataset.pic]);return}
  const a=t.dataset.act;
  if(a==='snap')camShot(true);
- else if(a==='music'){R.music=!R.music;saveRoom();updateAudio();drawPhone()}
- else if(a==='rain'){R.rain=!R.rain;saveRoom();drawPhone()}
+ else if(a==='music'){R.music=!(R.music&&soundOn);if(R.music&&!soundOn){soundOn=true;lsSet('room-sound',true);syncHud()}saveRoom();updateAudio();drawPhone();if(R.music)toast(`🎧 Đang phát: ${LOFI[LOFI_I].e} ${LOFI[LOFI_I].n}`)}
+ else if(a==='rain'){R.rain=true;WX_AUTO=false;lsSet('wx-auto',false);saveRoom();wxUpdate(false);drawPhone()}
+ else if(a==='wxsun'){R.rain=false;WX_AUTO=false;lsSet('wx-auto',false);saveRoom();wxUpdate(false);drawPhone()}
+ else if(a==='wxauto'){R.rain=false;WX_AUTO=true;lsSet('wx-auto',true);saveRoom();wxUpdate(false);drawPhone()}
+ else if(a==='lnext'){lofiSet(LOFI_I+1);setTimeout(drawPhone,100)}
+ else if(a==='lprev'){lofiSet(LOFI_I-1);setTimeout(drawPhone,100)}
  else if(a==='tiers'){phClose();openTiers()}
  else if(a==='unequip'){AVD=Object.assign({},UM.av);AVD.phone='';AVD.phoneN='';setAv(AVD);phClose();toast('📴 Đã cất điện thoại vào túi')}
  else if(a==='like'){const c=TT.list[TT.i%TT.list.length];TT.liked[c.id]=!TT.liked[c.id];phSet('liked',TT.liked);if(TT.liked[c.id]){burst(me,'❤️',3);if(c.own&&c.who!==ME)send('emo',{e:'❤️',burst:'💗'})}ttDraw()}
@@ -1864,14 +1945,8 @@ const sfx={step:()=>noise(.05,.05,900),pop:()=>{tone(660,.08,'sine',.1);tone(990
 const mtof=m=>440*Math.pow(2,(m-69)/12);
 const CHORDS=[[53,57,60,64],[52,55,59,62],[50,53,57,60],[48,52,55,59]],PENT=[72,74,76,79,81,84];
 function mnote(f,t,dur,type,vol,cut){const o=AC.createOscillator(),gn=AC.createGain(),lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=cut;o.type=type;o.frequency.value=f;gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(vol,t+.05);gn.gain.exponentialRampToValueAtTime(.0008,t+dur);o.connect(lp);lp.connect(gn);gn.connect(musicGain);o.start(t);o.stop(t+dur+.05)}
-function startMusic(){if(musicTimer||!AC)return;musicGain=AC.createGain();musicGain.gain.value=.6;musicGain.connect(master);let nt=AC.currentTime+.15,beat=0;const spb=60/72;
- musicTimer=setInterval(()=>{while(nt<AC.currentTime+.4){const ch2=CHORDS[Math.floor(beat/8)%4];if(beat%8===0)ch2.forEach((m,i)=>mnote(mtof(m),nt+i*.04,spb*8.5,'triangle',.03,900));if(beat%4===0)mnote(mtof(ch2[0]-12),nt,spb*1.8,'sine',.09,300);if(beat%4===2)mnote(mtof(ch2[0]-12),nt,spb*1.2,'sine',.06,300);
-  if(Math.random()<.5)mnote(mtof(PENT[Math.floor(Math.random()*PENT.length)]),nt+(Math.random()<.35?spb/2:0),1.6,'sine',.045,2600);
-  {const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();s.buffer=noiseBuf;f.type='highpass';f.frequency.value=7000;const tt=nt+spb/2;gn.gain.setValueAtTime(.025,tt);gn.gain.exponentialRampToValueAtTime(.0005,tt+.05);s.connect(f);f.connect(gn);gn.connect(musicGain);s.start(tt);s.stop(tt+.08)}
-  nt+=spb;beat++}},120)}
-function stopMusic(){if(!musicTimer)return;clearInterval(musicTimer);musicTimer=null;const m=musicGain;m.gain.setTargetAtTime(0,AC.currentTime,.3);setTimeout(()=>m.disconnect(),2000)}
 function updateAudio(){if(!AC)return;if(soundOn&&R.music)startMusic();else stopMusic();
- if(soundOn&&R.rain){if(!rainNode){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();s.buffer=noiseBuf;s.loop=true;f.type='lowpass';f.frequency.value=1100;gn.gain.value=.12;s.connect(f);f.connect(gn);gn.connect(master);s.start();rainNode={s,gn}}}else if(rainNode){rainNode.s.stop();rainNode=null}}
+ if(soundOn&&raining()){if(!rainNode){const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();s.buffer=noiseBuf;s.loop=true;f.type='lowpass';f.frequency.value=1100;gn.gain.value=.12;s.connect(f);f.connect(gn);gn.connect(master);s.start();rainNode={s,gn}}}else if(rainNode){rainNode.s.stop();rainNode=null}}
 function syncHud(){$('#hSound').textContent=soundOn?'🔊':'🔇';$('#hLight').classList.toggle('off',!R.light)}
 $('#hSound').onclick=()=>{soundOn=!soundOn;lsSet('room-sound',soundOn);ac();updateAudio();syncHud()};
 $('#hLight').onclick=()=>{R.light=!R.light;saveRoom();syncHud()};
