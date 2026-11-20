@@ -1228,7 +1228,7 @@ const THROWS={
  flower:{e:'🌸',n:'Tung hoa',hit:'🌸',love:1,snd:()=>tone(1760,.12,'triangle',.04)},
  confetti:{e:'🎉',n:'Pháo giấy',hit:'🎊',boom:1,snd:()=>{for(let k=0;k<5;k++)tone(800+k*240,.05,'square',.025,k*.03)}},
  bubble:{e:'🫧',n:'Bong bóng',hit:'🫧',slow:1,snd:()=>tone(1400,.05,'sine',.05)}};
-const PROJ=[];let RC={k:'',n:0,t:0},COMBO={k:'',n:0,t:0},TQ={},TQT=null;
+const PROJ=[],CRUMBS=[];let RC={k:'',n:0,t:0},COMBO={k:'',n:0,t:0},TQ={},TQT=null;
 function launch(from,to,k){const T=THROWS[k];if(!T)return;const s=charScreen(from),d=charScreen(to);const top=to.pose==='lie'?24:36;
  PROJ.push({k,from,to,x0:s[0],y0:s[1]-30,x1:d[0]+(Math.random()-.5)*8,y1:d[1]-top+(Math.random()-.5)*6,t0:NOW,dur:T.fast?300:T.slow?1100:520,r:Math.random()*6});
  faceToward(from,to.x,to.y);if(soundOn)noise(.06,.05,2000+Math.random()*800,'bandpass')}
@@ -1289,7 +1289,7 @@ function render(dt){
  D.sort((a,b)=>a.k-b.k);
  for(const d of D){d.fn();if(d.hit)HITS.push(d.hit)}
  lightPass();
- drawProj();
+ drawProj();drawCrumbs();
  if(!editing)drawSigns();
  for(const f of OVER)f();
  if(editing)drawEditOverlay();
@@ -1306,7 +1306,7 @@ function hitAt(px,py){for(let i=HITS.length-1;i>=0;i--){const h=HITS[i];if(h.rec
 /* ================= loop ================= */
 let last=performance.now();
 let lastDraw=0;window.__mainG=g;
-function frame(t){const modal=document.querySelector('.modal.on'),busy=me.path.length||pa.path.length||FX.length||PROJ.length||(me.act&&t<me.actT)||(pa.act&&t<pa.actT),gap=modal?160:busy?0:33;
+function frame(t){const modal=document.querySelector('.modal.on'),busy=me.path.length||pa.path.length||FX.length||PROJ.length||CRUMBS.length||(me.act&&t<me.actT)||(pa.act&&t<pa.actT),gap=modal?160:busy?0:33;
  if(t-lastDraw<gap-2){requestAnimationFrame(frame);return}lastDraw=t;
  const dt=Math.min(.2,(t-last)/1000);last=t;NOW=t;
  stepChar(me,dt);if(livePa()||busyPa())stepChar(pa,dt);for(const n of NPCS)stepChar(n,dt);updatePet();
@@ -1320,7 +1320,7 @@ cv.addEventListener('pointerup',e=>{const p=evPt(e);if(editing){edUp(p);down=nul
 
 /* ================= network ================= */
 let ch=null;
-function send(t,p={}){if(t==='eat'&&p.e)me.hold={e:p.e,t:NOW+3500};if(!ch)return;ch.send({type:'broadcast',event:'r',payload:Object.assign({t},p)})}
+function send(t,p={}){if(t==='eat'&&p.e){me.hold={e:p.e,t:NOW+(p.drink?1700:1800)};try{eatFx(me,p.e,p.drink)}catch(e){}}if(!ch)return;ch.send({type:'broadcast',event:'r',payload:Object.assign({t},p)})}
 function snap(){return{x:me.x,y:me.y,pose:me.pose,seat:me.seat,face:me.face,flip:me.flip,path:me.path.length?me.path[me.path.length-1]:null}}
 function sendSnap(){send('snap',snap())}
 let saveUT;function saveU(){UM.pos={x:me.x,y:me.y};clearTimeout(saveUT);saveUT=setTimeout(()=>saveS(UK(ME),UM),1200)}
@@ -1349,7 +1349,7 @@ function onMsg(m){
  case'cook':window.COOKING={until:NOW+COOK_MS};pa.emo={e:m.e,t:NOW+COOK_MS};sfx.whoosh();break;
  case'rt':RT=m.RT;window.RT_DISHES=RT.dishes;if($('#mResto').classList.contains('on'))drawResto();break;
  case'rb':RB=m.RB;applyDeco();break;
- case'eat':burst(pa,m.drink?'💦':'😋',3);pa.emo={e:m.e,t:NOW+1800};pa.hold={e:m.e,t:NOW+3500};if(m.drink)sfxSlurp();else sfxChew();break;
+ case'eat':burst(pa,m.drink?'💦':'😋',3);pa.emo={e:m.e,t:NOW+1800};pa.hold={e:m.e,t:NOW+1800};try{eatFx(pa,m.e,m.drink)}catch(e){}if(m.drink)sfxSlurp();else sfxChew();break;
  case'mkop':if(m.o){mkApply(m.o,m.d);drawMk()}break;
  case'mkhello':if(IS_MK)sendMk('mk',{MK});break;
  }
@@ -1665,9 +1665,21 @@ $('#cookL').onclick=e=>{const b=e.target.closest('button[data-k]');if(!b)return;
 const DRINK_RX=/(trà|cà phê|cafe|sinh tố|nước|sữa|bia|rượu|vang|soju|coca|pepsi|sting|7up|fanta|sprite|red bull|milo|yakult|probi|nutri|revive|pocari|mirinda|number 1|chè)/i;
 const isDrink=d=>/^@(glass|can|pet|bottle|milk)\//.test(d.e)||/[🥤🧋☕🍵🥛🧃🍺🍷🍶🧉🍹🍸]/u.test(d.e)||DRINK_RX.test(d.n);
 // chọp chẹp: tiếng nhai (ồn trầm) + tiếng chép miệng; cuối cùng "ừm~"
-const sfxChew=()=>{for(let k=0;k<5;k++){const w=k*.17+Math.random()*.03;noise(.07,.28,420,'lowpass',w);noise(.025,.22,2600,'bandpass',w+.07)}tone(240,.28,'sine',.035,.95);tone(300,.22,'sine',.025,1.05)};
+// ăn kiểu Minecraft: nhai rôm rốp liên tục ~1,5 giây rồi "ợ" một cái
+const EAT_N=7,EAT_GAP=.19;
+function chomp(w){const f=900+Math.random()*700;noise(.09,.24,f,'bandpass',w);noise(.07,.16,320,'lowpass',w+.01);noise(.03,.06,3600,'highpass',w+.03)}
+function burp(w){if(!soundOn||!AC)return;const t=AC.currentTime+w,o=AC.createOscillator(),f=AC.createBiquadFilter(),gn=AC.createGain();o.type='sawtooth';o.frequency.setValueAtTime(175,t);o.frequency.linearRampToValueAtTime(120,t+.12);o.frequency.exponentialRampToValueAtTime(82,t+.42);
+ f.type='bandpass';f.frequency.setValueAtTime(650,t);f.frequency.linearRampToValueAtTime(420,t+.4);f.Q.value=2.2;gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(.11,t+.04);gn.gain.exponentialRampToValueAtTime(.001,t+.45);o.connect(f);f.connect(gn);gn.connect(master);o.start(t);o.stop(t+.5);noise(.3,.04,300,'lowpass',w)}
+const sfxChew=()=>{for(let k=0;k<EAT_N;k++)chomp(k*EAT_GAP+Math.random()*.02);burp(EAT_N*EAT_GAP+.12)};
 // hút nước: rột rột lên cao dần + ực
-const sfxSlurp=()=>{for(let k=0;k<11;k++)noise(.055,.16,650+k*140+Math.random()*80,'bandpass',k*.045);noise(.12,.12,400,'lowpass',.5);tone(170,.1,'sine',.09,.62);tone(130,.1,'sine',.07,.74);tone(520,.25,'sine',.025,.9)};
+// uống kiểu Minecraft: "ực ực" từng ngụm
+function gulp(w){if(!soundOn||!AC)return;const t=AC.currentTime+w,o=AC.createOscillator(),gn=AC.createGain(),lp=AC.createBiquadFilter();o.type='sine';o.frequency.setValueAtTime(330+Math.random()*40,t);o.frequency.exponentialRampToValueAtTime(150,t+.13);lp.type='lowpass';lp.frequency.value=900;
+ gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(.16,t+.02);gn.gain.exponentialRampToValueAtTime(.001,t+.16);o.connect(lp);lp.connect(gn);gn.connect(master);o.start(t);o.stop(t+.2);noise(.08,.07,700+Math.random()*200,'bandpass',w+.03)}
+const sfxSlurp=()=>{for(let k=0;k<6;k++)gulp(k*.23+Math.random()*.02);tone(880,.06,'sine',.02,6*.23+.05)};
+// vụn thức ăn bắn ra từ miệng (ăn) hoặc giọt nước (uống), đúng nhịp nhai
+function foodCol(e){const m=/^@\w+\/([0-9a-f]{3,8})/i.exec(e||'');if(m)return'#'+m[1];const M={'🍕':'#f4a261','🍔':'#a0522d','🍟':'#f6c453','🍜':'#f2cc8f','🍣':'#ff8a65','🍰':'#fff3e0','🎂':'#ffcdd2','🍫':'#6d4c41','🍪':'#c68642','🥐':'#e0a458','🍞':'#d9a066','🍎':'#e53935','🍉':'#ef5350','🍌':'#ffe082','🥗':'#81c784','🍗':'#c47a3a','🥩':'#b23a48','🍦':'#fff8e1','🍩':'#f48fb1','🍙':'#fafafa','🥟':'#f5deb3','🍤':'#ffb74d'};return M[e]||['#d9a066','#f4a261','#e9c46a','#c68642'][Math.floor(Math.random()*4)]}
+function eatFx(c,e,drink){const col=drink?'#8fd3ff':foodCol(e),n=drink?6:EAT_N;for(let k=0;k<n;k++)setTimeout(()=>{if(!c)return;const[sx,sy]=charScreen(c);const my=sy-30-(c.pose==='sit'?4:0);for(let i=0;i<(drink?2:4);i++)CRUMBS.push({x:sx+(c.flip?-3:3)+(Math.random()-.5)*4,y:my,vx:(Math.random()-.5)*40,vy:-30-Math.random()*30,c:drink&&Math.random()<.5?'#cdeeff':col,t:NOW,life:500+Math.random()*300,sz:1.6+Math.random()*1.4})},k*(drink?230:EAT_GAP*1000))}
+function drawCrumbs(){for(let i=CRUMBS.length-1;i>=0;i--){const p=CRUMBS[i],a=(NOW-p.t)/1000;if(NOW-p.t>p.life){CRUMBS.splice(i,1);continue}const x=p.x+p.vx*a,y=p.y+p.vy*a+160*a*a;g.globalAlpha=1-(NOW-p.t)/p.life;g.fillStyle=p.c;g.fillRect(x-p.sz/2,y-p.sz/2,p.sz,p.sz);g.strokeStyle='rgba(0,0,0,.25)';g.lineWidth=.4;g.strokeRect(x-p.sz/2,y-p.sz/2,p.sz,p.sz)}g.globalAlpha=1}
 function eatDish(id){const d=PT.dishes.find(x=>x.id===id);if(!d)return;d.b--;if(d.b<=0)PT.dishes=PT.dishes.filter(x=>x!==d);ptSave();const dr=isDrink(d);me.emo={e:d.e,t:NOW+1800};burst(me,dr?'💦':'😋',3);send('eat',{e:d.e,drink:dr});if(dr)sfxSlurp();else sfxChew();vib(dr?[20,30,20]:[15,40,15,40,15]);drawTable();
  const atTable=c=>c.seat&&itemById(c.seat.id)?.t==='chair';
  if(atTable(me)&&atTable(pa)&&livePa()){burst(me,'💗',5);burst(pa,'💗',4);toast('Ăn cùng nhau ngon gấp đôi 💗')}else if(d.b<=0)toast(`Hết sạch ${d.n} rồi, ngon quá 😋`)}
