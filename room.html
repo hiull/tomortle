@@ -1118,6 +1118,7 @@ setInterval(()=>{try{autoTick()}catch(e){}},1200);
 
 /* ================= scene compose ================= */
 let HITS=[],OVER=[];
+window.__dbg={free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
 window.__meScreen=()=>{const r=cv.getBoundingClientRect(),[x,y]=charScreen(me);return[r.x+x*r.width/W,r.y+y*r.width/W]};
 function charScreen(c){const z=c.pose==='sit'?16:c.pose==='lie'?24:0;return iso(c.x,c.y,z)}
 function itemKey(it){const f=fp(it);return f.x+f.y+f.w+f.d-1}
@@ -1141,8 +1142,8 @@ function render(dt){
    else if(c.say&&NOW<c.say.t)bubble(sx,top-4,c.say.text);
    else if(c===pa&&!live&&UP.msg&&UP.msg.text&&Date.now()-UP.msg.at<3*864e5&&UP.msg.at>lsGet('seenMsg-'+PA,0)){bubble(sx,top-4,'💌 '+UP.msg.text,true);if(!window.__msgT)window.__msgT=NOW;if(NOW-window.__msgT>8000){lsSet('seenMsg-'+PA,UP.msg.at);window.__msgT=0}}
    });if(c===pa&&!live&&Math.random()<.012)spawn(sx+10,sy-30,'💤',{size:12,vy:-14});
-  },hit:{kind:'char',ref:c,rect:(()=>{const[sx,sy]=charScreen(c);return c.pose==='lie'?[sx-14,sy-22,28,26]:[sx-14,sy-60,28,64]})()}})}
- for(const n of NPCS){const[sx,sy]=iso(n.x,n.y);D.push({k:n.x+n.y,fn:()=>drawNPC(n),hit:{kind:'npc',ref:n,rect:n.type==='chibi'?[sx-13,sy-54,26,58]:[sx-13,sy-26,26,30]}})}
+  },hit:{kind:'char',ref:c,rect:(()=>{const[sx,sy]=charScreen(c);return c.pose==='lie'?[sx-13,sy-22,26,18]:[sx-11,sy-56,22,46]})()}})}
+ for(const n of NPCS){const[sx,sy]=iso(n.x,n.y);D.push({k:n.x+n.y,fn:()=>drawNPC(n),hit:{kind:'npc',ref:n,rect:n.type==='chibi'?[sx-10,sy-50,20,40]:[sx-11,sy-22,22,18]}})}
  if(R.pet){const[sx,sy]=iso(pet.x,pet.y);D.push({k:pet.x+pet.y-.05,fn:()=>drawPet(sx,sy),hit:{kind:'pet',rect:[sx-14,sy-26,30,30]}})}
  D.sort((a,b)=>a.k-b.k);
  for(const d of D){d.fn();if(d.hit)HITS.push(d.hit)}
@@ -1152,6 +1153,12 @@ function render(dt){
  if(editing)drawEditOverlay();
  drawFX(dt);
 }
+// chạm trúng đồ vật phải trúng phần được vẽ thật (không tính khoảng trống trong hộp bao) → chạm sàn quanh đồ vẫn đi được
+let pickCv=null,pickG=null;
+function pixelHit(it,px,py){try{if(!pickCv){pickCv=document.createElement('canvas');pickG=pickCv.getContext('2d',{willReadFrequently:true})}if(pickCv.width!==W||pickCv.height!==H){pickCv.width=W;pickCv.height=H}
+ const old=g,sq=SIGNQ.length,ov=OVER.length;g=pickG;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,H);try{drawItem(it)}finally{g=old;SIGNQ.length=sq;OVER.length=ov}
+ const x0=Math.max(0,Math.round(px)-4),y0=Math.max(0,Math.round(py)-4),d=pickG.getImageData(x0,y0,9,9).data;for(let i=3;i<d.length;i+=4)if(d[i]>40)return true;return false}catch(e){return true}}
+function pickAt(px,py){for(let i=HITS.length-1;i>=0;i--){const h=HITS[i];let inside=false;if(h.rect){const[x,y,w,hh]=h.rect;inside=px>=x&&px<=x+w&&py>=y&&py<=y+hh}else if(h.poly)inside=pip([px,py],h.poly);if(!inside)continue;if(h.kind==='item'&&!pixelHit(h.ref,px,py))continue;return h}return null}
 function hitAt(px,py){for(let i=HITS.length-1;i>=0;i--){const h=HITS[i];if(h.rect){const[x,y,w,hh]=h.rect;if(px>=x&&px<=x+w&&py>=y&&py<=y+hh)return h}else if(h.poly&&pip([px,py],h.poly))return h}return null}
 
 /* ================= loop ================= */
@@ -1826,8 +1833,8 @@ cv.addEventListener('pointerdown',e=>{ac();const p=evPt(e);down={p,t:Date.now(),
 cv.addEventListener('pointermove',e=>{if(editing&&drag){edMove(evPt(e))}});
 cv.addEventListener('pointerup',e=>{const p=evPt(e);if(editing){edUp(p);down=null;return}if(!down)return;if(Math.hypot(p[0]-down.p[0],p[1]-down.p[1])>12){down=null;return}down=null;tap(p)});
 function tap([px,py]){
- if(menuEl){closeMenu();return}
- const h=hitAt(px,py);
+ if(menuEl){closeMenu()}
+ const h=pickAt(px,py);
  if(h){if(h.kind==='char'){charMenu(h.ref,px,py-10);return}if(h.kind==='pet'){petMenu(px,py-14);return}if(h.kind==='npc'){npcMenu(h.ref,px,py-14);return}if(h.kind==='item'){if(itemMenu(h.ref,px,py-8))return}if(h.kind==='wall'){if(wallMenu(h.ref,px,py))return}}
  const[gx,gy]=unIso(px,py);const tx=Math.floor(gx),ty=Math.floor(gy);
  if(!inB(tx,ty))return;
