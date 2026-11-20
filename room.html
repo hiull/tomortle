@@ -64,6 +64,8 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
       <button id="hLight" title="Đèn">💡</button>
       <button id="hEdit" title="Trang trí">✏️</button>
     </div>
+    <div class="loveb" id="loveB" title="Điểm yêu thương">💗 0</div>
+    <div class="scene" id="scene"></div>
   </div>
   <p class="hint2" id="hint">Chạm sàn để đi · chạm đồ vật, thú cưng hay người ấy để tương tác</p>
 
@@ -73,7 +75,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
       <form class="row" id="sayForm" style="margin-top:6px"><input class="input" id="sayIn" placeholder="Nói gì đó… 💬" maxlength="80" style="margin:0" autocomplete="off"><button class="btn primary">Nói</button></form>
     </div>
     <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap">
-      <button class="btn small primary hidden" id="bCart">🛒 Giỏ chung</button><button class="btn small hidden" id="bList">📝 Danh sách đi chợ</button><button class="btn small hidden" id="bDir">📋 Danh mục</button><button class="btn small hidden" id="bDeals">🔥 Giá sốc · Tìm món</button><button class="btn small" id="bAvatar">👗 Thay đồ</button>
+      <button class="btn small primary hidden" id="bCart">🛒 Giỏ chung</button><button class="btn small hidden" id="bList">📝 Danh sách đi chợ</button><button class="btn small hidden" id="bDir">📋 Danh mục</button><button class="btn small hidden" id="bDeals">🔥 Giá sốc · Tìm món</button><button class="btn small nty" id="bNty">😈 Làm này làm kia</button><button class="btn small" id="bAvatar">👗 Thay đồ</button>
       <button class="btn small" id="bInvite">💌 Rủ người ấy vào</button>
       <button class="btn small" id="bDecor">✏️ Trang trí phòng</button>
     </div>
@@ -136,6 +138,13 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .ctabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}.ctabs::-webkit-scrollbar{display:none}.ctabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--ink);white-space:nowrap}.ctabs button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .rcp{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}.rcp>b{font-size:30px;width:40px;text-align:center}.rcp span{flex:1;font-size:14px}.rcp small{display:block;font-size:12px;color:var(--muted)}.rcp small i{font-style:normal}.rcp small i.no{color:#e63946;text-decoration:line-through}.rcp button{white-space:nowrap}
 .dirf{margin:10px 0 6px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:6px}.dirf small{font-weight:600;color:var(--muted)}.dirg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.dirg button{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 10px;cursor:pointer;color:var(--ink);font-weight:700;font-size:13px}.dirg button b{font-size:22px}.dirg button small{display:block;font-weight:600;color:var(--muted);font-size:11px}.dirg button.here{border-color:var(--accent)}
+.loveb{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.88);border-radius:999px;padding:5px 11px;font-weight:800;font-size:13px;color:#e0457b;box-shadow:0 2px 8px rgba(224,69,123,.2);pointer-events:none}
+.scene{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:20px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4);z-index:5;padding:20px}.scene.on{display:flex;animation:scfade .6s}.scene small{font-size:14px;font-weight:600;display:block;margin-top:6px}
+.scene.steam{background:radial-gradient(circle at 50% 60%,rgba(255,255,255,.85),rgba(190,230,255,.92));color:#2a6f97;text-shadow:none;backdrop-filter:blur(6px)}
+.scene.night{background:rgba(10,6,25,.94)}.scene.night2{background:#05030f}.scene.morning{background:linear-gradient(#ffe7b8,#ffd1dc);color:#b24a72;text-shadow:none}
+@keyframes scfade{from{opacity:0}to{opacity:1}}
+.btn.nty{background:#2b1d3a;color:#ffd6f0;border-color:#2b1d3a}
+.ntyl{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:56vh;overflow:auto}.ntyl button{position:relative;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:8px 10px;cursor:pointer;color:var(--ink);font-weight:800;font-size:13px}.ntyl button b{font-size:24px}.ntyl button small{display:block;font-weight:600;color:var(--muted);font-size:11px}.ntyl button i{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;color:#e0457b}.ntyl button.cd{opacity:.6}
 .payl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.payl button{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:7px 10px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}.payl button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 .rc .scan{border-radius:4px}.rc .scan.hit{animation:scanhit .35s}@keyframes scanhit{0%{background:#b9f6ca}100%{background:transparent}}.rc .big b{font-size:17px}.rc #rcL,.rc #rcT{display:block}#rcL{max-height:40vh;overflow:auto}
 .rc{font-family:'Courier New',monospace;text-align:left;background:#fffdf6;color:#333;border-radius:8px;padding:12px;font-size:13px;line-height:1.6}.rc div{display:flex;justify-content:space-between;gap:8px}</style>
@@ -182,6 +191,11 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <div class="dirf" style="margin-top:12px">🧊 Bày thêm từ tủ lạnh</div>
   <div id="tblP" style="max-height:24vh;overflow:auto"></div>
   <div class="row" style="gap:8px;margin-top:10px"><button class="btn" id="tblCook">🍳 Nấu thêm</button><button class="btn primary" style="flex:1" onclick="this.closest('.modal').classList.remove('on')">Xong</button></div>
+</div></div>
+<div class="modal" id="mNty"><div class="sheet">
+  <h3>😈 Làm này làm kia</h3><p class="note" style="margin:0 0 8px">Chỉ hai đứa thấy · người ấy phải đang ở trong phòng · cộng điểm yêu thương 💗</p>
+  <div class="ntyl" id="ntyL"></div>
+  <button class="btn block" style="margin-top:10px" onclick="this.closest('.modal').classList.remove('on')">Thôi để sau 🙈</button>
 </div></div>
 <div class="modal" id="mCook"><div class="sheet">
   <h3>🍳 Nấu món gì đây?</h3><p class="note" id="cookSub" style="margin:0 0 6px"></p>
@@ -809,6 +823,8 @@ function onMsg(m){
  case'av':UP.av=m.av;break;
  case'ball':pet.ball=m.p;pet.ballT=Date.now()+4000;break;
  case'ttt':tttRecv(m);break;
+ case'nty':doNaughty(pa,m.a,true);break;
+ case'love':LOVE+=m.n;LOVEB.pts=(LOVEB.pts||0)+m.n;renderLove();break;
  case'mk':MK=m.MK;drawMk();break;
  case'pt':PT=m.PT;window.DISHES=PT.dishes;drawCook();if($('#mTable').classList.contains('on'))drawTable();break;
  case'cook':window.COOKING={until:NOW+COOK_MS};pa.emo={e:m.e,t:NOW+COOK_MS};sfx.whoosh();break;
@@ -1239,8 +1255,53 @@ $('#tttNew').onclick=()=>tttOpen(true);$('#tttClose').onclick=()=>$('#mTtt').cla
 
 /* ================= love points (unlock rooms) ================= */
 let LOVE=0;
-async function calcLove(){if(DEMO){LOVE=42;renderRoomTabs();return}try{const cnt=async(t,f)=>{let q=C.sb.from(t).select('*',{count:'exact',head:true});if(f)q=f(q);const{count}=await q;return count||0};
- const[a,b,c2,d,e,f,g2]=await Promise.all([cnt('letters'),cnt('daily_answers'),cnt('album'),cnt('vgifts'),cnt('notes'),cnt('voices'),cnt('bucket',q=>q.eq('done',true))]);LOVE=a+Math.floor(b/2)+c2+d+e+f+g2*3+Math.floor(((R.plant&&R.plant.w)||0)/2)}catch(x){}renderRoomTabs()}
+/* ================= 😈 Làm này làm kia: tương tác riêng tư của hai người + điểm yêu thương ================= */
+// [mã, emoji, tên, điểm, phút chờ giữa 2 lần, mô tả]
+const NAUGHTY=[['slap','👋','Đánh yêu',4,1,'Phát vào mông một cái 😝'],['pinch','🤏','Véo má',3,1,'Má phúng phính quá'],['tickle','🤣','Cù lét',4,2,'Cù tới khi xin tha'],
+ ['whisper','🙈','Thì thầm vào tai',4,2,'Nói nhỏ một câu ngại ngùng'],['fkiss','😚','Hôn trán',4,1,'Hôn nhẹ lên trán'],['backhug','🫶','Ôm từ phía sau',6,2,'Ôm eo từ đằng sau'],
+ ['deepkiss','💋','Hôn môi thật lâu',10,5,'Hôn đến đỏ mặt'],['carry','👰','Bế bổng',8,5,'Bế kiểu công chúa'],['massage','💆','Massage vai',8,10,'Đấm bóp sau ngày dài'],
+ ['spoon','😴','Ôm nhau ngủ',12,30,'Nằm ôm nhau trên giường'],['shower','🛁','Tắm chung',25,60,'Bồn tắm đầy bọt 🫧'],['spicy','🔥','Sexy time 🔞',50,120,'Đóng cửa, tắt đèn… 😈']];
+let LOVEB={pts:0};
+const cdKey=a=>'naughty-'+ME+'-'+a;
+function addLove(n){LOVEB.pts=(LOVEB.pts||0)+n;LOVE+=n;saveS('love-bonus',LOVEB,300);send('love',{n});renderLove();const[sx,sy]=charScreen(me);spawn(sx,sy-70,`+${n} 💗`,{vy:-26,life:2,size:15})}
+function renderLove(){const el=$('#loveB');if(el)el.textContent='💗 '+LOVE}
+function openNaughty(){const now=Date.now();$('#ntyL').innerHTML=NAUGHTY.map(([k,e,n,p,cd,d])=>{const left=Math.ceil(((lsGet(cdKey(k),0)+cd*6e4)-now)/6e4);return`<button data-k="${k}" ${left>0?'class="cd"':''}><b>${e}</b><span>${esc(n)}<small>${left>0?`⏳ ${left} phút nữa`:esc(d)}</small></span><i>+${p}</i></button>`}).join('');$('#mNty').classList.add('on')}
+$('#ntyL').onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;const A=NAUGHTY.find(x=>x[0]===b.dataset.k);
+ if(!livePa()){toast(`${ctx.partnerName} chưa vào phòng, rủ vào đã 😏`,'💌 Rủ vào',inviteP);return}
+ const left=lsGet(cdKey(A[0]),0)+A[4]*6e4-Date.now();$('#mNty').classList.remove('on');
+ const go=()=>{doNaughty(me,A[0],false);send('nty',{a:A[0]});if(left<=0){lsSet(cdKey(A[0]),Date.now());addLove(A[3])}else toast('Vẫn ngọt ngào, nhưng lần này không cộng điểm nha 😜')};
+ if(['shower','spicy'].includes(A[0])){go();return}
+ const d=Math.hypot(pa.x-me.x,pa.y-me.y);if(d<1.6||(me.seat&&pa.seat&&me.seat.id===pa.seat.id)){go();return}
+ const tx=Math.floor(pa.x),ty=Math.floor(pa.y),tiles=new Set();for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const x=tx+dx,y=ty+dy;if(inB(x,y)&&!BM[x][y])tiles.add(x+','+y)}
+ if(!tiles.size){go();return}goNear(tiles,{face:[pa.x,pa.y]},()=>{faceToward(me,pa.x,pa.y);go()})};
+// tiếng nhỏ cho từng hành động (tổng hợp, không dùng file)
+const nSfx={slap:()=>{noise(.05,.35,1800,'bandpass');tone(700,.08,'triangle',.04,.05)},pinch:()=>{tone(1400,.06,'square',.03);tone(1800,.08,'square',.03,.07)},tickle:()=>{for(let k=0;k<6;k++)tone(600+((k%2)?250:0),.07,'triangle',.05,k*.09)},
+ whisper:()=>noise(.6,.05,3000,'bandpass'),fkiss:()=>{noise(.04,.2,3500,'highpass');tone(1200,.12,'sine',.04,.04)},deepkiss:()=>{for(let k=0;k<3;k++){noise(.04,.22,3500,'highpass',k*.35);tone(1100,.1,'sine',.04,k*.35+.04)}},
+ backhug:()=>sfx.heart(),carry:()=>{tone(523,.12,'triangle',.05);tone(659,.12,'triangle',.05,.1);tone(784,.2,'triangle',.05,.2)},massage:()=>{for(let k=0;k<5;k++)noise(.08,.15,300,'lowpass',k*.22)},spoon:()=>sfx.heart()};
+function scene(kind,txt,ms){const el=$('#scene');el.className='scene on '+kind;el.innerHTML=`<div>${txt}</div>`;return new Promise(r=>setTimeout(()=>{el.className='scene';r()},ms))}
+function bedSeats(){const bed=R.items.find(i=>i.t==='bed');if(!bed)return false;applySeat(me,{id:bed.id,k:IS_A?0:1,kind:'lie'});applySeat(pa,{id:bed.id,k:IS_A?1:0,kind:'lie'});return true}
+async function doNaughty(c,a,remote){const o=c===me?pa:me;faceToward(c,o.x,o.y);(nSfx[a]||(()=>{}))();vib(40);
+ switch(a){
+ case'slap':c.emo={e:'👋',t:NOW+1500};o.emo={e:'😳',t:NOW+1800};o.act='dizzy';o.actT=NOW+900;burst(o,'💢',1);setTimeout(()=>burst(o,'💗',4),300);break;
+ case'pinch':c.emo={e:'🤏',t:NOW+1500};o.emo={e:'🥺',t:NOW+2000};burst(o,'💗',3);break;
+ case'tickle':o.act='dance';o.actT=NOW+2200;o.emo={e:'🤣',t:NOW+2400};c.emo={e:'😈',t:NOW+2000};break;
+ case'whisper':c.say={text:'*thì thầm* 🤫',t:NOW+2500};setTimeout(()=>{o.emo={e:'🙈',t:NOW+2200};burst(o,'💗',3)},900);break;
+ case'fkiss':c.act='kiss';c.actT=NOW+1500;burst(o,'💗',4);break;
+ case'backhug':c.act='hug';c.actT=NOW+3000;o.act='hug';o.actT=NOW+3000;burst(c,'🫶',3);burst(o,'💞',5);break;
+ case'deepkiss':c.act='kiss';c.actT=NOW+2600;o.act='kiss';o.actT=NOW+2600;burst(c,'💋',6);burst(o,'💋',6);setTimeout(()=>{o.emo={e:'😳',t:NOW+2000};c.emo={e:'🥰',t:NOW+2000}},2000);break;
+ case'carry':c.act='hug';c.actT=NOW+2600;o.emo={e:'😳',t:NOW+2600};burst(o,'✨',6);break;
+ case'massage':c.emo={e:'💆',t:NOW+3000};o.emo={e:'😌',t:NOW+3200};burst(o,'✨',4);break;
+ case'spoon':if(!bedSeats()){toast('Cần có giường trong phòng ngủ 🛏️');break}burst(me,'💤',3);burst(pa,'💗',5);break;
+ case'shower':{const t=setInterval(()=>noise(.4,.06,600,'lowpass'),350);await scene('steam','🛁 Tắm chung…<br><small>bồn đầy bọt, hơi nước mờ cả gương 🫧</small>',5200);clearInterval(t);burst(me,'🫧',8);burst(pa,'🫧',8);me.emo={e:'🧖',t:NOW+3000};pa.emo={e:'🧖‍♀️',t:NOW+3000};break}
+ case'spicy':{const was=R.light;R.light=false;syncHud();for(let k=0;k<4;k++)tone([392,440,494,523][k],.9,'sine',.025,k*.9);
+  await scene('night','🔞 Đóng cửa, tắt đèn…<br><small>chuyện người lớn, Tomortle xin phép quay đi 🙈</small>',3800);
+  await scene('night2','🌙 …<br><small>…</small>',2200);R.light=was;syncHud();bedSeats();
+  await scene('morning','☀️ Sáng hôm sau<br><small>hai đứa vẫn còn ôm nhau ngủ 💞</small>',2600);burst(me,'💗',8);burst(pa,'💗',8);break}
+ }}
+
+$('#bNty').onclick=openNaughty;
+async function calcLove(){if(DEMO){LOVEB=Object.assign({pts:0},await loadS('love-bonus',{}));LOVE=42+(LOVEB.pts||0);renderRoomTabs();renderLove();return}try{const cnt=async(t,f)=>{let q=C.sb.from(t).select('*',{count:'exact',head:true});if(f)q=f(q);const{count}=await q;return count||0};
+ const[a,b,c2,d,e,f,g2]=await Promise.all([cnt('letters'),cnt('daily_answers'),cnt('album'),cnt('vgifts'),cnt('notes'),cnt('voices'),cnt('bucket',q=>q.eq('done',true))]);LOVE=a+Math.floor(b/2)+c2+d+e+f+g2*3+Math.floor(((R.plant&&R.plant.w)||0)/2)}catch(x){}LOVEB=Object.assign({pts:0},await loadS('love-bonus',{}));LOVE+=LOVEB.pts||0;renderRoomTabs();renderLove()}
 function renderRoomTabs(){const el=$('#roomTabs');if(!el)return;
  // 4 phòng trên một hàng (vuốt ngang nếu chật); trong siêu thị thêm một hàng tầng gọn T1·T2·T3
  el.innerHTML=`<div class="rtabs"><button class="${KIND==='room'?'on':''}" data-r="room">🛏️ Phòng ngủ</button><button class="${KIND==='balcony'?'on':''}" data-r="balcony">🌙 Ban công</button><button class="${KIND==='kitchen'?'on':''}" data-r="kitchen">🍳 Bếp</button><button class="${IS_MK?'on':''}" data-r="market">🛒 Siêu thị</button></div>${IS_MK?`<div class="ftabs"><span>🛗</span>${Object.entries(MD.FLOORS).map(([k,f])=>`<button class="${KIND===k?'on':''}" data-r="${k}" title="${f.n}"><b>${f.s}</b> ${({market:'Tươi sống',market2:'Đồ khô · uống',market3:'Đặc sản'})[k]}</button>`).join('')}</div>`:''}`}
