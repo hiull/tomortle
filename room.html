@@ -1188,6 +1188,50 @@ function autoTick(){if(!autoOK()||NOW<autoNext)return;me.auto=true;autoNext=NOW+
  if(Math.random()<.5){me.act='dance';me.actT=NOW+2600;send('emo',{e:'💃'})}else emo(rnd1(['😊','🎶','💭','✨','🥱']))}
 setInterval(()=>{try{autoTick()}catch(e){}},1200);
 
+/* ================= 🎯 Ném đồ (spam thoải mái): mỗi lần bấm là một món bay sang người ấy, có combo ================= */
+const THROWS={
+ pillow:{n:'Ném gối',hit:'💥',dz:900,snd:()=>sfx.bonk()},
+ heart:{e:'💗',n:'Bắn tim',hit:'🥰',love:1,snd:()=>{tone(988,.08,'sine',.06);tone(1319,.1,'sine',.05,.06)}},
+ kiss:{e:'😘',n:'Hôn gió',hit:'😳',love:1,snd:()=>{tone(1568,.06,'sine',.05);tone(2093,.08,'sine',.04,.05)}},
+ cake:{e:'🎂',n:'Úp bánh kem',hit:'🤭',splat:'#fff8e7',dz:500,snd:()=>noise(.18,.3,500,'lowpass')},
+ tomato:{e:'🍅',n:'Ném cà chua',hit:'😖',splat:'#e53935',dz:500,snd:()=>{noise(.12,.35,700,'lowpass');tone(140,.08,'sine',.08)}},
+ water:{e:'💧',n:'Súng nước',hit:'💦',wet:1,fast:1,snd:()=>noise(.08,.18,3500,'highpass')},
+ snow:{e:'❄️',n:'Ném tuyết',hit:'🥶',wet:1,dz:500,snd:()=>noise(.1,.3,900,'lowpass')},
+ slipper:{e:'🩴',n:'Ném dép',hit:'😵',dz:1100,spin:1,snd:()=>{noise(.05,.4,1800,'bandpass');tone(500,.06,'square',.03,.03)}},
+ hammer:{e:'🔨',n:'Búa hơi',hit:'😵‍💫',dz:1000,spin:1,snd:()=>{tone(1900,.05,'square',.04);tone(2400,.07,'square',.04,.05)}},
+ candy:{e:'🍬',n:'Ném kẹo',hit:'😋',snd:()=>sfx.pop()},
+ flower:{e:'🌸',n:'Tung hoa',hit:'🌸',love:1,snd:()=>tone(1760,.12,'triangle',.04)},
+ confetti:{e:'🎉',n:'Pháo giấy',hit:'🎊',boom:1,snd:()=>{for(let k=0;k<5;k++)tone(800+k*240,.05,'square',.025,k*.03)}},
+ bubble:{e:'🫧',n:'Bong bóng',hit:'🫧',slow:1,snd:()=>tone(1400,.05,'sine',.05)}};
+const PROJ=[];let RC={k:'',n:0,t:0},COMBO={k:'',n:0,t:0},TQ={},TQT=null;
+function launch(from,to,k){const T=THROWS[k];if(!T)return;const s=charScreen(from),d=charScreen(to);const top=to.pose==='lie'?24:36;
+ PROJ.push({k,from,to,x0:s[0],y0:s[1]-30,x1:d[0]+(Math.random()-.5)*8,y1:d[1]-top+(Math.random()-.5)*6,t0:NOW,dur:T.fast?300:T.slow?1100:520,r:Math.random()*6});
+ faceToward(from,to.x,to.y);if(soundOn)noise(.06,.05,2000+Math.random()*800,'bandpass')}
+function throwAt(k){ac();if(!livePa()&&!busyPa()&&Math.random()<.15)toast(`${ctx.partnerName} đang ngủ, ném nhẹ thôi kẻo dậy 😆`);
+ launch(me,pa,k);const now=NOW;COMBO=COMBO.k===k&&now-COMBO.t<900?{k,n:COMBO.n+1,t:now}:{k,n:1,t:now};
+ TQ[k]=(TQ[k]||0)+1;if(!TQT)TQT=setTimeout(()=>{for(const[kk,n]of Object.entries(TQ))send('throw',{k:kk,n});TQ={};TQT=null},160)}
+function onHit(p){const T=THROWS[p.k],o=p.to;T.snd&&T.snd();
+ if(T.dz&&o.pose!=='lie'){o.act='dizzy';o.actT=NOW+T.dz}
+ o.emo={e:T.hit,t:NOW+900};
+ if(T.splat){o.splat={c:T.splat,t:NOW+4500,n:Math.min(6,((o.splat&&o.splat.t>NOW)?o.splat.n:0)+1)}}
+ if(T.wet)o.wet=NOW+3500;
+ if(T.love&&Math.random()<.5)burst(o,T.e||'💗',2);
+ if(T.boom){for(let i=0;i<10;i++){const[sx,sy]=charScreen(o);spawn(sx+(Math.random()-.5)*40,sy-40-Math.random()*20,['🎊','✨','🎉','💫'][i%4],{vy:-30-Math.random()*30,life:1.2,size:10})}}
+ else burst(o,T.hit,1);
+ if(o===me)vib(T.dz?[30]:[12]);
+ // combo nổi trên đầu
+ const c=p.from===me?COMBO:(p.combo||null);if(c&&c.n>=3){const[sx,sy]=charScreen(o);spawn(sx+14,sy-70,`x${c.n}${c.n>=20?' 🔥🔥':c.n>=10?' 🔥':''}`,{vy:-20,life:.9,size:Math.min(22,12+c.n*.4)})}
+ if(p.from===me&&COMBO.n===10)toast('🔥 Combo x10! Người ấy chịu sao nổi 😆');if(p.from===me&&COMBO.n===30)toast('💀 x30… tha cho người ta đi 🤣')}
+// vẽ món đang bay + vết bánh kem / ướt trên người
+function drawProj(){for(let i=PROJ.length-1;i>=0;i--){const p=PROJ[i],T=THROWS[p.k],f=Math.min(1,(NOW-p.t0)/p.dur);
+  const x=p.x0+(p.x1-p.x0)*f,y=p.y0+(p.y1-p.y0)*f-Math.sin(f*Math.PI)*(T.fast?8:T.slow?18:38)+(T.slow?Math.sin(f*12)*4:0);
+  g.save();g.translate(x,y);if(p.k==='pillow'){g.rotate(f*8+p.r);rr(-8,-5,16,10,4,'#fff','#e6a3b9')}else{if(T.spin)g.rotate(f*12+p.r);g.font=(T.fast?11:15)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';g.fillText(T.e,0,0)}g.restore();
+  if(p.k==='water'&&f<1){g.strokeStyle='rgba(120,190,255,.6)';g.lineWidth=2;g.beginPath();g.moveTo(p.x0,p.y0);g.lineTo(x,y);g.stroke()}
+  if(f>=1){PROJ.splice(i,1);onHit(p)}}
+ for(const c of[me,pa]){if(c.pose==='lie')continue;const[sx,sy]=charScreen(c),hy=sy-37-(c.pose==='sit'?4:0);
+  if(c.splat&&c.splat.t>NOW){const a=Math.min(1,(c.splat.t-NOW)/1200);g.globalAlpha=a;for(let k=0;k<c.splat.n+2;k++){const ang=k*2.3,rx=Math.cos(ang)*6,ry=Math.sin(ang)*5;circ(sx+rx,hy+ry+1,3.2+(k%3),c.splat.c,'rgba(0,0,0,.08)')}if(c.splat.c!=='#e53935'){circ(sx-2,hy-6,2.2,'#ff5252')}g.globalAlpha=1}
+  if(c.wet>NOW){g.fillStyle='rgba(120,190,255,.85)';for(let k=0;k<4;k++){const dy=((NOW/6+k*23)%26);g.beginPath();g.ellipse(sx-9+k*6,hy-4+dy,1.1,1.8,0,0,7);g.fill()}}}}
+
 /* ================= scene compose ================= */
 let HITS=[],OVER=[];
 window.__dbg={wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
@@ -1220,6 +1264,7 @@ function render(dt){
  D.sort((a,b)=>a.k-b.k);
  for(const d of D){d.fn();if(d.hit)HITS.push(d.hit)}
  lightPass();
+ drawProj();
  if(!editing)drawSigns();
  for(const f of OVER)f();
  if(editing)drawEditOverlay();
@@ -1236,7 +1281,7 @@ function hitAt(px,py){for(let i=HITS.length-1;i>=0;i--){const h=HITS[i];if(h.rec
 /* ================= loop ================= */
 let last=performance.now();
 let lastDraw=0;window.__mainG=g;
-function frame(t){const modal=document.querySelector('.modal.on'),busy=me.path.length||pa.path.length||FX.length||(me.act&&t<me.actT)||(pa.act&&t<pa.actT),gap=modal?160:busy?0:33;
+function frame(t){const modal=document.querySelector('.modal.on'),busy=me.path.length||pa.path.length||FX.length||PROJ.length||(me.act&&t<me.actT)||(pa.act&&t<pa.actT),gap=modal?160:busy?0:33;
  if(t-lastDraw<gap-2){requestAnimationFrame(frame);return}lastDraw=t;
  const dt=Math.min(.2,(t-last)/1000);last=t;NOW=t;
  stepChar(me,dt);if(livePa()||busyPa())stepChar(pa,dt);for(const n of NPCS)stepChar(n,dt);updatePet();
@@ -1262,6 +1307,7 @@ function onMsg(m){
  case'gift':burst(pa,'🎁',6);sfxChaching();toast(`🎁 ${ctx.partnerName} vừa tặng bạn ${m.n}! Mở 🎒 Đồ đã mua để dùng nhé`,'🎒 Xem',()=>openBag());break;
  case'say':chatLog(PA,m.text);pa.say={text:m.text,t:NOW+6500};UP.msg={text:m.text,at:Date.now()};lsSet('seenMsg-'+PA,UP.msg.at);sfx.pop();break;
  case'act':doAct(pa,m.a,true);break;
+ case'throw':{const n=Math.min(12,m.n|0||1);for(let i=0;i<n;i++)setTimeout(()=>{RC=RC.k===m.k&&NOW-RC.t<1300?{k:m.k,n:RC.n+1,t:NOW}:{k:m.k,n:1,t:NOW};launch(pa,me,m.k);PROJ[PROJ.length-1].combo={...RC}},i*110);break}
  case'room':R=m.R;BM=blockedMap();petCache.k=-1;fixMe();syncDecorUI();updateAudio();break;
  case'av':UP.av=m.av;break;
  case'ball':pet.ball=m.p;pet.ballT=Date.now()+4000;break;
@@ -1389,7 +1435,7 @@ function charMenu(c,sx,sy){
  if(c===me){menu(sx,sy,ctx.myName+' (bạn)','',[['👗 Thay đồ',openAvatar,1],['💃 Nhảy',()=>{doAct(me,'dance');send('act',{a:'dance'})}],...(me.seat?[['🚶 Đứng dậy',()=>{standUp(me);send('seat',{seat:null,x:me.x,y:me.y})}]]:[])]);return}
  if(busyPa()){menu(sx,sy,ctx.partnerName,paDoing()+' · chưa vào phòng',[['💌 Rủ vào phòng',inviteP,1],['💗 Thả tim',()=>{burst(pa,'💗',6);ctx.main&&ctx.main.send({type:'broadcast',event:'miss',payload:{}})}]]);return}
  if(!livePa()){menu(sx,sy,ctx.partnerName,'Đang ngủ 💤'+(UP.msg?.text?' · lời nhắn: “'+UP.msg.text+'”':''),[['💌 Rủ vào phòng',inviteP,1],['😘 Hôn chúc ngủ ngon',()=>{burst(pa,'💋',4);say('Ngủ ngon nha 😘')}]]);return}
- menu(sx,sy,ctx.partnerName,'',[['🤗 Ôm',()=>toPartner('hug'),1],['😘 Hôn',()=>toPartner('kiss')],['💥 Ném gối',()=>toPartner('pillow')],['👋 Vẫy tay',()=>{doAct(me,'wave');send('act',{a:'wave'})}]])}
+ menu(sx,sy,ctx.partnerName,'',[['🤗 Ôm',()=>toPartner('hug'),1],['😘 Hôn',()=>toPartner('kiss')],['💥 Ném gối',()=>throwAt('pillow')],['🩴 Ném dép',()=>throwAt('slipper')],['🎂 Úp bánh kem',()=>throwAt('cake')],['💧 Bắn súng nước',()=>throwAt('water')],['👋 Vẫy tay',()=>{doAct(me,'wave');send('act',{a:'wave'})}]])}
 function petMenu(sx,sy){if(!R.pet)return;const h=petHungry();const mood=pet.sleep?'đang ngủ 💤':h>20?'đói meo 🥺':h>8?'hơi đói':'no bụng, vui vẻ 💗';
  menu(sx,sy,`${PETS[R.pet.k].e} ${R.pet.n}`,mood+` · được yêu ${R.pet.love||0} lần`,[['🍖 Cho ăn',feedPet,1],['🤲 Vuốt ve',petPet],['⚾ Ném bóng',throwBall],['✏️ Đổi tên',renamePet]])}
 function moonName(){const lp=2551443,nm=new Date(1970,0,7,20,35,0);const ph=((Date.now()-nm.getTime())/1000)%lp/lp;return ph<.03||ph>.97?'là trăng non':ph<.22?'lưỡi liềm đầu tháng':ph<.28?'bán nguyệt':ph<.47?'gần tròn':ph<.53?'tròn vành vạnh':ph<.72?'đang khuyết':ph<.78?'bán nguyệt cuối tháng':'lưỡi liềm cuối tháng'}
@@ -1929,7 +1975,7 @@ document.addEventListener('keydown',e=>{if(editing||e.target.tagName==='INPUT')r
  const m={'0,-1':[-1,0],'0,1':[1,0],'-1,0':[0,1],'1,0':[0,-1]}[k.join(',')]||k;const tx=Math.floor(me.x)+m[0],ty=Math.floor(me.y)+m[1];if(inB(tx,ty)&&!BM[tx][ty])goTile(tx,ty,null)});
 
 /* emotes bar */
-const EMOS=[['👋','Vẫy',()=>{doAct(me,'wave');send('act',{a:'wave'})}],['💗','Thả tim',()=>{burst(me,'💗',7);send('emo',{e:'💗',burst:'💗'});sfx.heart()}],['🤗','Ôm',()=>toPartner('hug')],['😘','Hôn',()=>toPartner('kiss')],['💥','Ném gối',()=>toPartner('pillow')],['💃','Nhảy',()=>{doAct(me,'dance');send('act',{a:'dance'})}],['😂','Haha',()=>emo('😂')],['🥺','Nhớ',()=>emo('🥺')],['😡','Dỗi',()=>emo('😤')],['😴','Đi ngủ',()=>{const b=R.items.find(i=>i.t==='bed');if(b)sitOn(b,'lie');else emo('😴')}]];
+const EMOS=[['👋','Vẫy',()=>{doAct(me,'wave');send('act',{a:'wave'})}],['💗','Thả tim',()=>{burst(me,'💗',7);send('emo',{e:'💗',burst:'💗'});sfx.heart()}],['🤗','Ôm',()=>toPartner('hug')],['😘','Hôn',()=>toPartner('kiss')],['💥','Ném gối',()=>throwAt('pillow')],['🩴','Ném dép',()=>throwAt('slipper')],['🎂','Úp bánh',()=>throwAt('cake')],['💧','Súng nước',()=>throwAt('water')],['🍅','Cà chua',()=>throwAt('tomato')],['❄️','Ném tuyết',()=>throwAt('snow')],['🔨','Búa hơi',()=>throwAt('hammer')],['💗','Bắn tim',()=>throwAt('heart')],['😘','Hôn gió',()=>throwAt('kiss')],['🍬','Ném kẹo',()=>throwAt('candy')],['🌸','Tung hoa',()=>throwAt('flower')],['🎉','Pháo giấy',()=>throwAt('confetti')],['🫧','Bong bóng',()=>throwAt('bubble')],['💃','Nhảy',()=>{doAct(me,'dance');send('act',{a:'dance'})}],['😂','Haha',()=>emo('😂')],['🥺','Nhớ',()=>emo('🥺')],['😡','Dỗi',()=>emo('😤')],['😴','Đi ngủ',()=>{const b=R.items.find(i=>i.t==='bed');if(b)sitOn(b,'lie');else emo('😴')}]];
 function emo(e){me.emo={e,t:NOW+2600};send('emo',{e});sfx.pop()}
 $('#emos').innerHTML=EMOS.map((x,i)=>`<button data-i="${i}">${x[0]}<small>${x[1]}</small></button>`).join('');
 $('#emos').onclick=e=>{const b=e.target.closest('button');if(!b)return;ac();EMOS[+b.dataset.i][2]()};
