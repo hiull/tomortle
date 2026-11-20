@@ -206,6 +206,13 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <div class="incart" id="rmQ"></div>
   <div class="row" style="gap:8px;margin-top:10px"><button class="btn" onclick="this.closest('.modal').classList.remove('on')">Để sau</button><button class="btn primary" style="flex:1" id="rmSend">🤵 Gửi món cho bếp</button></div>
 </div></div>
+<div class="modal" id="mSkin"><div class="sheet">
+  <h3>🧴 Skincare của <span id="skWho"></span></h3>
+  <div class="ftabs" id="skT" style="margin:6px 0"><button data-m="am">☀️ Buổi sáng</button><button data-m="pm">🌙 Buổi tối</button></div>
+  <p class="note" id="skSub" style="margin:4px 0 8px"></p>
+  <div id="skL" style="max-height:48vh;overflow:auto"></div>
+  <div class="row" style="gap:8px;margin-top:10px"><button class="btn" onclick="this.closest('.modal').classList.remove('on')">Xong</button><button class="btn primary" style="flex:1" id="skAll">✨ Làm hết các bước</button></div>
+</div></div>
 <div class="modal" id="mResto"><div class="sheet">
   <h3>🍽️ Bàn của hai đứa</h3>
   <div id="rsL" style="max-height:40vh;overflow:auto"></div>
@@ -242,10 +249,10 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 <div id="toast"></div><div class="fx" id="fx"></div>
 <script type="module">
 const DEMO=new URLSearchParams(location.search).has('demo');
-const KIND=({balcony:'balcony',market:'market',market2:'market2',market3:'market3',mall:'mall',mall2:'mall2',mall3:'mall3',mall4:'mall4',mall5:'mall5',kitchen:'kitchen',resto:'resto',resto2:'resto2'})[new URLSearchParams(location.search).get('r')]||'room';const RK=KIND==='room'?'room':'room-'+KIND;const PAGE=RK;const UNLOCK=0; // ban công đã mở cho cả hai
+const KIND=({balcony:'balcony',market:'market',market2:'market2',market3:'market3',mall:'mall',mall2:'mall2',mall3:'mall3',mall4:'mall4',mall5:'mall5',kitchen:'kitchen',spa:'spa',resto:'resto',resto2:'resto2'})[new URLSearchParams(location.search).get('r')]||'room';const RK=KIND==='room'?'room':'room-'+KIND;const PAGE=RK;const UNLOCK=0; // ban công đã mở cho cả hai
 const C=DEMO?null:await import('./common.js');
 const IS_MK=KIND.startsWith('market')||KIND.startsWith('mall');const IS_MALL=KIND.startsWith('mall');const IS_RT=KIND.startsWith('resto');
-const MD=(IS_MK||KIND==='kitchen'||IS_RT)?await import('./market.js'):null;
+const MD=(IS_MK||KIND==='kitchen'||KIND==='spa'||IS_RT)?await import('./market.js'):null;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
@@ -295,6 +302,10 @@ const CAT={
  stove:{n:'Bếp nấu',e:'🍳',w:1,d:1,h:40,c:'#fdf6f0'},
  counter:{n:'Bồn rửa & tủ bếp',e:'🚰',w:2,d:1,h:40,c:'#d9a87c'},
  ktable:{n:'Bàn ăn',e:'🍽️',w:2,d:1,h:30,c:'#c69c72'},
+ vanity:{n:'Bàn trang điểm',e:'💄',w:2,d:1,h:30,c:'#fbeff2'},
+ basin:{n:'Bồn rửa mặt',e:'🚿',w:1,d:1,h:34,c:'#ffffff'},
+ skinshelf:{n:'Kệ mỹ phẩm',e:'🧴',w:1,d:1,h:62,c:'#f3e3e8'},
+ spabed:{n:'Giường spa',e:'💆',w:2,d:1,h:24,c:'#fdfaf6',lie:[[.5,.5]]},
  checkout:{n:'Quầy thu ngân',e:'🧾',w:2,d:1,h:34,c:'#ff8fab'},
  cartrack:{n:'Xe đẩy',e:'🛒',w:1,d:1,h:30,c:'#c8c8cf'},
  rtable:{n:'Bàn ăn nhà hàng',e:'🍽️',w:1,d:1,h:26,c:'#fafafa'},
@@ -345,13 +356,17 @@ function defResto(k=KIND){const vip=k==='resto2';return{v:1,mv:4,lux:1,kind:k,wa
   [['host',0,3,1],['bar',3,0,0],['piano',6,0,0],['plant',0,0,1],['waiter',7,4,3],['rtable',2,2,0],['chair',2,1,0],['chair',2,3,2],['rtable',5,2,0],['chair',5,1,0],['chair',5,3,2],['rtable',2,5,0,1],['chair',2,4,0,1],['chair',2,6,2,1],['rtable',5,6,0,1],['chair',5,5,0,1],['chair',5,7,2,1],['vase',7,7,0]])
   .map(([t,x,y,r,npc])=>Object.assign({id:nid(),t,x,y,r,c:t==='chair'?(vip?'#c9a227':'#7a4b2e'):t==='rug'?'#8e2a3a':CAT[t].c},npc?{npc:1}:{})),
  walls:[{t:'door',w:'B',p:5},{t:vip?'fairy':'window',w:'A',p:vip?1:4},{t:'frame',w:'B',p:2},{t:'clock',w:'A',p:vip?5:2}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
+function defSpa(){return{v:1,mv:4,lux:1,kind:'spa',wall:{c:'#f6e6ea',p:'panel'},floor:{c:'#f5f1ec',p:'marble'},light:true,music:true,rain:false,
+ items:[{t:'vanity',x:0,y:0,r:0},{t:'chair',x:0,y:1,r:0},{t:'basin',x:3,y:0,r:0},{t:'skinshelf',x:4,y:0,r:0},{t:'plant',x:7,y:0,r:0},{t:'rug',x:3,y:3,r:0},
+  {t:'spabed',x:5,y:4,r:3},{t:'lamp',x:7,y:7,r:0},{t:'vase',x:0,y:6,r:1},{t:'plant',x:0,y:3,r:1}].map(o=>Object.assign({id:nid(),c:o.t==='chair'?'#f4c6d4':o.t==='rug'?'#f1d3dc':CAT[o.t].c},o)),
+ walls:[{t:'mirror',w:'A',p:1},{t:'window',w:'A',p:5},{t:'frame',w:'B',p:2},{t:'door',w:'B',p:5}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 function defKitchen(){return{v:1,kind:'kitchen',wall:{c:'#fff1e6',p:'gingham'},floor:{c:'#f6f0e8',p:'tiles'},light:true,music:true,rain:false,
  items:[{t:'counter',x:0,y:0,r:0},{t:'stove',x:2,y:0,r:0},{t:'fridge',x:3,y:0,r:0},{t:'shelf',x:4,y:0,r:0},{t:'plant',x:7,y:0,r:0},
   {t:'ktable',x:3,y:4,r:0},{t:'chair',x:3,y:3,r:0},{t:'chair',x:4,y:5,r:2},{t:'lamp',x:7,y:3,r:3},{t:'rug',x:2,y:3,r:0},{t:'vase',x:7,y:7,r:0}].map(o=>Object.assign({id:nid(),c:CAT[o.t].c},o)),
  walls:[{t:'door',w:'B',p:5},{t:'window',w:'A',p:5},{t:'clock',w:'B',p:2},{t:'garland',w:'A',p:0}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 const UK=id=>'room-u-'+id;
 let [R,UM,UP]=await Promise.all([loadS(RK,null),loadS(UK(ME),{}),loadS(UK(PA),{})]);
-if(!R||!R.items||((IS_MK||IS_RT)&&(R.mv|0)<4))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():IS_RT?defResto():KIND==='kitchen'?defKitchen():defRoom();R.kind=KIND;
+if(!R||!R.items||((IS_MK||IS_RT)&&(R.mv|0)<4))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():IS_RT?defResto():KIND==='kitchen'?defKitchen():KIND==='spa'?defSpa():defRoom();R.kind=KIND;
 R.items=R.items.filter(i=>CAT[i.t]);
 UM=UM||{};UP=UP||{};if(!UM.av){const bk=lsGet('roomU-'+ME,null);if(bk&&bk.av)UM=bk}
 
@@ -631,6 +646,13 @@ function drawItem(it){
  case'grill':{const lg=shade(c,-.1);parts(it,[[.25,.32,.25,.32,0,22,lg,.5,.5],[.68,.75,.25,.32,0,22,lg,.5,.5],[.25,.32,.68,.75,0,22,lg,.5,.5],[.68,.75,.68,.75,0,22,lg,.5,.5],[.18,.82,.18,.82,22,10,c,.5,.5]]);const m=lp3(it,.5,.5,32);g.strokeStyle='#bbb';for(let k=-2;k<=2;k++){g.beginPath();g.moveTo(m[0]-14,m[1]+k*2.5);g.lineTo(m[0]+14,m[1]+k*2.5);g.stroke()}rr(m[0]-9,m[1]-3,7,3,1.5,'#c0392b');rr(m[0]+2,m[1]-1,7,3,1.5,'#e9c46a');if(Math.random()<.04)spawn(m[0],m[1]-6,'💨',{size:10,vy:-14,life:1.2});break}
  case'stove':{parts(it,[[.05,.95,.1,.9,0,38,c]]);fquad(it,.12,.88,.1,6,30,'#e9e1d8',null);fquad(it,.2,.8,.1,10,26,'#2b2d42',null);const top=[[.3,.32],[.7,.32],[.3,.68],[.7,.68]];for(const[a,b]of top){const p=lp3(it,a,b,40);ell(p[0],p[1],7,3.5,'#3a3a46');ell(p[0],p[1],4,2,'#555')}
   if(window.COOKING&&NOW<window.COOKING.until){const p=lp3(it,.3,.32,40);for(let k=0;k<3;k++)emj('🔥',p[0]-4+k*4,p[1]-3-Math.abs(Math.sin(NOW/90+k))*3,8);emj('🍳',p[0],p[1]-9,15);if(Math.random()<.06)spawn(p[0],p[1]-14,'💨',{size:10,vy:-16,life:1})}break}
+ case'vanity':{parts(it,[[0,1,.15,.85,0,28,c],[0,1,.12,.88,28,2,'#e9d5a1']]);if(frontVis(it)){fquad(it,.05,.48,.15,5,24,shade(c,-.05),null);fquad(it,.52,.95,.15,5,24,shade(c,-.05),null);for(const a of[.27,.73]){const q=lp3(it,a,.15,15);circ(q[0],q[1],1.4,'#c9a227')}}
+  fquad(it,.22,.78,.86,31,66,'#c9a227',null);fquad(it,.26,.74,.86,34,63,'#e3f1f8',null);fquad(it,.3,.42,.86,40,60,'rgba(255,255,255,.55)',null);
+  for(const[a,cl]of[[.12,'#ffb3c6'],[.2,'#cdb4db'],[.85,'#ffd6a5']]){const q=lp3(it,a,.55,30);rr(q[0]-2,q[1]-9,4,9,1.5,cl);rr(q[0]-1,q[1]-11,2,2,.5,'#c9a227')}{const q=lp3(it,.62,.45,30);ell(q[0],q[1],5,2.2,'#fff','#e8c9d2');circ(q[0],q[1]-1,1.6,'#ff8fab')}
+  for(let k=0;k<6;k++){const a=.24+k*.1,q=lp3(it,a,.86,68);circ(q[0],q[1],1.6,'rgba(255,240,180,'+(.6+.4*Math.sin(NOW/300+k))+')')}break}
+ case'basin':{parts(it,[[.3,.7,.3,.7,0,24,'#eef1f4']]);const p=lp3(it,.5,.5,24);ell(p[0],p[1]-2,15,7,c,'#d7dde2');ell(p[0],p[1]-2,11,4.6,'#cfe6f2');const f=lp3(it,.5,.82,24);g.strokeStyle='#c9a227';g.lineWidth=2.4;g.beginPath();g.moveTo(f[0],f[1]);g.lineTo(f[0],f[1]-12);g.lineTo(f[0]+(p[0]-f[0])*.5,f[1]-12+(p[1]-f[1])*.5);g.stroke();if(window.__splash>NOW){g.strokeStyle='rgba(120,190,230,.8)';g.lineWidth=2;g.beginPath();g.moveTo(f[0]+(p[0]-f[0])*.5,f[1]-11+(p[1]-f[1])*.5);g.lineTo(p[0],p[1]-3);g.stroke()}break}
+ case'skinshelf':{parts(it,[[.08,.92,.3,.95,0,62,c]]);if(frontVis(it)){fquad(it,.12,.88,.3,4,58,shade(c,-.18),null);const G=skinGoods();let k=0;for(const z of[6,24,42]){fquad(it,.12,.88,.3,z-2,z,'#e9d5a1',null);for(const a of[.3,.7]){const q=lp3(it,a,.28,z+8);emj(G[k++%G.length],q[0],q[1],11)}}}break}
+ case'spabed':{parts(it,[[.05,.95,.15,.85,0,16,'#d9b99b'],[.05,.95,.15,.85,16,7,c]]);const q=lp3(it,.12,.5,23);ell(q[0],q[1],8,3.6,'#fff','#eee');const t2=lp3(it,.6,.5,23);ell(t2[0],t2[1],13,4,'#f7cad0');break}
  case'counter':{parts(it,[[0,1,.1,.9,0,38,c],[0,1,.06,.94,38,3,'#f4efe9']]);fquad(it,.04,.48,.1,6,32,shade(c,-.12),null);fquad(it,.52,.96,.1,6,32,shade(c,-.12),null);const s2=lp3(it,.3,.5,41);ell(s2[0],s2[1],12,5,'#b8c4cc');ell(s2[0],s2[1],9,3.6,'#9fb0bb');const f=lp3(it,.3,.15,41);g.strokeStyle='#9aa';g.lineWidth=2.5;g.beginPath();g.moveTo(f[0],f[1]);g.lineTo(f[0],f[1]-12);g.lineTo(f[0]+5,f[1]-9);g.stroke();const k=lp3(it,.75,.5,41);emj('🧂',k[0]-6,k[1]-5,10);emj('🫙',k[0]+7,k[1]-5,10);break}
  case'ktable':{const lg=shade(c,-.2);parts(it,[[.04,.1,.1,.2,0,28,lg,.5,.5],[.9,.96,.1,.2,0,28,lg,.5,.5],[.04,.1,.8,.9,0,28,lg,.5,.5],[.9,.96,.8,.9,0,28,lg,.5,.5],[0,1,.05,.95,28,3,c]]);const cl=[lp3(it,0,.05,31),lp3(it,1,.05,31),lp3(it,1,.95,31),lp3(it,0,.95,31)];poly([[cl[0][0],cl[0][1]],[cl[1][0],cl[1][1]],[cl[2][0],cl[2][1]],[cl[3][0],cl[3][1]]],'rgba(255,255,255,.55)',null);
   const D=(window.DISHES||[]).slice(-4);D.forEach((d,k)=>{const p=lp3(it,.18+k*.22,.5,31);ell(p[0],p[1],8,3.5,'#fff','#ddd');emj(d.e,p[0],p[1]-5,14)});break}
@@ -740,13 +762,16 @@ function drawChibi(av,sx,sy,o){
   const ex=1.2;circ(-4.3+ex,hy+1,1.9,'#3a2430');circ(4.3+ex,hy+1,1.9,'#3a2430');circ(-3.8+ex,hy+.3,.7,'#fff');circ(4.8+ex,hy+.3,.7,'#fff');
   {const bl=av.blush?av.blush+'b3':av.acc==='blush'?'rgba(255,100,140,.7)':'rgba(255,130,160,.38)';circ(-7+ex,hy+4.5,av.blush?2.7:2.3,bl);circ(7+ex,hy+4.5,av.blush?2.7:2.3,bl)}
   g.strokeStyle=av.lip||'#8a3b55';g.lineWidth=av.lip?2.1:1.1;g.beginPath();if(o.mouth==='o'){circ(ex,hy+6,1.6,av.lip||'#8a3b55')}else{g.arc(ex,hy+4.8,2,.2,Math.PI-.2);g.stroke()}
+  if(av.mask&&av.mask.t>Date.now()){g.fillStyle=av.mask.c;g.beginPath();g.ellipse(0,hy+2,10.5,9.5,0,0,7);g.fill();circ(-3.1+ex,hy+1,2.1,sk);circ(5.5+ex,hy+1,2.1,sk);circ(-3.1+ex,hy+1,1.5,'#3a2430');circ(5.5+ex,hy+1,1.5,'#3a2430');g.strokeStyle='rgba(0,0,0,.25)';g.lineWidth=1;g.beginPath();g.arc(ex+1,hy+6,1.6,.2,Math.PI-.2);g.stroke()}
   hairFront(av,0,hy,false,false);
+  if(av.glow>Date.now()){const t3=NOW/380;for(let k=0;k<3;k++){g.globalAlpha=.4+.6*Math.abs(Math.sin(t3+k*1.7));spark(Math.cos(k*2.1+t3*.3)*14,hy-4+Math.sin(k*2.6)*9,2.4);}g.globalAlpha=1}
  }
  accessory(av,0,hy,back);
  if(av.bag&&!lie){const sd=back?-1:1;g.strokeStyle=shade(av.bag,-.3);g.lineWidth=1.2;g.beginPath();g.moveTo(-5*sd,-27+by);g.lineTo(9*sd,-15+by);g.stroke();rr(sd>0?7:-14,-16+by,7,7,2,av.bag,shade(av.bag,-.3));circ(sd>0?10.5:-10.5,-13+by,.9,'#e0c066')}
  if(av.scent){const t2=NOW/450+(o.seed||0);for(let k=0;k<3;k++){g.globalAlpha=.55+.45*Math.sin(t2*2+k);circ(Math.cos(t2+k*2.1)*15,-30+by+Math.sin(t2*1.3+k)*13,1.5,av.scent);circ(Math.cos(t2+k*2.1)*15,-30+by+Math.sin(t2*1.3+k)*13,.7,'#fff')}g.globalAlpha=1}
  g.restore();
 }
+function spark(x,y,r){g.fillStyle='#fff7c2';g.beginPath();g.moveTo(x,y-r*2);g.lineTo(x+r*.5,y-r*.5);g.lineTo(x+r*2,y);g.lineTo(x+r*.5,y+r*.5);g.lineTo(x,y+r*2);g.lineTo(x-r*.5,y+r*.5);g.lineTo(x-r*2,y);g.lineTo(x-r*.5,y-r*.5);g.closePath();g.fill()}
 function hairBack(av,x,y,lie){g.fillStyle=av.hc;const s=av.hair;
  if(s==='long'){g.beginPath();g.moveTo(x-13,y-2);g.quadraticCurveTo(x-15,y+18,x-10,y+22);g.lineTo(x+10,y+22);g.quadraticCurveTo(x+15,y+18,x+13,y-2);g.closePath();g.fill()}
  else if(s==='bob'){rr(x-14,y-4,28,16,6,av.hc)}
@@ -976,6 +1001,10 @@ function itemMenu(it,sx,sy){const c=CAT[it.t];const B=[];let sub='';
  case'fridge':if(KIND==='kitchen'){B.push(['🧊 Mở tủ lạnh (nguyên liệu)',()=>{useItem(it);openPantry()},1]);goUse('📝 Xem note dán tủ',()=>nav('fridge.html'))}else goUse('📝 Xem note dán tủ',()=>nav('fridge.html'),1);break;
  case'stove':B.push(['🍳 Nấu ăn',()=>{useItem(it);openCook()},1]);break;
  case'counter':goUse('🧽 Rửa bát',()=>{me.emo={e:'🫧',t:NOW+2500};send('emo',{e:'🫧'});burst(me,'🫧',4)},1);B.push(['🧊 Xem nguyên liệu',openPantry]);break;
+ case'vanity':sub=skinSub();B.push(['🧴 Làm skincare',()=>{useItem(it);openSkin()},1]);B.push(['💄 Trang điểm & thay đồ',()=>useItem(it,openAvatar)]);B.push(['🧖 Đắp mặt nạ',()=>useItem(it,()=>doMask())]);B.push(['✨ Tẩy trang',()=>useItem(it,cleanFace)]);break;
+ case'basin':goUse('💦 Rửa mặt',()=>skinAct('clean'),1);goUse('🪥 Đánh răng',()=>{me.emo={e:'🪥',t:NOW+2600};send('emo',{e:'🪥'});noise(1.2,.06,3000,'bandpass');burst(me,'🫧',3)});break;
+ case'skinshelf':sub=`${skinItems().length} món skincare trong tủ của bạn`;B.push(['🧴 Xem & dùng',()=>{useItem(it);openSkin()},1]);B.push(['🛍️ Đi TTTM mua thêm',()=>nav('room.html?r=mall2'+(DEMO?'&demo':''))]);break;
+ case'spabed':B.push(['💆 Nằm thư giãn',()=>sitOn(it,'lie'),1]);B.push(['🧖 Nằm đắp mặt nạ',()=>{sitOn(it,'lie');doMask()}]);break;
  case'ktable':{const D=PT.dishes||[];sub=D.length?`${D.length} món đang bày · bấm để chọn ăn`:'Bàn trống, bày món từ tủ lạnh hoặc nấu đi 🍳';B.push(['🍽️ Mở bàn ăn',()=>{useItem(it);openTable()},1]);const ch2=R.items.filter(i=>i.t==='chair');if(ch2.length)B.push(['🪑 Ngồi vào bàn',()=>{const c=ch2.find(c=>!seatTaken(c,0,'sit',ME))||ch2[0];sitOn(c,'sit')}]);break}
  case'mailbox':goUse('💌 Mở hòm thư',()=>nav('letters.html'),1);goUse('✍️ Viết thư',()=>nav('letters.html?t=write'));break;
  case'camera':goUse('📸 Rủ chụp photobooth',boothInvite,1);break;
@@ -1217,6 +1246,48 @@ const sfxSlurp=()=>{for(let k=0;k<11;k++)noise(.055,.16,650+k*140+Math.random()*
 function eatDish(id){const d=PT.dishes.find(x=>x.id===id);if(!d)return;d.b--;if(d.b<=0)PT.dishes=PT.dishes.filter(x=>x!==d);ptSave();const dr=isDrink(d);me.emo={e:d.e,t:NOW+1800};burst(me,dr?'💦':'😋',3);send('eat',{e:d.e,drink:dr});if(dr)sfxSlurp();else sfxChew();vib(dr?[20,30,20]:[15,40,15,40,15]);drawTable();
  const atTable=c=>c.seat&&itemById(c.seat.id)?.t==='chair';
  if(atTable(me)&&atTable(pa)&&livePa()){burst(me,'💗',5);burst(pa,'💗',4);toast('Ăn cùng nhau ngon gấp đôi 💗')}else if(d.b<=0)toast(`Hết sạch ${d.n} rồi, ngon quá 😋`)}
+/* ================= 🧴 Phòng skincare: quy trình sáng/tối bằng đồ mua ở TTTM ================= */
+const SKSTEP={remove:['Tẩy trang','🧼',/^(nước|sáp|dầu|bông|gel) tẩy trang|micellar|cleansing/i],clean:['Sữa rửa mặt','🫧',/^(sữa rửa mặt|gel rửa mặt|bọt rửa mặt)|cleanser|rửa mặt/i],
+ toner:['Toner','💧',/^(toner|nước hoa hồng|nước thần|lotion|essence|nước cân bằng)/i],serum:['Serum','💎',/^(serum|tinh chất|ampoule|retinol)/i],
+ moist:['Kem dưỡng','🧴',/^(kem dưỡng|kem (?!chống|nền|lót|mắt)|gel dưỡng|sữa dưỡng (?!thể)|dưỡng ẩm)/i],sun:['Chống nắng','☀️',/chống nắng|sunscreen|sun (cream|milk|stick)/i],mask:['Mặt nạ','🧖',/^mặt nạ(?! ngủ môi)/i]};
+const SKR={am:['clean','toner','serum','moist','sun'],pm:['remove','clean','toner','serum','moist','mask']};
+let SK={},SKCL={},skMode=new Date().getHours()<15&&new Date().getHours()>=4?'am':'pm';
+if(KIND==='spa'){SK=await loadS('skincare',{})||{};SKCL=await loadS('closet',{})||{};$('#hint').textContent='Chạm 💄 bàn trang điểm để skincare · 🚿 rửa mặt · 💆 giường spa đắp mặt nạ · mỹ phẩm mua ở 🛍️ TTTM sẽ lên kệ'}
+const today=()=>new Date().toISOString().slice(0,10);
+function skinItems(){return(SKCL[ME]||[]).filter(x=>Object.values(SKSTEP).some(s=>s[2].test(x.n))).filter((x,i,a)=>a.findIndex(y=>y.n===x.n)===i)}
+function skinGoods(){const L=skinItems().map(x=>x.e);return L.length?L:['🧴','🧼','💧','🫧','🌸','🧖']}
+function mySk(){const d=today();const m=SK[ME]=SK[ME]||{};if(m.day!==d){if(m.day&&(m.am||m.pm)&&new Date(d)-new Date(m.day)>864e5*1.5)m.streak=0;m.day=d;m.am=[];m.pm=[]}return m}
+function skinSub(){const m=mySk();return`☀️ ${m.am.length}/${SKR.am.length} · 🌙 ${m.pm.length}/${SKR.pm.length} bước hôm nay${m.streak?` · 🔥 ${m.streak} ngày liền`:''}`}
+function prodFor(st){return skinItems().filter(x=>SKSTEP[st][2].test(x.n))}
+function openSkin(){$('#skWho').textContent=ctx.myName||'bạn';drawSkin();$('#mSkin').classList.add('on')}
+function drawSkin(){const m=mySk(),done=m[skMode];$('#skT').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.m===skMode));
+ $('#skSub').innerHTML=skinSub()+(skinItems().length?'':' · <b>chưa có mỹ phẩm</b>, đang dùng đồ mẫu, mua thêm ở 🛍️ TTTM nhé');
+ $('#skL').innerHTML=SKR[skMode].map((st,i)=>{const[n,e]=SKSTEP[st],P=prodFor(st),ok=done.includes(st),sel=m['use_'+st]&&P.find(x=>x.n===m['use_'+st])||P[0];
+  return`<div class="cl" style="${ok?'opacity:.55':''}"><b>${i+1}. ${e}</b><span>${n}<br><small class="note">${sel?icoH(sel.e,'ico s')+' '+esc(sel.n):'đồ mẫu của phòng'}${P.length>1?` · <a href="#" data-sw="${st}">đổi (${P.length})</a>`:''}</small></span><button class="btn small ${ok?'':'primary'}" style="flex:none;white-space:nowrap;min-width:64px" data-st="${st}">${ok?'✓ Xong':'Dùng'}</button></div>`}).join('')}
+$('#skT').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;skMode=b.dataset.m;drawSkin()};
+$('#skL').onclick=e=>{const sw=e.target.closest('[data-sw]');if(sw){e.preventDefault();const st=sw.dataset.sw,P=prodFor(st),m=mySk(),i=P.findIndex(x=>x.n===m['use_'+st]);m['use_'+st]=P[(i+1)%P.length].n;drawSkin();return}
+ const b=e.target.closest('[data-st]');if(!b)return;skinAct(b.dataset.st);drawSkin()};
+$('#skAll').onclick=async()=>{for(const st of SKR[skMode]){if(mySk()[skMode].includes(st))continue;skinAct(st);drawSkin();await new Promise(r=>setTimeout(r,900))}};
+// mỗi bước: hiệu ứng + âm thanh riêng, đánh dấu xong; đủ bước thì da sáng bóng ✨ và cộng điểm yêu thương
+function skinAct(st){const[n,e]=SKSTEP[st],m=mySk(),mode=SKR[skMode].includes(st)?skMode:(SKR.am.includes(st)?'am':'pm');ac();
+ me.emo={e,t:NOW+2400};send('emo',{e,burst:st==='clean'?'🫧':null});vib(15);
+ if(st==='clean'||st==='remove'){window.__splash=NOW+1500;noise(1.1,.09,1400,'bandpass');burst(me,'🫧',5)}
+ else if(st==='toner'||st==='serum'){for(let k=0;k<4;k++)noise(.05,.18,900,'lowpass',k*.16);burst(me,st==='serum'?'💎':'💧',3)}
+ else if(st==='mask'){doMask();return}else{tone(1320,.12,'sine',.05);tone(1760,.18,'sine',.04,.1);burst(me,'✨',3)}
+ if(!m[mode].includes(st))m[mode].push(st);
+ if(SKR[mode].every(x=>m[mode].includes(x))&&!m[mode+'Done']){m[mode+'Done']=1;if(!m.lastAll||m.lastAll!==today()){m.streak=(m.streak|0)+1;m.lastAll=today()}
+  glowUp(3*3600e3);addLove(mode==='am'?4:5);toast(mode==='am'?'☀️ Xong skincare buổi sáng! Da căng bóng rồi nè ✨':'🌙 Xong skincare buổi tối! Ngủ ngon da đẹp 💤');tone(1047,.2,'sine',.06);tone(1568,.3,'sine',.05,.15);tone(2093,.4,'sine',.04,.3)}
+ saveS('skincare',SK,400)}
+function setAv(p){UM.av=Object.assign({},UM.av,p);saveS(UK(ME),UM);send('av',{av:UM.av})}
+function glowUp(ms){setAv({glow:Date.now()+ms});burst(me,'✨',8)}
+const MASKC={'Mặt nạ':'#f8f9fa',Teatree:'#d8f3dc',Matcha:'#b7e4c7','Than':'#495057',Vàng:'#f6d365',Mediheal:'#e3f2fd',Innisfree:'#c7f9cc',Sulwhasoo:'#f1e3c8',Laneige:'#bde0fe'};
+function doMask(){const P=prodFor('mask'),m=mySk(),p=P[0];const c=p?(Object.entries(MASKC).find(([k])=>p.n.includes(k))||[0,'#f8f9fa'])[1]:'#f8f9fa';
+ setAv({mask:{t:Date.now()+15*60e3,c}});noise(.4,.08,600,'lowpass');burst(me,'🧖',4);toast(`🧖 Đắp ${p?p.n:'mặt nạ giấy'} 15 phút · thư giãn chút nha`);
+ if(!m.pm.includes('mask'))m.pm.push('mask');saveS('skincare',SK,400);if($('#mSkin').classList.contains('on'))drawSkin();
+ clearTimeout(window.__maskT);window.__maskT=setTimeout(()=>{if(UM.av.mask){setAv({mask:null});glowUp(2*3600e3);toast('✨ Gỡ mặt nạ rồi, da mịn màng quá!')}},15*60e3)}
+function cleanFace(){setAv({lip:'',blush:'',mask:null});window.__splash=NOW+1500;noise(.9,.08,1400,'bandpass');burst(me,'🫧',5);toast('✨ Đã tẩy trang sạch sẽ')}
+if(UM.av&&UM.av.mask&&UM.av.mask.t>Date.now()){window.__maskT=setTimeout(()=>{setAv({mask:null});glowUp(2*3600e3)},UM.av.mask.t-Date.now())}
+
 /* ================= 🍽️ Nhà hàng Tomortle: hai đứa là khách (đặt bàn, phục vụ, phòng riêng, trang trí) ================= */
 let RB={booking:null,ratings:[]},RT={dishes:[],bill:[],table:null};
 if(IS_RT){RB=Object.assign(RB,await loadS('resto',{}));RT=Object.assign(RT,await loadS('resto-table',{}));RT.dishes=RT.dishes||[];RT.bill=RT.bill||[];window.RT_DISHES=RT.dishes;
@@ -1463,7 +1534,7 @@ async function calcLove(){if(DEMO){LOVEB=Object.assign({pts:0},await loadS('love
  const[a,b,c2,d,e,f,g2]=await Promise.all([cnt('letters'),cnt('daily_answers'),cnt('album'),cnt('vgifts'),cnt('notes'),cnt('voices'),cnt('bucket',q=>q.eq('done',true))]);LOVE=a+Math.floor(b/2)+c2+d+e+f+g2*3+Math.floor(((R.plant&&R.plant.w)||0)/2)}catch(x){}LOVEB=Object.assign({pts:0},await loadS('love-bonus',{}));LOVE+=LOVEB.pts||0;renderRoomTabs();renderLove()}
 function renderRoomTabs(){const el=$('#roomTabs');if(!el)return;
  // 4 phòng trên một hàng (vuốt ngang nếu chật); trong siêu thị thêm một hàng tầng gọn T1·T2·T3
- el.innerHTML=`<div class="rtabs"><button class="${KIND==='room'?'on':''}" data-r="room">🛏️ Phòng ngủ</button><button class="${KIND==='balcony'?'on':''}" data-r="balcony">🌙 Ban công</button><button class="${KIND==='kitchen'?'on':''}" data-r="kitchen">🍳 Bếp</button><button class="${KIND.startsWith('market')?'on':''}" data-r="market">🛒 Siêu thị</button><button class="${IS_MALL?'on':''}" data-r="mall">🛍️ TTTM</button><button class="${IS_RT?'on':''}" data-r="resto">🍽️ Nhà hàng</button></div>${IS_MK?`<div class="ftabs ${myFloors().length>3?'many':''}">${myFloors().length>3?'':'<span>🛗</span>'}${myFloors().map(([k,f])=>`<button class="${KIND===k?'on':''}" data-r="${k}" title="${f.n}"><b>${f.s}</b> ${({market:'Tươi sống',market2:'Đồ khô · uống',market3:'Đặc sản',mall:'Cao cấp',mall2:'Bình dân',mall3:'Thời trang',mall4:'Hàn Nhật',mall5:'Âu Mỹ'})[k]}</button>`).join('')}</div>`:''}`}
+ el.innerHTML=`<div class="rtabs"><button class="${KIND==='room'?'on':''}" data-r="room">🛏️ Phòng ngủ</button><button class="${KIND==='balcony'?'on':''}" data-r="balcony">🌙 Ban công</button><button class="${KIND==='kitchen'?'on':''}" data-r="kitchen">🍳 Bếp</button><button class="${KIND==='spa'?'on':''}" data-r="spa">🧴 Skincare</button><button class="${KIND.startsWith('market')?'on':''}" data-r="market">🛒 Siêu thị</button><button class="${IS_MALL?'on':''}" data-r="mall">🛍️ TTTM</button><button class="${IS_RT?'on':''}" data-r="resto">🍽️ Nhà hàng</button></div>${IS_MK?`<div class="ftabs ${myFloors().length>3?'many':''}">${myFloors().length>3?'':'<span>🛗</span>'}${myFloors().map(([k,f])=>`<button class="${KIND===k?'on':''}" data-r="${k}" title="${f.n}"><b>${f.s}</b> ${({market:'Tươi sống',market2:'Đồ khô · uống',market3:'Đặc sản',mall:'Cao cấp',mall2:'Bình dân',mall3:'Thời trang',mall4:'Hàn Nhật',mall5:'Âu Mỹ'})[k]}</button>`).join('')}</div>`:''}`}
 document.addEventListener('click',e=>{const b=e.target.closest('#roomTabs button');if(!b)return;const r=b.dataset.r;if(r===KIND||(r==='market'&&KIND.startsWith('market'))||(r==='mall'&&IS_MALL)||(r==='resto'&&IS_RT))return;if(r==='balcony'&&LOVE<UNLOCK){toast(`Cần ${UNLOCK} điểm yêu thương để mở ban công. Gửi thư, ảnh, trả lời câu hỏi mỗi ngày… để tích điểm nhé`);return}nav((r==='room'?'room.html':'room.html?r='+r)+(DEMO?(r==='room'?'?':'&')+'demo':''))});
 calcLove();
 /* ================= first run ================= */
