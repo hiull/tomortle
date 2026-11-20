@@ -33,7 +33,7 @@
 [data-theme=night]{--bg:#16131c;--card:#221e2b;--ink:#f3eaf7;--muted:#9a8fa8;--accent:#c39bff;--accent-ink:#16131c;--line:#352f42;--soft:#2c2638;--font:'Baloo 2';--head:'Baloo 2';--r:18px;--shadow:0 10px 30px rgba(0,0,0,.35)}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font),system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
-body{min-height:100vh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);transition:background .3s}
+html,body{overscroll-behavior:none}body{min-height:100vh;min-height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);transition:background .3s}
 button,input,select{font:inherit;color:inherit}
 .app{max-width:1120px;margin:0 auto;padding:12px 14px 120px}
 header{display:flex;align-items:center;gap:10px;padding:6px 2px 14px}
