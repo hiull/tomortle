@@ -923,6 +923,84 @@ function paIdle(){if(!busyPa()||pa.path.length||pa.act&&NOW<pa.actT)return;
 setInterval(paIdle,4500);
 function placeOfflinePartner(){const o=offlineSpot();pa.path=[];if(o.seat)applySeat(pa,o.seat);else{pa.seat=null;pa.pose='stand';pa.x=o.x;pa.y=o.y}}
 
+/* ================= 🧑‍🤝‍🧑 NPC: mỗi phòng 1–2 nhân vật tự đi lại, dùng đồ, chào hỏi người chơi ================= */
+const rnd1=a=>a[Math.floor(Math.random()*a.length)];
+const NPC_AV=(tc,bc,o={})=>Object.assign({skin:rnd1(['#f9d0b0','#f1c27d','#e0ac69','#ffe0bd']),hair:rnd1(['short','long','bob','bun','curly','spiky']),hc:rnd1(['#2b1d16','#5a3825','#8d5524','#1b1b1b']),top:'tee',tc,bot:'pants',bc,acc:'none'},o);
+const NPCL={shopper:['Hôm nay giảm giá nhiều ghê!','Hai bạn đi chung dễ thương quá 😍','Món này ngon nè, thử đi!','Mua gì cho bữa tối đây ta…','Quầy này đồ tươi lắm nha'],
+ mshopper:['Son này lên màu xinh quá!','Hai bạn hợp nhau ghê 💕','Đang sale đó, nhanh tay nha!','Váy này mặc đi hẹn hò hợp nè'],
+ staff:['Anh chị cần tìm gì cứ hỏi em nha!','Hàng mới về đó ạ!','Quầy giá sốc đang giảm mạnh ạ 🔥','Em vừa xếp hàng mới lên kệ ạ'],
+ advisor:['Chị ơi thử son mới bên này nha 💄','Em tư vấn da miễn phí ạ!','Hôm nay có quà tặng kèm ạ 🎁','Mùi nước hoa này đang hot lắm ạ'],
+ stylist:['Anh chị mặc tông pastel hợp lắm ạ!','Mẫu áo dài mới về xinh lắm ạ 🌸','Để em phối đồ cho anh chị nha!'],
+ waiter:['Mời anh chị dùng bữa ngon miệng ạ!','Anh chị cần gọi thêm món không ạ?','Tráng miệng hôm nay ngon lắm ạ 🍮','Rượu vang bàn bên vừa mở, thơm lắm ạ 🍷'],
+ spa:['Nhớ thoa kem chống nắng nha ☀️','Đắp mặt nạ giúp da căng bóng đó ạ 🧖','Uống đủ nước da mới đẹp nha 💧'],
+ cat:['Meo~','Meoo 🐾','Prrr…','Meo meo 😽'],robot:['Bíp bíp 🧹','Đang dọn dẹp…','Phát hiện bụi! 🤖','Sàn sạch bong ✨'],bird:['Chíp chíp 🎶','Chiu chiu~','Chíp! 🐦']};
+function npcDefs(){const k=KIND;
+ if(k==='room')return[{type:'robot',role:'robot',name:'Robot hút bụi'}];
+ if(k==='balcony')return[{type:'cat',role:'cat',name:'Mèo hàng xóm'},{type:'bird',role:'bird',name:'Chim sẻ'}];
+ if(k==='kitchen')return[{type:'cat',role:'cat',name:'Mèo mướp'}];
+ if(k==='spa')return[{type:'chibi',role:'spa',name:'Chuyên viên spa',av:NPC_AV('#ffffff','#f4c6d4',{hair:'bun'})}];
+ if(k.startsWith('market'))return[{type:'chibi',role:'shopper',name:'Khách đi chợ',av:NPC_AV(rnd1(['#a2d2ff','#ffc8dd','#caffbf','#fdffb6']),'#3d5a80')},{type:'chibi',role:'staff',name:'Nhân viên',av:NPC_AV('#e63946','#2b2d42',{acc:'cap'})}];
+ if(k.startsWith('mall'))return[{type:'chibi',role:'mshopper',name:'Khách mua sắm',av:NPC_AV(rnd1(['#cdb4db','#ffafcc','#bde0fe']),'#264653',{top:rnd1(['dress','crop','coat']),bag:'#f8bbd0'})},{type:'chibi',role:k==='mall3'?'stylist':'advisor',name:k==='mall3'?'Stylist':'Beauty advisor',av:NPC_AV('#1b1b1b','#1b1b1b',{top:k==='mall3'?'coat':'shirt',lip:'#c2185b'})}];
+ if(IS_RT)return[{type:'chibi',role:'waiter',name:'Phục vụ',av:NPC_AV('#ffffff','#1b1b1b',{top:'shirt'})}];
+ return[]}
+const NPCS=npcDefs().map((d,i)=>{const ft=freeTiles(),t=ft[Math.floor(Math.random()*ft.length)]||[4,4];return Object.assign(mkChar('npc'+i),d,{x:t[0]+.5,y:t[1]+.5,lineT:0,seed:3+i,npc:true})});
+function npcSay(n,txt,ms=4200){n.say={text:txt,t:NOW+ms}}
+// bộ não: chọn việc mỗi vài giây
+function npcBrain(){for(const n of NPCS){if(n.path.length||(n.busyT||0)>NOW)continue;const r=Math.random(),items=R.items.filter(i=>!CAT[i.t].flat);
+ const pickUse=f=>{const L=items.filter(f);const it=rnd1(L);if(!it)return false;const adj=adjOfItem(it);const p=bfs(n.x,n.y,(x,y)=>adj.has(x+','+y));if(!p)return false;const t=p[p.length-1];
+  walkTo(n,t[0],t[1],ok=>{if(!ok)return;const c=lpt(it,.5,.5);faceToward(n,c[0],c[1]);n.busyT=NOW+2500+Math.random()*2500;npcUse(n,it)});return true};
+ if(n.role==='robot'||n.role==='bird'){if(r<.75){const ft=freeTiles(),t=rnd1(ft);if(t)walkTo(n,t[0],t[1])}else n.emo={e:n.role==='robot'?'✨':'🎶',t:NOW+1800};continue}
+ if(r<.55){const want={shopper:i=>MD&&MD.COUNTERS[i.t],mshopper:i=>MD&&MD.COUNTERS[i.t]||i.t==='fitting',staff:i=>MD&&MD.COUNTERS[i.t],advisor:i=>MD&&MD.COUNTERS[i.t],stylist:i=>MD&&MD.COUNTERS[i.t]||i.t==='fitting',
+   waiter:i=>i.t==='rtable'||i.t==='bar'||i.t==='piano',spa:i=>['vanity','basin','skinshelf','spabed'].includes(i.t),cat:i=>['bed','sofa','rug','fridge','ktable','petbed','plant','chair'].includes(i.t)}[n.role]||(i=>USE_EMO[i.t]);
+  if(pickUse(want))continue}
+ if(r<.85){const ft=freeTiles(),t=rnd1(ft);if(t)walkTo(n,t[0],t[1]);continue}
+ // nói chuyện với NPC khác hoặc tự cười
+ const o=NPCS.find(m=>m!==n&&Math.hypot(m.x-n.x,m.y-n.y)<2.2);if(o&&n.type==='chibi'&&o.type==='chibi'){faceToward(n,o.x,o.y);faceToward(o,n.x,n.y);npcSay(n,rnd1(['Chào chị ạ!','Hôm nay đông khách ghê','Cố lên nha 💪']),3000);setTimeout(()=>npcSay(o,rnd1(['Chào em!','Ừa, vui ghê 😄','Em cũng vậy nha']),3000),1600)}
+ else n.emo={e:rnd1(n.role==='cat'?['😺','💤','🐾']:['😊','🎶','💭']),t:NOW+2200}}}
+function npcUse(n,it){const C2=MD&&MD.COUNTERS[it.t];
+ if(C2){const G=goodsOf(it.t,6);const e=rnd1(G);n.emo={e:n.role==='staff'||n.role==='advisor'||n.role==='stylist'?'📦':e,t:NOW+3000};if(Math.random()<.35){const P=PROD[it.t]||[];const p=rnd1(P);if(p)npcSay(n,n.role==='shopper'||n.role==='mshopper'?`Lấy ${p[1]} nè`:`Xếp thêm ${p[1]} lên kệ…`,3200)}return}
+ const E={rtable:'🍽️',bar:'🍷',piano:'🎹',vanity:'🧴',basin:'🫧',skinshelf:'🧴',spabed:'💆',fitting:'👗',bed:'💤',sofa:'💤',rug:'🐾',fridge:'🐟',ktable:'🐟',petbed:'💤',plant:'🌿',chair:'😺'};
+ n.emo={e:E[it.t]||USE_EMO[it.t]||'✨',t:NOW+3000}}
+// gần người chơi thì quay sang chào
+function npcNotice(){for(const n of NPCS){if(n.walking||n.lineT>NOW)continue;for(const c of[me,pa]){if(c===pa&&!livePa())continue;if(Math.hypot(c.x-n.x,c.y-n.y)<1.7){faceToward(n,c.x,c.y);npcSay(n,rnd1(NPCL[n.role]||['Xin chào!']));n.lineT=NOW+22000+Math.random()*10000;break}}}}
+if(NPCS.length){setInterval(()=>{try{npcBrain()}catch(e){}},2600);setInterval(()=>{try{npcNotice()}catch(e){}},1000)}
+function drawNPC(n){const[sx,sy]=iso(n.x,n.y);
+ if(n.type==='chibi')drawChibi(n.av,sx,sy,{face:n.face,flip:n.flip,pose:'stand',walking:n.walking,seed:n.seed,scale:.9});
+ else if(n.type==='robot'){const b=n.walking?Math.sin(NOW/60)*.5:0;ell(sx,sy,12,5.5,'rgba(0,0,0,.15)');ell(sx,sy-3+b,11,5.5,'#4a4e69','#22223b');ell(sx,sy-5+b,8,3.6,'#9a8c98');circ(sx+(n.flip?-4:4),sy-5+b,1.4,(NOW/400|0)%2?'#80ffdb':'#ff6b6b')}
+ else{const hop=n.walking?Math.abs(Math.sin(NOW/(n.type==='bird'?90:140)))*(n.type==='bird'?5:2):0;ell(sx,sy,8,3.5,'rgba(0,0,0,.14)');g.save();g.translate(sx,sy-10-hop);if(!n.flip)g.scale(-1,1);g.font=(n.type==='bird'?16:20)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';g.fillText(n.type==='bird'?'🐦':'🐈',0,0);g.restore()}
+ OVER.push(()=>{const top=n.type==='chibi'?sy-56:sy-24;g.save();g.font='600 7.5px "Be Vietnam Pro",sans-serif';const w=g.measureText(n.name).width+8;rr(sx-w/2,sy+2,w,11,5.5,'rgba(255,255,255,.85)');g.fillStyle='#6d6875';g.textAlign='center';g.textBaseline='middle';g.fillText(n.name,sx,sy+7.8);g.restore();
+  if(n.emo&&NOW<n.emo.t){if(String(n.emo.e).startsWith('@'))emj(n.emo.e,sx,top-10,16);else{g.save();g.font='15px sans-serif';g.textAlign='center';g.textBaseline='bottom';g.fillText(n.emo.e,sx,top);g.restore()}}else if(n.say&&NOW<n.say.t)bubble(sx,top,n.say.text)})}
+function npcMenu(n,sx,sy){const B=[];const talk=()=>{faceToward(n,me.x,me.y);npcSay(n,rnd1(NPCL[n.role]||['Xin chào!']));n.lineT=NOW+15000};
+ const go=fn=>()=>{const adj=new Set();const fx=Math.floor(n.x),fy=Math.floor(n.y);for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]])if(inB(fx+a,fy+b)&&!BM[fx+a][fy+b])adj.add((fx+a)+','+(fy+b));n.path=[];n.busyT=NOW+6000;goNear(adj,{face:[n.x,n.y]},()=>{faceToward(me,n.x,n.y);faceToward(n,me.x,me.y);fn()})};
+ if(n.type==='chibi'){B.push(['👋 Chào',go(()=>{me.emo={e:'👋',t:NOW+2000};send('emo',{e:'👋'});setTimeout(talk,700)}),1]);B.push(['💬 Hỏi chuyện',go(talk)]);
+  if(n.role==='staff')B.push(['🔍 Hỏi chỗ bán đồ',go(()=>{npcSay(n,'Anh chị tìm gì, em chỉ cho ạ!');openFind()})]);
+  if(n.role==='advisor'||n.role==='stylist')B.push([n.role==='stylist'?'👗 Nhờ phối đồ':'💄 Nhờ tư vấn',go(openConsult)]);
+  if(n.role==='waiter')B.push(['📋 Gọi món',go(openRMenu)]);
+  if(n.role==='spa')B.push(['🧴 Hướng dẫn skincare',go(()=>{npcSay(n,'Mình làm từng bước nha chị!');openSkin()})]);
+  if(n.role==='shopper'||n.role==='mshopper')B.push(['🤝 Khen đồ đẹp',go(()=>{me.emo={e:'👍',t:NOW+2000};send('emo',{e:'👍'});npcSay(n,'Ui cảm ơn nha, bạn cũng xinh quá 😆')})])}
+ else B.push(['🤲 Vuốt ve',go(()=>{burst(n,'💗',5);n.emo={e:n.role==='robot'?'😊':'😻',t:NOW+2500};npcSay(n,rnd1(NPCL[n.role]),2500);sfx.pop()}),1]);
+ menu(sx,sy,n.name,{shopper:'Khách đi chợ',mshopper:'Khách mua sắm',staff:'Nhân viên siêu thị',advisor:'Tư vấn làm đẹp',stylist:'Tư vấn thời trang',waiter:'Nhân viên phục vụ',spa:'Chuyên viên chăm sóc da',cat:'Hay đi lang thang',robot:'Đang dọn nhà',bird:'Ghé chơi ban công'}[n.role]||'',B)}
+
+/* ================= 🤖 Tự hoạt động: không chạm màn hình 10 giây → nhân vật tự đi xem đồ, dùng đồ, chơi với NPC ================= */
+let lastInput=performance.now(),autoNext=0;const AUTO_AFTER=10000;
+for(const ev of['pointerdown','keydown','wheel','touchstart'])document.addEventListener(ev,()=>{lastInput=performance.now();me.auto=false},{passive:true,capture:true});
+function autoOK(){return!document.hidden&&!editing&&!document.querySelector('.modal.on')&&!document.querySelector('.ctxm')&&!me.path.length&&!(me.act&&NOW<me.actT)&&NOW-lastInput>AUTO_AFTER}
+function autoUse(it,then){const adj=adjOfItem(it);const p=bfs(me.x,me.y,(x,y)=>adj.has(x+','+y));if(!p)return false;const t=p[p.length-1];const c=lpt(it,.5,.5);goTile(t[0],t[1],{face:c},()=>{faceToward(me,c[0],c[1]);then&&then()});return true}
+function autoTick(){if(!autoOK()||NOW<autoNext)return;me.auto=true;autoNext=NOW+5500+Math.random()*4500;if(me.pose==='lie'&&Math.random()<.7)return;
+ const items=R.items.filter(i=>!CAT[i.t].flat&&!i.npc),r=Math.random(),shop=IS_MK;
+ const emo=e=>{me.emo={e,t:NOW+3000};send('emo',{e})};
+ if(r<(shop?.55:.38)){const L=items.filter(i=>USE_EMO[i.t]||(MD&&MD.COUNTERS[i.t])||['vanity','basin','skinshelf','fitting','rtable','bar','piano'].includes(i.t));const it=rnd1(L);if(!it)return;
+  autoUse(it,()=>{const C2=MD&&MD.COUNTERS[it.t];if(C2){const p=rnd1(PROD[it.t]||[]);if(p){emo(p[0]);me.say={text:rnd1(['Xem thử ','Ồ, có ','Mua ','Thích ghê '])+p[1]+(Math.random()<.5?' 🤔':' 😍'),t:NOW+3200}}}
+   else emo({vanity:'💄',basin:'🫧',skinshelf:'🧴',fitting:'👗',rtable:'🍽️',bar:'🍸',piano:'🎹'}[it.t]||USE_EMO[it.t]||'✨')});return}
+ if(r<.58&&NPCS.length){const n=rnd1(NPCS);const fx=Math.floor(n.x),fy=Math.floor(n.y),adj=new Set();for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]])if(inB(fx+a,fy+b)&&!BM[fx+a][fy+b])adj.add((fx+a)+','+(fy+b));
+  const p=bfs(me.x,me.y,(x,y)=>adj.has(x+','+y));if(!p)return;const t=p[p.length-1];n.path=[];n.busyT=NOW+5000;goTile(t[0],t[1],{face:[n.x,n.y]},()=>{faceToward(me,n.x,n.y);faceToward(n,me.x,me.y);
+   if(n.type==='chibi'){emo('👋');setTimeout(()=>{npcSay(n,rnd1(NPCL[n.role]||['Xin chào!']));n.lineT=NOW+15000},800)}else{emo('🤲');burst(n,'💗',4);npcSay(n,rnd1(NPCL[n.role]),2500)}});return}
+ if(r<.68&&livePa()&&!pa.path.length){const fx=Math.floor(pa.x),fy=Math.floor(pa.y),adj=new Set();for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]])if(inB(fx+a,fy+b)&&!BM[fx+a][fy+b])adj.add((fx+a)+','+(fy+b));const p=bfs(me.x,me.y,(x,y)=>adj.has(x+','+y));if(p){const t=p[p.length-1];goTile(t[0],t[1],{face:[pa.x,pa.y]},()=>emo(rnd1(['💗','🥰','😘'])))}return}
+ if(r<.8){const ss=items.filter(i=>CAT[i.t].sit||(!shop&&CAT[i.t].lie&&Math.random()<.3));const it=rnd1(ss);if(it){sitOn(it,CAT[it.t].sit?'sit':'lie');return}}
+ if(r<.92){const ft=freeTiles(),t=rnd1(ft);if(t)goTile(t[0],t[1]);return}
+ if(Math.random()<.5){me.act='dance';me.actT=NOW+2600;send('emo',{e:'💃'})}else emo(rnd1(['😊','🎶','💭','✨','🥱']))}
+setInterval(()=>{try{autoTick()}catch(e){}},1200);
+
 /* ================= scene compose ================= */
 let HITS=[],OVER=[];
 function charScreen(c){const z=c.pose==='sit'?16:c.pose==='lie'?24:0;return iso(c.x,c.y,z)}
@@ -940,7 +1018,7 @@ function render(dt){
    if(c.act==='dizzy'&&NOW<c.actT){for(let i=0;i<3;i++){const a=NOW/200+i*2.1;g.font='9px sans-serif';g.fillText('⭐',sx+Math.cos(a)*12,sy-56+Math.sin(a)*4)}}
    if(c.act==='pillow'&&NOW<c.actT&&c.pillow){const p=c.pillow,f=1-(c.actT-NOW)/600;const x=p[0]+(p[2]-p[0])*f,y=p[1]+(p[3]-p[1])*f-Math.sin(f*Math.PI)*40;g.save();g.translate(x,y);g.rotate(f*8);rr(-8,-5,16,10,4,'#fff','#e6a3b9');g.restore()}
    OVER.push(()=>{const col=c===me?'#ff7aa2':'#9b86d1';const nm=c===me?ctx.myName:ctx.partnerName;
-   nameTag(sx,sy+3,(c===pa&&!live?'💤 ':'')+nm,live?col:'#b9a6b2');
+   nameTag(sx,sy+3,(c===pa&&!live?'💤 ':'')+nm+(c===me&&me.auto?' 💭':''),live?col:'#b9a6b2');
    const top=c.pose==='lie'?sy-26:sy-60-(c.pose==='sit'?4:0);
    if(c===pa&&busyPa()&&!(c.emo&&NOW<c.emo.t)&&!(c.say&&NOW<c.say.t)){g.save();g.font='600 8.5px "Be Vietnam Pro",sans-serif';g.textAlign='center';g.fillStyle='rgba(90,60,120,.85)';g.fillText(paDoing(),sx,top-4);g.restore()}
    if(c.emo&&NOW<c.emo.t){if(String(c.emo.e).startsWith('@'))emj(c.emo.e,sx,top-12+Math.sin(NOW/150)*1.5,20);else{g.save();g.font='18px sans-serif';g.textAlign='center';g.textBaseline='bottom';g.fillText(c.emo.e,sx,top-2+Math.sin(NOW/150)*1.5);g.restore()}}
@@ -948,6 +1026,7 @@ function render(dt){
    else if(c===pa&&!live&&UP.msg&&UP.msg.text&&Date.now()-UP.msg.at<3*864e5&&UP.msg.at>lsGet('seenMsg-'+PA,0)){bubble(sx,top-4,'💌 '+UP.msg.text,true);if(!window.__msgT)window.__msgT=NOW;if(NOW-window.__msgT>8000){lsSet('seenMsg-'+PA,UP.msg.at);window.__msgT=0}}
    });if(c===pa&&!live&&Math.random()<.012)spawn(sx+10,sy-30,'💤',{size:12,vy:-14});
   },hit:{kind:'char',ref:c,rect:(()=>{const[sx,sy]=charScreen(c);return c.pose==='lie'?[sx-14,sy-22,28,26]:[sx-14,sy-60,28,64]})()}})}
+ for(const n of NPCS){const[sx,sy]=iso(n.x,n.y);D.push({k:n.x+n.y,fn:()=>drawNPC(n),hit:{kind:'npc',ref:n,rect:n.type==='chibi'?[sx-13,sy-54,26,58]:[sx-13,sy-26,26,30]}})}
  if(R.pet){const[sx,sy]=iso(pet.x,pet.y);D.push({k:pet.x+pet.y-.05,fn:()=>drawPet(sx,sy),hit:{kind:'pet',rect:[sx-14,sy-26,30,30]}})}
  D.sort((a,b)=>a.k-b.k);
  for(const d of D){d.fn();if(d.hit)HITS.push(d.hit)}
@@ -965,7 +1044,7 @@ let lastDraw=0;window.__mainG=g;
 function frame(t){const modal=document.querySelector('.modal.on'),busy=me.path.length||pa.path.length||FX.length||(me.act&&t<me.actT)||(pa.act&&t<pa.actT),gap=modal?160:busy?0:33;
  if(t-lastDraw<gap-2){requestAnimationFrame(frame);return}lastDraw=t;
  const dt=Math.min(.2,(t-last)/1000);last=t;NOW=t;
- stepChar(me,dt);if(livePa()||busyPa())stepChar(pa,dt);updatePet();
+ stepChar(me,dt);if(livePa()||busyPa())stepChar(pa,dt);for(const n of NPCS)stepChar(n,dt);updatePet();
  render(dt);requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 
@@ -1479,7 +1558,7 @@ cv.addEventListener('pointerup',e=>{const p=evPt(e);if(editing){edUp(p);down=nul
 function tap([px,py]){
  if(menuEl){closeMenu();return}
  const h=hitAt(px,py);
- if(h){if(h.kind==='char'){charMenu(h.ref,px,py-10);return}if(h.kind==='pet'){petMenu(px,py-14);return}if(h.kind==='item'){if(itemMenu(h.ref,px,py-8))return}if(h.kind==='wall'){if(wallMenu(h.ref,px,py))return}}
+ if(h){if(h.kind==='char'){charMenu(h.ref,px,py-10);return}if(h.kind==='pet'){petMenu(px,py-14);return}if(h.kind==='npc'){npcMenu(h.ref,px,py-14);return}if(h.kind==='item'){if(itemMenu(h.ref,px,py-8))return}if(h.kind==='wall'){if(wallMenu(h.ref,px,py))return}}
  const[gx,gy]=unIso(px,py);const tx=Math.floor(gx),ty=Math.floor(gy);
  if(!inB(tx,ty))return;
  if(BM[tx][ty]){const it=BM[tx][ty];itemMenu(it,px,py);return}
