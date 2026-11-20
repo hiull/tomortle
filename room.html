@@ -94,6 +94,9 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .tt-e.zoom{animation:tz 1.6s ease-in-out infinite alternate}@keyframes tz{to{transform:scale(1.3)}}.tt-e.spin{animation:sp 2.4s linear infinite}.tt-e.float{animation:tf 2.2s ease-in-out infinite alternate}@keyframes tf{from{transform:translate(-12px,8px)}to{transform:translate(12px,-14px)}}
 .tt-side{position:absolute;right:10px;bottom:110px;display:flex;flex-direction:column;gap:14px;z-index:3}.tt-side button{background:none;border:0;color:#fff;font-size:26px;display:flex;flex-direction:column;align-items:center;cursor:pointer}.tt-side small{font-size:10px;font-weight:700}
 .tt-side button.on{animation:tz .3s 2 alternate}.tt-cap{position:absolute;left:12px;right:62px;bottom:34px;font-size:12.5px;text-shadow:0 1px 3px rgba(0,0,0,.6);z-index:3}.tt-cap i{color:#ffe082;font-style:normal}.tt-cap u{text-decoration:none;background:#ff4d8d;border-radius:6px;padding:0 4px;font-size:10px}
+.ph-exit{margin-top:10px;border:0;border-radius:999px;padding:10px 22px;background:rgba(255,255,255,.95);color:#3a2430;font:700 14px "Be Vietnam Pro",sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
+.ph-sheet{flex-direction:column;align-items:center}.ph-f{height:min(600px,74vh)!important}
+.tt-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}.tt-side.real{bottom:120px;right:4px;background:rgba(0,0,0,.35);border-radius:16px;padding:6px 2px}.tt-side.real button{font-size:20px}.tt-cap.real{bottom:auto;top:78px;background:rgba(0,0,0,.45);border-radius:10px;padding:4px 8px;right:12px}
 </style>
 </head>
 <body>
@@ -290,6 +293,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 </div></div>
 <div class="modal" id="mPhone"><div class="sheet ph-sheet">
   <div class="ph-f" id="phF"><div class="ph-s" id="phS"><div class="ph-island"></div><div class="ph-bar" id="phBar"></div><div class="ph-body" id="phBody"></div><button class="ph-home" onclick="window.phClose()" aria-label="Thoát"></button></div></div>
+  <button class="ph-exit" onclick="window.phClose()">✕ Thoát điện thoại</button>
 </div></div>
 <div class="modal" id="mBag"><div class="sheet">
   <h3>🎒 Đồ đã mua của bạn</h3>
@@ -1664,6 +1668,11 @@ function drawPhone(){const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_W
  const B=$('#phBody');if(!PHAPP){B.innerHTML=`<div class="ph-model">${esc(av.phoneN||'Điện thoại')}</div><div class="ph-grid">${APPS.map(([k,e,n,c])=>`<button data-app="${k}"><i style="background:${c}">${e}</i><span>${n}</span></button>`).join('')}</div>`;return}
  const head=t=>`<div class="ph-head"><button data-app="">‹</button><b>${t}</b></div>`;
  if(PHAPP==='tt'){ttDraw();return}
+ if(PHAPP==='ttadd'){B.innerHTML=`<div class="ph-head"><button data-app="tt">‹</button><b>＋ Thêm vào TikTok</b></div>
+  <p class="ph-note" style="text-align:left">🔗 <b>Xem TikTok thật:</b> mở TikTok, bấm <b>Chia sẻ → Sao chép liên kết</b>, rồi dán vào đây. Video sẽ phát ngay trong điện thoại này và người ấy cũng xem được.</p>
+  <form id="ttLinkF" class="ph-in"><input id="ttLinkI" placeholder="Dán link TikTok…" autocomplete="off" inputmode="url"><button>＋</button></form><p class="ph-note" id="ttLinkMsg"></p>
+  <button class="ph-big" data-act="ttroom">📸 Đăng ảnh phòng của hai đứa</button>
+  <a class="ph-big g" style="display:block;text-align:center;text-decoration:none;margin-top:8px" href="https://www.tiktok.com/foryou" target="_blank" rel="noopener">🌐 Mở app TikTok thật</a>`;return}
  if(PHAPP==='msg'){const L=phLS('chat',[]);B.innerHTML=head('💬 '+esc(ctx.partnerName))+`<div class="ph-chat" id="phChat">${L.length?L.map(m=>`<div class="${m.who===ME?'me':''}"><span>${esc(m.text)}</span></div>`).join(''):'<p class="ph-note">Chưa có tin nhắn · gửi gì đó cho người ấy nhé 💌</p>'}</div><form id="phMsgF" class="ph-in"><input id="phMsgI" maxlength="80" placeholder="Nhắn tin…" autocomplete="off"><button>➤</button></form>`;const c=$('#phChat');c.scrollTop=c.scrollHeight;return}
  if(PHAPP==='call'){B.innerHTML=head('📞 Gọi')+`<div class="ph-center"><div class="ph-av">💗</div><b>${esc(ctx.partnerName)}</b><p class="ph-note">${livePa()?'đang ở trong phòng với bạn':'đang không ở phòng'}</p><button class="ph-big" data-go="call">📹 Gọi video</button><button class="ph-big g" data-go="callv">📞 Gọi thoại</button></div>`;return}
  if(PHAPP==='cam'){B.innerHTML=head('📷 Camera')+`<div class="ph-center"><img id="phShot" class="ph-shot" alt=""><button class="ph-snap" data-act="snap" aria-label="Chụp"></button><p class="ph-note">Chụp lại khung cảnh phòng đang có hai đứa</p></div>`;camShot(false);return}
@@ -1683,15 +1692,22 @@ async function ttLoad(){const shared=(await loadS('tiktok',{list:[]}))||{list:[]
  for(let i=gen.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[gen[i],gen[j]]=[gen[j],gen[i]]}
  TT.list=[...mine,...gen];TT.i=0;TT.liked=phLS('liked',{})}
 async function ttDraw(){if(!TT.list.length)await ttLoad();const B=$('#phBody'),c=TT.list[TT.i%TT.list.length],lk=!!TT.liked[c.id],likes=(c.likes|0)+(lk?1:0);
- const who=c.own?(c.who===ME?'@'+(ctx.myName||'bạn'):'@'+(ctx.partnerName||'người ấy')):c.by;
+ const who=c.vid?(c.by||'TikTok')+' · gửi bởi '+(c.who===ME?(ctx.myName||'bạn'):(ctx.partnerName||'người ấy')):c.own?(c.who===ME?'@'+(ctx.myName||'bạn'):'@'+(ctx.partnerName||'người ấy')):c.by;
  B.innerHTML=`<div class="tt" id="tt" style="background:${c.img?'#000':`linear-gradient(170deg,${c.bg})`}">
   <div class="tt-top"><button data-app="">‹</button><span>Đang Follow · <b>Dành cho bạn</b></span><button data-act="post">＋</button></div>
-  ${c.img?`<img class="tt-img" src="${c.img}" alt="">`:`<div class="tt-e ${c.an}">${c.e}</div>`}
-  <div class="tt-side"><button data-act="like" class="${lk?'on':''}">${lk?'❤️':'🤍'}<small>${likes>=1000?(likes/1000).toFixed(1)+'K':likes}</small></button><button data-act="share">↗️<small>Chia sẻ</small></button><button data-act="next">⬇️<small>Tiếp</small></button></div>
-  <div class="tt-cap"><b>${esc(who)}</b>${c.own?' <u>hai đứa</u>':''}<br>${esc(c.cap)} <i>${esc(c.tag||'')}</i><br><small>🎵 nhạc nền · ${esc(c.own?'âm thanh gốc':'trending')}</small></div></div>`;
- if(soundOn&&AC){const base=[523,587,659,698,784][TT.i%5];[0,.18,.36,.54].forEach((t,k)=>tone(base*(k%2?1.25:1),.12,'triangle',.03,t))}
+  ${c.vid?`<iframe class="tt-frame" src="https://www.tiktok.com/player/v1/${c.vid}?autoplay=1&loop=1&music_info=1&description=0&rel=0&native_context_menu=0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`:c.img?`<img class="tt-img" src="${c.img}" alt="">`:`<div class="tt-e ${c.an}">${c.e}</div>`}
+  <div class="tt-side ${c.vid?'real':''}"><button data-act="like" class="${lk?'on':''}">${lk?'❤️':'🤍'}<small>${likes>=1000?(likes/1000).toFixed(1)+'K':likes}</small></button><button data-act="share">↗️<small>Chia sẻ</small></button><button data-act="prev">⬆️<small>Trước</small></button><button data-act="next">⬇️<small>Tiếp</small></button></div>
+  <div class="tt-cap ${c.vid?'real':''}"><b>${esc(who)}</b>${c.vid?' <u>TikTok thật</u>':c.own?' <u>hai đứa</u>':''}<br>${esc(c.cap)} <i>${esc(c.tag||'')}</i><br><small>🎵 nhạc nền · ${esc(c.own?'âm thanh gốc':'trending')}</small></div></div>`;
+ if(!c.vid&&soundOn&&AC){const base=[523,587,659,698,784][TT.i%5];[0,.18,.36,.54].forEach((t,k)=>tone(base*(k%2?1.25:1),.12,'triangle',.03,t))}
  const el=$('#tt');let y0=null;el.ontouchstart=e=>{y0=e.touches[0].clientY};el.ontouchend=e=>{if(y0==null)return;const dy=e.changedTouches[0].clientY-y0;y0=null;if(Math.abs(dy)>50){TT.i=(TT.i+(dy<0?1:TT.list.length-1))%TT.list.length;ttDraw()}};
  el.onwheel=e=>{if(Math.abs(e.deltaY)<30)return;TT.i=(TT.i+(e.deltaY>0?1:TT.list.length-1))%TT.list.length;ttDraw()}}
+// lấy mã video từ link TikTok (link đầy đủ hoặc link rút gọn vt.tiktok.com qua oEmbed của TikTok)
+async function ttAddLink(){const inp=$('#ttLinkI'),msg=$('#ttLinkMsg');const url=(inp&&inp.value||'').trim();if(!url){msg.textContent='Dán link TikTok vào ô trên nhé';return}
+ const m=url.match(/\/(?:video|photo|v|embed(?:\/v2)?|player\/v1)\/(\d{10,})/)||url.match(/^(\d{15,})$/);let vid=m&&m[1],cap='',by='';msg.textContent='⏳ Đang lấy video…';
+ try{const r=await fetch('https://www.tiktok.com/oembed?url='+encodeURIComponent(/^\d+$/.test(url)?'https://www.tiktok.com/video/'+url:url));if(r.ok){const j=await r.json();cap=j.title||'';by=j.author_name?'@'+j.author_unique_id||j.author_name:'';const v2=(j.html||'').match(/data-video-id="(\d+)"/);if(v2)vid=v2[1];if(j.author_unique_id)by='@'+j.author_unique_id}}catch(e){}
+ if(!vid){msg.innerHTML='😥 Không đọc được link này. Thử bấm <b>Chia sẻ → Sao chép liên kết</b> trong TikTok rồi dán lại, hoặc mở video trên trình duyệt và copy link có chữ <b>/video/</b>.';return}
+ const S=(await loadS('tiktok',{list:[]}))||{list:[]};S.list=[...(S.list||[]).filter(x=>x.vid!==vid),{id:'v'+vid,vid,cap:(cap||'Video TikTok').slice(0,90),by:by||'TikTok',tag:'',who:ME,at:Date.now(),likes:0}].slice(-30);await saveS('tiktok',S);
+ send('ttpost',{cap:cap||'một video TikTok'});send('emo',{e:'🎵',burst:'✨'});sfx.pop();TT.list=[];await ttLoad();TT.i=0;PHAPP='tt';drawPhone();toast('🎵 Đã thêm video TikTok, người ấy cũng xem được!')}
 async function ttPost(){const cap=prompt('Viết caption cho clip của hai đứa 🎬','Một ngày bình thường của tụi mình 💗');if(cap==null)return;const img=snapRoom(300,.6);
  const S=(await loadS('tiktok',{list:[]}))||{list:[]};S.list=[...(S.list||[]),{id:'u'+Date.now(),img,cap:cap.slice(0,80),tag:'#tomortle #couple',who:ME,at:Date.now(),likes:0}].slice(-12);await saveS('tiktok',S);
  send('emo',{e:'🎬',burst:'✨'});send('ttpost',{cap});toast('🎬 Đã đăng clip lên TikTok của hai đứa!');sfxChaching();TT.list=[];await ttLoad();ttDraw()}
@@ -1715,9 +1731,14 @@ $('#phBody').onclick=async e=>{const t=e.target.closest('[data-app],[data-act],[
  else if(a==='like'){const c=TT.list[TT.i%TT.list.length];TT.liked[c.id]=!TT.liked[c.id];phSet('liked',TT.liked);if(TT.liked[c.id]){burst(me,'❤️',3);if(c.own&&c.who!==ME)send('emo',{e:'❤️',burst:'💗'})}ttDraw()}
  else if(a==='next'){TT.i=(TT.i+1)%TT.list.length;ttDraw()}
  else if(a==='share'){const c=TT.list[TT.i%TT.list.length];say('Xem clip này nè: '+c.cap.slice(0,50));toast('↗️ Đã gửi clip cho người ấy')}
- else if(a==='post')ttPost()};
-$('#phBody').addEventListener('submit',e=>{if(e.target.id!=='phMsgF')return;e.preventDefault();const v=$('#phMsgI').value.trim();if(!v)return;say(v);tone(1568,.06,'sine',.04);drawPhone()});
+ else if(a==='post'){PHAPP='ttadd';drawPhone()}
+ else if(a==='prev'){TT.i=(TT.i+TT.list.length-1)%TT.list.length;ttDraw()}
+ else if(a==='ttroom'){ttPost()}
+ else if(a==='ttlink'){ttAddLink()}};
+$('#phBody').addEventListener('submit',e=>{if(e.target.id==='ttLinkF'){e.preventDefault();ttAddLink();return}if(e.target.id!=='phMsgF')return;e.preventDefault();const v=$('#phMsgI').value.trim();if(!v)return;say(v);tone(1568,.06,'sine',.04);drawPhone()});
 window.openPhone=openPhone;window.phClose=phClose;
+$('#mPhone').addEventListener('click',e=>{if(e.target.id==='mPhone'||e.target.classList.contains('ph-sheet'))phClose()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#mPhone').classList.contains('on'))phClose()});
 
 /* ================= 🍽️ Nhà hàng Tomortle: hai đứa là khách (đặt bàn, phục vụ, phòng riêng, trang trí) ================= */
 let RB={booking:null,ratings:[]},RT={dishes:[],bill:[],table:null};
