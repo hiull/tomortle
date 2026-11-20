@@ -396,7 +396,7 @@ const saveS=(k,v,delay)=>{if(k===UK(ME))lsSet('roomU-'+ME,v);if(PRE_WAIT.has(k))
 // tải trước song song ngay khi mở trang; quá 8 giây thì dùng tạm giá trị mặc định (không ghi đè dữ liệu thật cho tới khi tải xong)
 const PRE={};function pre(k,d){if(!(k in PRE)){const real=Promise.resolve().then(()=>loadS(k,d)).catch(()=>d);let late=false;
  PRE[k]=Promise.race([real.then(v=>v==null?d:v),new Promise(r=>setTimeout(()=>{late=true;PRE_WAIT.add(k);r(d)},8000))]);
- real.then(()=>{if(late){PRE_WAIT.delete(k);try{toast('Mạng hơi chậm · dữ liệu vừa tải xong','🔄 Tải lại',()=>location.reload())}catch(e){}}})}return PRE[k]}
+ real.then(()=>{if(late){try{toast('Mạng hơi chậm · dữ liệu vừa tải xong','🔄 Tải lại',()=>location.reload())}catch(e){}}})}return PRE[k]}
 pre('market',{});if(IS_MK||KIND==='kitchen')pre('pantry',{});if(KIND==='spa'){pre('skincare',{});pre('closet',{})}if(IS_RT){pre('resto',{});pre('resto-table',{})}
 
 /* ================= catalog ================= */
@@ -1289,8 +1289,8 @@ function drawProj(){for(let i=PROJ.length-1;i>=0;i--){const p=PROJ[i],T=THROWS[p
 
 /* ================= scene compose ================= */
 let HITS=[],OVER=[];
-window.__dbg={auto:()=>({auto:me.auto,hidden:document.hidden,editing,modal:!!document.querySelector('.modal.on'),ctxm:!!document.querySelector('.ctxm'),idle:Math.round(NOW-lastInput),err:window.__autoErr||null}),amb:()=>AMB&&{key:AMB.key,n:AMB.nodes.length,ac:AC&&AC.state},wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
-window.__meScreen=()=>{const r=cv.getBoundingClientRect(),[x,y]=charScreen(me);return[r.x+x*r.width/W,r.y+y*r.width/W]};
+if(DEMO)window.__dbg={auto:()=>({auto:me.auto,hidden:document.hidden,editing,modal:!!document.querySelector('.modal.on'),ctxm:!!document.querySelector('.ctxm'),idle:Math.round(NOW-lastInput),err:window.__autoErr||null}),amb:()=>AMB&&{key:AMB.key,n:AMB.nodes.length,ac:AC&&AC.state},wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
+if(DEMO)window.__meScreen=()=>{const r=cv.getBoundingClientRect(),[x,y]=charScreen(me);return[r.x+x*r.width/W,r.y+y*r.width/W]};
 function charScreen(c){const z=c.pose==='sit'?16:c.pose==='lie'?24:0;return iso(c.x,c.y,z)}
 function itemKey(it){const f=fp(it);return f.x+f.y+f.w+f.d-1}
 function render(dt){
@@ -1527,7 +1527,7 @@ if(IS_MK){MK=Object.assign(MK,JSON.parse(JSON.stringify(await pre('market',{})))
 const tierOf=life=>{let t=TM.TIERS[0];for(const x of TM.TIERS)if(life>=x[0])t=x;return t};const tierIdx=life=>TM.TIERS.indexOf(tierOf(life));
 const mkSub=()=>MK.cart.reduce((a,i)=>a+lineTotal(i),0),mkCount=()=>MK.cart.reduce((a,i)=>a+i.q,0);
 function mkBill(){const sub=mkSub(),t=tierOf(MK.life),tierOff=Math.round(sub*t[3]/100/500)*500,useV=$('#mkVoucher')?.checked&&MK.points>=100,vou=useV?50000:0;return{sub,t,tierOff,vou,useV,total:Math.max(0,sub-tierOff-vou)}}
-function mkSave(){CARD_LIFE=MK.life||0;saveS('market',MK,600);sendMk('mk',{MK});drawMk()}
+function mkSave(){CARD_LIFE=MK.life||0;saveS('market',MK,600);if(!PRE_WAIT.has('market'))sendMk('mk',{MK});drawMk()}
 let shopKind=null,shopSeg='all';
 $('#shopSeg').onclick=e=>{const b=e.target.closest('[data-sg]');if(!b)return;shopSeg=b.dataset.sg;sfx.pop();drawMk()};
 const LOGOU={};function logoURL(t){if(!LOGOU[t]){const m=document.createElement('canvas');m.width=m.height=64;const x=m.getContext('2d');x.scale(2,2);drawLogo(x,t,16,16,13);LOGOU[t]=m.toDataURL()}return LOGOU[t]}
@@ -1656,7 +1656,7 @@ const RECIPES=MD?MD.RECIPES:[];
 let PT={items:{},dishes:[]};
 if(KIND==='kitchen'||IS_MK){PT=Object.assign(PT,await pre('pantry',{}));PT.items=PT.items||{};PT.dishes=PT.dishes||[];window.DISHES=PT.dishes}
 if(KIND==='kitchen')$('#hint').textContent='Chạm bếp để nấu · tủ lạnh có đồ mua ở siêu thị · nấu xong ra bàn ngồi ăn cùng nhau nhé';
-function ptSave(){saveS('pantry',PT,500);send('pt',{PT});window.DISHES=PT.dishes;drawCook()}
+function ptSave(){saveS('pantry',PT,500);if(!PRE_WAIT.has('pantry'))send('pt',{PT});window.DISHES=PT.dishes;drawCook()}
 async function stockPantry(cart){try{const pt=Object.assign({items:{},dishes:[]},await loadS('pantry',{}));pt.items=pt.items||{};for(const i of cart){const o=pt.items[i.n]||{e:i.e,q:0,tag:i.tag||''};o.q+=i.q;pt.items[i.n]=o}await saveS('pantry',pt);PT=pt;toast('Đồ đã cất vào tủ lạnh trong Bếp 🍳','Vào bếp',()=>nav('room.html?r=kitchen'+(DEMO?'&demo':'')))}catch(e){console.warn(e)}}
 // nguyên liệu khớp theo nhãn (tag) hoặc đúng tên món
 const ingHit=(alt,n,o)=>{const tg=tagsOf(o.tag);return alt.split('|').map(norm).some(t=>tg.includes(t)||t===norm(n))};
@@ -1904,10 +1904,19 @@ function snakeDir(dx,dy){if(!SNAKE)return;if(SNAKE.over){snakeStart();return}if(
 function calcPress(k){const C=CALC,num=()=>parseFloat(C.s.replace(',','.'))||0,ap=(a,b,o)=>o==='+'?a+b:o==='−'?a-b:o==='×'?a*b:o==='÷'?(b===0?NaN:a/b):b;
  if(/^[0-9]$/.test(k)){C.s=C.fresh||C.s==='0'?k:(C.s.length<12?C.s+k:C.s);C.fresh=false}
  else if(k===','){if(C.fresh){C.s='0,';C.fresh=false}else if(!C.s.includes(','))C.s+=','}
- else if(k==='AC'){CALC={s:'0',acc:null,op:null,fresh:true};return}
+ else if(k==='AC'){CALC={s:'0',acc:null,op:null,fresh:true,lo:null};return}
  else if(k==='±'){C.s=C.s.startsWith('-')?C.s.slice(1):(C.s==='0'?'0':'-'+C.s)}
  else if(k==='%'){C.s=String(num()/100).replace('.',',')}
- else{if(C.op&&!C.fresh){C.acc=ap(C.acc,num(),C.op)}else if(C.acc==null||!C.op)C.acc=num();if(k==='='){C.s=Number.isFinite(C.acc)?String(+C.acc.toPrecision(10)).replace('.',','):'Lỗi';C.op=null;C.acc=null}else{C.op=k;C.s=Number.isFinite(C.acc)?String(+C.acc.toPrecision(10)).replace('.',','):'Lỗi'}C.fresh=true}}
+ else{const fmt=v=>Number.isFinite(v)?String(+v.toPrecision(10)).replace('.',','):'Lỗi',hi=o=>o==='×'||o==='÷';
+  if(C.fresh&&C.last&&k!=='='){if(hi(k)&&C.op)C.op=k;else if(!hi(k)&&C.lo&&!C.op)C.lo.o=k;C.last=k;return}
+  // C.op chỉ giữ × ÷ đang chờ; C.lo giữ "a + / a −" đang chờ, nên nhân chia được tính trước
+  let v=num();if(C.op)v=ap(C.acc,v,C.op);
+  if(k==='='){C.s=fmt(C.lo?ap(C.lo.a,v,C.lo.o):v);C.op=C.acc=C.lo=C.last=null}
+  else if(hi(k)){C.acc=v;C.op=k;C.s=fmt(v);C.last=k}
+  else{const t=C.lo?ap(C.lo.a,v,C.lo.o):v;C.lo={a:t,o:k};C.acc=C.op=null;C.s=fmt(t);C.last=k}
+  C.fresh=true}}
+// tự kiểm tra máy tính: 1+2×3=7, 12×3=36, 10−4÷2=8, 2×3+4=10
+{const run=q=>{const keep=CALC;CALC={s:'0',acc:null,op:null,fresh:true,lo:null};for(const k of q)calcPress(k);const r=CALC.s;CALC=keep;return r};console.assert(run(['1','+','2','×','3','='])==='7'&&run(['1','2','×','3','='])==='36'&&run(['1','0','−','4','÷','2','='])==='8'&&run(['2','×','3','+','4','='])==='10','calc precedence')}
 /* --- 📷 bộ lọc màu cho ảnh chụp (xử lý điểm ảnh, chạy được cả trên Safari) --- */
 const CAMFS=[['none','Gốc'],['pink','Hồng'],['bw','Đen trắng'],['vintage','Cổ điển'],['cool','Lạnh'],['warm','Ấm']];
 function camFilter(c,f){if(f==='none')return;const x=c.getContext('2d'),im=x.getImageData(0,0,c.width,c.height),d=im.data;for(let i=0;i<d.length;i+=4){let r=d[i],g2=d[i+1],b=d[i+2];
@@ -1920,8 +1929,8 @@ function shoot(w){// chụp: cả phòng hoặc selfie (cận cảnh hai đứa)
 /* ================= 🎮 Trò chơi trong điện thoại: kỷ lục chung của hai đứa ================= */
 const GAMES=[['flap','🐦','Chim Sẻ Vượt Tre','Chạm để vỗ cánh, bay qua khe giữa các thân tre'],['catch','💗','Hứng Tim','Kéo giỏ hứng tim, tránh bom 💣 · 3 mạng'],['memo','🃏','Lật Thẻ Ghép Đôi','Lật 2 thẻ giống nhau · càng ít lượt càng nhiều điểm'],['whack','🦟','Đập Muỗi','30 giây đập muỗi, đừng đập nhầm người yêu 😆'],['game','🐍','Rắn Săn Mồi','Game rắn cổ điển kiểu Nokia']];
 let GSC={},GM=null;
-async function loadScores(){try{GSC=(await loadS('phone-games',{}))||{}}catch(e){GSC={}}return GSC}
-async function saveScore(k,v){try{const S=(await loadS('phone-games',{}))||{};S[ME]=S[ME]||{};if(v>(S[ME][k]||0)){S[ME][k]=v;await saveS('phone-games',S);GSC=S;const pb=(S[PA]||{})[k]||0;if(v>pb&&pb>0){toast(`🏆 Phá kỷ lục của ${ctx.partnerName} rồi!`);send('emo',{e:'🏆',burst:'✨'})}else toast('🏆 Kỷ lục mới!');return true}}catch(e){}return false}
+async function loadScores(){try{const[a,b,old]=await Promise.all([loadS('phone-games-'+ME,{}),loadS('phone-games-'+PA,{}),loadS('phone-games',{})]);const o=old||{};GSC={[ME]:Object.assign({},o[ME],a),[PA]:Object.assign({},o[PA],b)}}catch(e){GSC={}}return GSC}
+async function saveScore(k,v){try{const S=await loadScores();if(v>(S[ME][k]||0)){S[ME][k]=v;await saveS('phone-games-'+ME,S[ME]);const pb=(S[PA]||{})[k]||0;if(v>pb&&pb>0){toast(`🏆 Phá kỷ lục của ${ctx.partnerName} rồi!`);send('emo',{e:'🏆',burst:'✨'})}else toast('🏆 Kỷ lục mới!');return true}}catch(e){}return false}
 const best=(k,who)=>((GSC[who]||{})[k]||0);
 const gHead=t=>`<div class="ph-head"><button data-app="games">‹</button><b>${t}</b></div>`;
 function gamesHub(B,noLoad){B.innerHTML=`<div class="ph-head"><button data-app="">‹</button><b>🎮 Trò chơi</b></div><div class="ph-games">${GAMES.map(([k,e,n,d])=>`<button data-app="${k==='game'?'game':'g_'+k}"><i>${e}</i><span><b>${n}</b><small>${d}</small><em>🏆 Bạn ${best(k,ME)} · ${esc(ctx.partnerName)} ${best(k,PA)}</em></span></button>`).join('')}</div>`;
@@ -1977,7 +1986,6 @@ function gamesScreen(B){const k=PHAPP;
 function drawTorch(){for(const c of[me,pa]){if(!c.torch||(c===pa&&!livePa()))continue;const[sx,sy]=charScreen(c),dir=(c.face==='f'?1:-1)*(c.flip?-1:1),ph=dayPhase(),k=ph==='night'?1:.5;
  g.save();g.globalCompositeOperation='lighter';const gx=sx+dir*44,gy=sy-8+(c.face==='f'?14:-14),gr=g.createRadialGradient(gx,gy,4,gx,gy,70);gr.addColorStop(0,`rgba(255,240,190,${.55*k})`);gr.addColorStop(1,'rgba(255,240,190,0)');g.fillStyle=gr;g.beginPath();g.moveTo(sx+dir*6,sy-22);g.lineTo(gx+dir*40,gy-40);g.lineTo(gx+dir*40,gy+40);g.closePath();g.fill();g.beginPath();g.arc(gx,gy,70,0,7);g.fill();g.restore()}}
 
-const APPS=[['tt','🎵','TikTok','#111'],['msg','💬','Tin nhắn','#34c759'],['call','📞','Gọi','#30d158'],['cam','📷','Camera','#8e8e93'],['pics','🖼️','Ảnh','#ff9f0a'],['music','🎧','Nhạc','#ff375f'],['wallet','💳','Ví','#0a84ff'],['map','🗺️','Đi đâu','#64d2ff'],['game','🎮','Game','#bf5af2'],['light','🔦','Đèn','#ffd60a'],['weather','🌦️','Thời tiết','#5ac8fa'],['set','⚙️','Cài đặt','#636366']];
 function drawPhone(){const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_WALL[0],d=new Date();
  $('#phF').style.setProperty('--frame',av.phone||'#222');const wimg=phLS('wallImg','');$('#phS').style.background=wimg?`center/cover no-repeat url(${wimg})`:wall[1];if(PHAPP!==window.__lastApp){window.__lastApp=PHAPP;const bd=$('#phBody');bd.classList.remove('anim');void bd.offsetWidth;bd.classList.add('anim')}
  if(PHAPP==='msg')phSet('readMsg',Date.now());if(PHAPP==='tt'){phSet('ttSeen',Date.now());TT_PART=0}
@@ -1992,7 +2000,7 @@ function drawPhone(){const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_W
  if(PHAPP==='cal'){const d=new Date(),y=d.getFullYear(),mo=d.getMonth(),first=(new Date(y,mo,1).getDay()+6)%7,days=new Date(y,mo+1,0).getDate(),meet=ctx.couple.next_meet?new Date(String(ctx.couple.next_meet).slice(0,10)+'T00:00:00'):null,dm=(()=>{const v=daysToMeet();return v!=null&&v>=0?v:null})();let cells='';for(let i=0;i<first;i++)cells+='<span></span>';for(let i=1;i<=days;i++){const isM=meet&&meet.getFullYear()===y&&meet.getMonth()===mo&&meet.getDate()===i;cells+=`<span class="${i===d.getDate()?'td':''} ${isM?'mt':''}">${i}</span>`}
   B.innerHTML=head('📅 Lịch')+`<div class="ph-center"><div class="ph-money">💗 ${daysTogether()||0} ngày</div><p class="ph-note" style="margin:0">bên nhau kể từ ${(()=>{try{return new Date(ctx.couple.started_on).toLocaleDateString('vi-VN')}catch(e){return''}})()}</p>${dm!=null?`<b>✈️ Còn ${dm} ngày nữa gặp nhau</b>`:''}<div class="ph-cal"><b>Tháng ${mo+1}/${y}</b><div>${['T2','T3','T4','T5','T6','T7','CN'].map(x=>`<i>${x}</i>`).join('')}${cells}</div></div><button class="ph-big g" data-go2="calendar">📅 Mở Lịch hẹn của hai đứa</button></div>`;return}
  if(PHAPP==='notes'){const N=phLS('notes',[]);B.innerHTML=head('📝 Ghi chú')+`<form id="phNoteF" class="ph-in"><input id="phNoteI" maxlength="140" placeholder="Viết ghi chú…" autocomplete="off"><button>＋</button></form><div class="ph-notes">${N.length?N.map((n,i)=>`<div><span>${esc(n.t)}</span><small>${new Date(n.at).toLocaleDateString('vi-VN')}</small><button data-ndel="${i}">✕</button></div>`).join(''):'<p class="ph-note">Chưa có ghi chú · ghi lại điều muốn nói, món muốn ăn, nơi muốn đi cùng nhau 💭</p>'}</div><p class="ph-note">Ghi chú chỉ lưu trên máy này</p>`;return}
- if(PHAPP==='calc'){const K=['AC','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0',',','='];B.innerHTML=head('🧮 Máy tính')+`<div class="ph-calc"><div class="ph-cd">${esc(CALC.s)}</div><div class="ph-ck">${K.map(k=>`<button data-ck="${k}" class="${/[÷×−+=]/.test(k)?'op':/AC|±|%/.test(k)?'fn':''} ${k==='0'?'z':''} ${CALC.op===k&&CALC.fresh?'act':''}">${k}</button>`).join('')}</div></div>`;return}
+ if(PHAPP==='calc'){const K=['AC','±','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0',',','='];B.innerHTML=head('🧮 Máy tính')+`<div class="ph-calc"><div class="ph-cd">${esc(CALC.s)}</div><div class="ph-ck">${K.map(k=>`<button data-ck="${k}" class="${/[÷×−+=]/.test(k)?'op':/AC|±|%/.test(k)?'fn':''} ${k==='0'?'z':''} ${CALC.last===k&&CALC.fresh?'act':''}">${k}</button>`).join('')}</div></div>`;return}
  if(PHAPP==='pic'){const P=phLS('pics',[]),u=P[PHPIC];if(!u){PHAPP='pics';drawPhone();return}B.innerHTML=head('🖼️ Ảnh '+(PHPIC+1)+'/'+P.length)+`<div class="ph-center"><img class="ph-shot" src="${u}" alt=""><div style="display:flex;gap:6px;width:100%"><button class="ph-big" data-pact="save">💾 Lưu</button><button class="ph-big g" data-pact="wall">🖼️ Hình nền</button><button class="ph-big g" data-pact="del">🗑️ Xoá</button></div></div>`;return}
  if(PHAPP==='ttadd'){B.innerHTML=`<div class="ph-head"><button data-app="tt">‹</button><b>＋ Thêm vào TikTok</b></div>
   <p class="ph-note" style="text-align:left">🔗 <b>Xem TikTok thật:</b> mở TikTok, bấm <b>Chia sẻ → Sao chép liên kết</b>, rồi dán vào đây. Video sẽ phát ngay trong điện thoại này và người ấy cũng xem được.</p>
@@ -2098,7 +2106,7 @@ if(IS_RT){RB=Object.assign(RB,await pre('resto',{}));RT=Object.assign(RT,await p
  $('#bResto').classList.remove('hidden');$('#bRMenu').classList.remove('hidden');
  $('#hint').textContent=(KIND==='resto2'?'Phòng riêng · ':'Sảnh nhà hàng · ')+'ngồi vào bàn rồi chạm 🤵 phục vụ để gọi món · 💁 lễ tân để đặt bàn'+(KIND==='resto'?' · cửa phòng riêng ở quầy lễ tân':'');
  setTimeout(()=>{const b=RB.booking;if(b&&b.date===new Date().toISOString().slice(0,10))toast(`💁 Chào ${ctx.myName}! Bàn ${b.area==='vip'?'phòng riêng':'sảnh'} lúc ${b.time} đã sẵn sàng ạ`);else toast('💁 Xin chào quý khách, mời anh chị vào bàn ạ!')},900)}
-function rtSave(){saveS('resto-table',RT,400);send('rt',{RT});window.RT_DISHES=RT.dishes;if($('#mResto').classList.contains('on'))drawResto()}
+function rtSave(){saveS('resto-table',RT,400);if(!PRE_WAIT.has('resto-table'))send('rt',{RT});window.RT_DISHES=RT.dishes;if($('#mResto').classList.contains('on'))drawResto()}
 const vndR=n=>(n||0).toLocaleString('vi-VN')+'đ';
 let rCat='viet',orderQ=[];
 function openRMenu(){drawRMenu();$('#mRMenu').classList.add('on')}
