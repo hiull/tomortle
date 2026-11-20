@@ -532,7 +532,7 @@ export function samplesToday(d = new Date()) {
   const r = rng(d.getFullYear() * 1000 + d.getMonth() * 40 + d.getDate() + 7); const pool = ['deli', 'frozen', 'bakery', 'junk', 'snacks', 'fruit', 'north', 'central', 'south', 'street'].flatMap(k => PROD[k].map(p => ({ k, e: p[0], n: p[1], p: p[2] })));
   const out = []; for (let i = 0; i < 3; i++)out.push(pool.splice(Math.floor(r() * pool.length), 1)[0]); return out;
 }
-export const TIERS = [[0, 'Thành viên', '🤍', 0], [100, 'Bạc', '🥈', 0], [300, 'Vàng', '🥇', 3], [800, 'Kim cương', '💎', 5]];
+export { TIERS } from './tiers.js';
 
 /* ================= Nhà hàng Tomortle: thực đơn 4 phong cách (hai đứa là khách) ================= */
 export const RESTO_MENU = {

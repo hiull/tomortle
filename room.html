@@ -53,6 +53,16 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .rtabs{gap:5px}.rtabs button{padding:6px 7px;font-size:12.5px}@media(min-width:440px){.rtabs button{font-size:14px;padding:7px 12px}}
 .ftabs{align-items:center;margin-top:-2px}.ftabs>span{font-size:18px}.ftabs{gap:4px}.ftabs button{font-size:11.5px;padding:6px 7px}.ftabs.many button{font-size:11px;padding:5px 6px}.ftabs button b{font-weight:900}
 .cs-q{background:#fff4f7;border-radius:14px;padding:10px 12px;margin:4px 0 10px;line-height:1.45}.cs-o{display:flex;flex-wrap:wrap;gap:6px}.cs-o button small{opacity:.7;font-size:.75em}
+.ptile{--a:#eee;--b:#999;position:relative;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:86px;height:98px;border-radius:14px;margin:4px;background:linear-gradient(140deg,var(--a),var(--b));color:#1d1d1f;box-shadow:0 3px 10px rgba(0,0,0,.18),inset 0 0 0 2px rgba(255,255,255,.6);overflow:hidden;vertical-align:top;font-family:"Be Vietnam Pro",sans-serif;cursor:pointer}
+.ptile i{position:absolute;top:5px;left:8px;font-style:normal;font-size:11px;font-weight:700;opacity:.8}.ptile u{position:absolute;top:4px;right:7px;text-decoration:none;font-size:12px}
+.ptile b{font-size:34px;line-height:1;font-weight:800;text-shadow:0 1px 0 rgba(255,255,255,.6)}.ptile span{font-size:10px;font-weight:700;margin-top:2px}.ptile small{font-size:9px;opacity:.75}
+.ptile::after{content:"";position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.65) 50%,transparent 60%);animation:shine 3.2s infinite linear}
+@keyframes shine{from{transform:translateX(-60%)}to{transform:translateX(60%)}}
+.ptile.lock{filter:grayscale(1) brightness(.92);opacity:.55}.ptile.lock::after{display:none}.ptile.cur{outline:3px solid #ff4d8d;outline-offset:2px}
+.ptile.rb{background:linear-gradient(140deg,#ff5f6d,#ffc371,#47e891,#3fa7ff,#b267ff,#ff5f6d);background-size:300% 300%;animation:rbw 4s linear infinite}@keyframes rbw{to{background-position:300% 0}}
+.ptile.big{width:150px;height:170px;border-radius:22px;margin:6px auto}.ptile.big b{font-size:64px}.ptile.big span{font-size:15px}.ptile.big i{font-size:15px}.ptile.big small{font-size:12px}
+.ptile.pop{animation:tpop 1.1s cubic-bezier(.2,1.6,.4,1)}@keyframes tpop{0%{transform:scale(.2) rotate(-25deg);opacity:0}70%{transform:scale(1.15) rotate(4deg)}100%{transform:none}}
+.tperk{text-align:left;font-size:13px;line-height:1.55;margin:8px 4px}.tbar{height:8px;border-radius:5px;background:#f1e4ea;overflow:hidden;margin:6px 0}.tbar>div{height:100%;background:linear-gradient(90deg,#ff8fab,#b388ff)}
 </style>
 </head>
 <body>
@@ -161,7 +171,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <h3>🛒 Giỏ hàng chung</h3>
   <div id="cartL"></div>
   <label class="note" style="display:flex;align-items:center;gap:8px;margin-top:8px">Ví chung (ngân sách) <input class="input" id="mkBudget" type="number" step="10000" min="0" style="margin:0;flex:1"><button type="button" class="btn small" id="mkTop">💰 Nạp 500k</button></label>
-  <div class="incart" id="mkCard" style="margin-top:8px"></div>
+  <div class="incart" id="mkCard" style="margin-top:8px;max-height:none;overflow:visible"></div>
   <label class="note hidden" id="mkVoucherRow" style="display:flex;align-items:center;gap:6px;margin-top:6px"><input type="checkbox" id="mkVoucher"> Dùng 100 điểm để giảm 50.000đ</label>
   <p id="cartTot" style="font-weight:700;margin:8px 0"></p>
   <p class="note" id="cartHist" style="margin:0 0 8px"></p>
@@ -247,6 +257,11 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <div id="pantryL" class="incart" style="max-height:50vh"></div>
   <div class="row" style="gap:8px;margin-top:10px"><button class="btn" id="goMarket">🛒 Đi siêu thị</button><button class="btn primary" style="flex:1" id="pantryCook">🍳 Nấu ăn</button></div>
 </div></div>
+<div class="modal" id="mTier"><div class="sheet" style="text-align:center">
+  <h3 id="tierT">⚛️ Bảng tuần hoàn hạng thẻ</h3>
+  <div id="tierB" style="max-height:66vh;overflow:auto"></div>
+  <div class="row" style="gap:8px;margin-top:10px"><button class="btn primary" style="flex:1" onclick="this.closest('.modal').classList.remove('on')">Đóng</button></div>
+</div></div>
 <div class="modal" id="mInfo"><div class="sheet" style="text-align:center">
   <h3 style="justify-content:center" id="infoT"></h3><p id="infoB" style="font-size:16px"></p>
   <button class="btn primary" onclick="this.closest('.modal').classList.remove('on')">Đóng</button>
@@ -259,6 +274,7 @@ const KIND=({balcony:'balcony',market:'market',market2:'market2',market3:'market
 const C=DEMO?null:await import('./common.js');
 const IS_MK=KIND.startsWith('market')||KIND.startsWith('mall');const IS_MALL=KIND.startsWith('mall');const IS_RT=KIND.startsWith('resto');
 const MD=(IS_MK||KIND==='kitchen'||KIND==='spa'||IS_RT)?await import('./market.js'):null;
+const TM=await import('./tiers.js');
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
@@ -925,6 +941,29 @@ function paIdle(){if(!busyPa()||pa.path.length||pa.act&&NOW<pa.actT)return;
 setInterval(paIdle,4500);
 function placeOfflinePartner(){const o=offlineSpot();pa.path=[];if(o.seat)applySeat(pa,o.seat);else{pa.seat=null;pa.pose='stand';pa.x=o.x;pa.y=o.y}}
 
+/* ================= ⚛️ Thẻ thành viên nguyên tố ================= */
+let CARD_LIFE=((await loadS('market',{}))||{}).life||0;
+const lifeNow=()=>CARD_LIFE;
+function tileHTML(i,cls=''){const[pt,nm,ic,off,o]=TM.TIERS[i];return`<div class="ptile ${o.rainbow?'rb':''} ${cls}" data-ti="${i}" style="--a:${o.col};--b:${o.col2}"><i>${o.num}</i><u>${ic}</u><b>${o.sym}</b><span>${esc(nm)}</span><small>${o.mass}</small></div>`}
+function cardHTML(life){const i=tierIdx(life),nx=TM.TIERS[i+1],pct=nx?Math.min(100,(life-TM.TIERS[i][0])/(nx[0]-TM.TIERS[i][0])*100):100;
+ return`<div style="display:flex;gap:10px;align-items:center;text-align:left">${tileHTML(i,'cur')}<div style="flex:1"><b>Hạng ${esc(TM.TIERS[i][1])}</b> · ${TM.TIERS[i][4].el}<br><small class="note">${esc(TM.TIERS[i][4].fact)}</small><div class="tbar"><div style="width:${pct}%"></div></div><small class="note">${nx?`${life.toLocaleString('vi-VN')} / ${nx[0].toLocaleString('vi-VN')} điểm → ${nx[4].sym} ${esc(nx[1])}`:'Đỉnh bảng tuần hoàn rồi 👑'}</small></div></div>`}
+window.openTiers=function(sel){const cur=tierIdx(lifeNow());const show=sel??cur;$('#tierT').textContent='⚛️ Bảng tuần hoàn hạng thẻ';
+ $('#tierB').innerHTML=`<p class="note" style="margin:0 0 6px">Càng tiêu nhiều, thẻ chung của hai đứa càng lên nguyên tố hiếm hơn. Chạm một ô để xem quyền lợi.</p><div>${TM.TIERS.map((_,i)=>tileHTML(i,(i>cur?'lock ':'')+(i===cur?'cur':''))).join('')}</div>
+  <div class="tperk" id="tierP"></div>`;tierPerks(show);$('#mTier').classList.add('on')};
+function tierPerks(i){const[pt,nm,,, o]=TM.TIERS[i],cur=tierIdx(lifeNow());$('#tierP').innerHTML=`<b>${o.sym} · ${esc(nm)}</b> <small class="note">(${pt.toLocaleString('vi-VN')} điểm${i>cur?' · 🔒 chưa mở':i===cur?' · ⭐ hạng hiện tại':' · ✅ đã qua'})</small><br><small class="note">🧪 ${esc(o.fact)}</small><br>${TM.perksOf(i).map(x=>'• '+x).join('<br>')||'• Thẻ khởi đầu, tiêu xài để lên hạng nhé!'}`}
+$('#tierB').onclick=e=>{const t=e.target.closest('[data-ti]');if(t){tierPerks(+t.dataset.ti);sfx.pop()}};
+// lên hạng: màn hình ăn mừng, nhạc kèn, pháo giấy
+function tierUp(i,bonus){const[,nm,,, o]=TM.TIERS[i];$('#tierT').textContent='🎉 LÊN HẠNG THẺ!';
+ $('#tierB').innerHTML=`${tileHTML(i,'big pop')}<p style="margin:6px 0"><b>Chúc mừng hai đứa đã chạm tới ${esc(o.el)}!</b><br><small class="note">${esc(o.fact)}</small></p>${bonus?`<p>💰 Quà lên hạng: <b>+${vnd(bonus)}</b> vào ví chung</p>`:''}<div class="tperk">${TM.perksOf(i).map(x=>'• '+x).join('<br>')}</div>`;
+ $('#mTier').classList.add('on');ac();[523,659,784,1047,1319,1568].forEach((f,k)=>tone(f,.28,'triangle',.07,k*.11));tone(2093,.8,'sine',.06,.75);vib([40,60,40,60,200]);
+ for(let k=0;k<4;k++)setTimeout(()=>{burst(me,rnd1(['🎉','⚛️','✨',TM.TIERS[i][2]]),8);if(livePa())burst(pa,'🎊',6)},k*350);send('emo',{e:TM.TIERS[i][2],burst:'🎉'})}
+// hào quang nguyên tố dưới chân nhân vật (thẻ chung nên cả hai đều có)
+function drawAura(c,sx,sy){const i=tierIdx(lifeNow());if(i<4||c.pose==='lie')return;const o=TM.TIERS[i][4],t=NOW/1000,col=o.rainbow?`hsl(${(t*90)%360},90%,62%)`:o.col2,top=sy-(c.pose==='sit'?36:30);
+ if(i>=12&&IS_MALL&&c.pose!=='sit'){g.save();g.globalAlpha=.85;ell(sx,sy+1,20,8,'#c62828','#d4af37');g.restore()}
+ g.save();g.globalAlpha=.35+.2*Math.sin(t*3);ell(sx,sy,17,7,null,col);g.lineWidth=2.5;g.strokeStyle=col;g.beginPath();g.ellipse(sx,sy,17,7,0,0,7);g.stroke();g.globalAlpha=.18;ell(sx,sy,14,5.5,col);g.restore();
+ if(i>=7){const n=Math.min(8,i-5);for(let k=0;k<n;k++){const a=t*(2.2+k*.15)+k*Math.PI*2/n,tl=k%2?.5:-.5,rx=19,ry=8;const ex=Math.cos(a)*rx,ey=Math.sin(a)*ry;const x2=sx+ex*Math.cos(tl)-ey*Math.sin(tl),y2=top+ex*Math.sin(tl)+ey*Math.cos(tl);circ(x2,y2,1.9,o.rainbow?`hsl(${(k*45+t*120)%360},90%,60%)`:col);circ(x2,y2,.8,'#fff')}}
+ if(i>=10&&Math.random()<.06)spawn(sx+(Math.random()-.5)*26,sy-10-Math.random()*40,i>=15?rnd1(['✨','💫','🌈','⚛️']):rnd1(['✨','☢️','💚']),{size:9,vy:-12,life:1.2})}
+
 /* ================= 🧑‍🤝‍🧑 NPC: mỗi phòng 1–2 nhân vật tự đi lại, dùng đồ, chào hỏi người chơi ================= */
 const rnd1=a=>a[Math.floor(Math.random()*a.length)];
 const NPC_AV=(tc,bc,o={})=>Object.assign({skin:rnd1(['#f9d0b0','#f1c27d','#e0ac69','#ffe0bd']),hair:rnd1(['short','long','bob','bun','curly','spiky']),hc:rnd1(['#2b1d16','#5a3825','#8d5524','#1b1b1b']),top:'tee',tc,bot:'pants',bc,acc:'none'},o);
@@ -964,7 +1003,7 @@ function npcUse(n,it){const C2=MD&&MD.COUNTERS[it.t];
  const E={rtable:'🍽️',bar:'🍷',piano:'🎹',vanity:'🧴',basin:'🫧',skinshelf:'🧴',spabed:'💆',fitting:'👗',bed:'💤',sofa:'💤',rug:'🐾',fridge:'🐟',ktable:'🐟',petbed:'💤',plant:'🌿',chair:'😺'};
  n.emo={e:E[it.t]||USE_EMO[it.t]||'✨',t:NOW+3000}}
 // gần người chơi thì quay sang chào
-function npcNotice(){for(const n of NPCS){if(n.walking||n.lineT>NOW)continue;for(const c of[me,pa]){if(c===pa&&!livePa())continue;if(Math.hypot(c.x-n.x,c.y-n.y)<1.7){faceToward(n,c.x,c.y);npcSay(n,rnd1(NPCL[n.role]||['Xin chào!']));n.lineT=NOW+22000+Math.random()*10000;break}}}}
+function npcNotice(){for(const n of NPCS){if(n.walking||n.lineT>NOW)continue;for(const c of[me,pa]){if(c===pa&&!livePa())continue;if(Math.hypot(c.x-n.x,c.y-n.y)<1.7){faceToward(n,c.x,c.y);const ti=tierIdx(lifeNow());if(ti>=6&&['staff','advisor','stylist','waiter','spa'].includes(n.role)&&Math.random()<.6){n.emo={e:'🙇',t:NOW+1500};setTimeout(()=>npcSay(n,`Kính chào quý khách hạng ${TM.TIERS[ti][1]} (${TM.TIERS[ti][4].sym})! ${rnd1(['Hân hạnh được phục vụ ạ 🙇','Mời anh chị lối VIP ạ ✨','Hôm nay có quà riêng cho hạng thẻ của mình ạ 🎁'])}`),1500)}else npcSay(n,rnd1(NPCL[n.role]||['Xin chào!']));n.lineT=NOW+22000+Math.random()*10000;break}}}}
 if(NPCS.length){setInterval(()=>{try{npcBrain()}catch(e){}},2600);setInterval(()=>{try{npcNotice()}catch(e){}},1000)}
 function drawNPC(n){const[sx,sy]=iso(n.x,n.y);
  if(n.type==='chibi')drawChibi(n.av,sx,sy,{face:n.face,flip:n.flip,pose:'stand',walking:n.walking,seed:n.seed,scale:.9});
@@ -1015,12 +1054,12 @@ function render(dt){
  for(const it of R.items){const f=fp(it),h=CAT[it.t].h;const flat=CAT[it.t].flat;const k=flat?-100+f.x+f.y:itemKey(it);
   D.push({k,fn:()=>drawItem(it),hit:{kind:'item',ref:it,poly:[iso(f.x,f.y+f.d),iso(f.x+f.w,f.y+f.d),iso(f.x+f.w,f.y),iso(f.x+f.w,f.y,h),iso(f.x,f.y,h),iso(f.x,f.y+f.d,h)]}})}
  for(const c of[pa,me]){const live=c===me||livePa()||busyPa();let k=c.x+c.y;if(c.seat){const it=itemById(c.seat.id);if(it)k=itemKey(it)+((it.r|0)<2||c.pose==='lie'?.5:-.5)}
-  D.push({k,fn:()=>{const[sx,sy]=charScreen(c);const av=avOf(c.id);
+  D.push({k,fn:()=>{const[sx,sy]=charScreen(c);const av=avOf(c.id);drawAura(c,sx,sy);
    drawChibi(av,sx,sy,{face:c.face,flip:c.flip,pose:c.pose,walking:c.walking,dance:c.act==='dance'&&NOW<c.actT,hug:(c.act==='hug'||c.act==='kiss')&&NOW<c.actT,mouth:(c.act==='kiss'&&NOW<c.actT)?'o':null,seed:c===me?0:2});
    if(c.act==='dizzy'&&NOW<c.actT){for(let i=0;i<3;i++){const a=NOW/200+i*2.1;g.font='9px sans-serif';g.fillText('⭐',sx+Math.cos(a)*12,sy-56+Math.sin(a)*4)}}
    if(c.act==='pillow'&&NOW<c.actT&&c.pillow){const p=c.pillow,f=1-(c.actT-NOW)/600;const x=p[0]+(p[2]-p[0])*f,y=p[1]+(p[3]-p[1])*f-Math.sin(f*Math.PI)*40;g.save();g.translate(x,y);g.rotate(f*8);rr(-8,-5,16,10,4,'#fff','#e6a3b9');g.restore()}
    OVER.push(()=>{const col=c===me?'#ff7aa2':'#9b86d1';const nm=c===me?ctx.myName:ctx.partnerName;
-   nameTag(sx,sy+3,(c===pa&&!live?'💤 ':'')+nm+(c===me&&me.auto?' 💭':''),live?col:'#b9a6b2');
+   nameTag(sx,sy+3,(c===pa&&!live?'💤 ':'')+nm+(tierIdx(lifeNow())>=4?' ['+TM.TIERS[tierIdx(lifeNow())][4].sym+']':'')+(c===me&&me.auto?' 💭':''),live?col:'#b9a6b2');
    const top=c.pose==='lie'?sy-26:sy-60-(c.pose==='sit'?4:0);
    if(c===pa&&busyPa()&&!(c.emo&&NOW<c.emo.t)&&!(c.say&&NOW<c.say.t)){g.save();g.font='600 8.5px "Be Vietnam Pro",sans-serif';g.textAlign='center';g.fillStyle='rgba(90,60,120,.85)';g.fillText(paDoing(),sx,top-4);g.restore()}
    if(c.emo&&NOW<c.emo.t){if(String(c.emo.e).startsWith('@'))emj(c.emo.e,sx,top-12+Math.sin(NOW/150)*1.5,20);else{g.save();g.font='18px sans-serif';g.textAlign='center';g.textBaseline='bottom';g.fillText(c.emo.e,sx,top-2+Math.sin(NOW/150)*1.5);g.restore()}}
@@ -1072,7 +1111,7 @@ function onMsg(m){
  case'ttt':tttRecv(m);break;
  case'nty':doNaughty(pa,m.a,true);break;
  case'love':LOVE+=m.n;LOVEB.pts=(LOVEB.pts||0)+m.n;renderLove();break;
- case'mk':MK=m.MK;drawMk();break;
+ case'mk':MK=m.MK;CARD_LIFE=MK.life||0;drawMk();break;
  case'pt':PT=m.PT;window.DISHES=PT.dishes;drawCook();if($('#mTable').classList.contains('on'))drawTable();break;
  case'cook':window.COOKING={until:NOW+COOK_MS};pa.emo={e:m.e,t:NOW+COOK_MS};sfx.whoosh();break;
  case'rt':RT=m.RT;window.RT_DISHES=RT.dishes;if($('#mResto').classList.contains('on'))drawResto();break;
@@ -1221,10 +1260,10 @@ if(IS_MK){MK=Object.assign(MK,await loadS('market',{}));MK.list=MK.list||[];MK.p
  ['#bCart','#bDir','#bList','#bDeals'].forEach(s=>$(s).classList.remove('hidden'));
  $('#hint').textContent=(IS_MALL?'Tomortle Mall · ':'')+MD.FLOORS[KIND].n+' · chạm quầy để chọn đồ · giỏ dùng chung · thang máy 🛗 đổi tầng'+(IS_MALL?' · 🪞 phòng thử đồ':'');
  if(!DEMO){mkch=C.featureChannel(ctx,'market-cart');mkch.on('broadcast',{event:'m'},({payload})=>onMsg(payload)).subscribe(s=>{if(s==='SUBSCRIBED')sendMk('mkhello')})}}
-const tierOf=life=>{let t=MD?MD.TIERS[0]:[0,'',''];for(const x of(MD?MD.TIERS:[]))if(life>=x[0])t=x;return t};
+const tierOf=life=>{let t=TM.TIERS[0];for(const x of TM.TIERS)if(life>=x[0])t=x;return t};const tierIdx=life=>TM.TIERS.indexOf(tierOf(life));
 const mkSub=()=>MK.cart.reduce((a,i)=>a+lineTotal(i),0),mkCount=()=>MK.cart.reduce((a,i)=>a+i.q,0);
 function mkBill(){const sub=mkSub(),t=tierOf(MK.life),tierOff=Math.round(sub*t[3]/100/500)*500,useV=$('#mkVoucher')?.checked&&MK.points>=100,vou=useV?50000:0;return{sub,t,tierOff,vou,useV,total:Math.max(0,sub-tierOff-vou)}}
-function mkSave(){saveS('market',MK,600);sendMk('mk',{MK});drawMk()}
+function mkSave(){CARD_LIFE=MK.life||0;saveS('market',MK,600);sendMk('mk',{MK});drawMk()}
 let shopKind=null,shopSeg='all';
 $('#shopSeg').onclick=e=>{const b=e.target.closest('[data-sg]');if(!b)return;shopSeg=b.dataset.sg;sfx.pop();drawMk()};
 const LOGOU={};function logoURL(t){if(!LOGOU[t]){const m=document.createElement('canvas');m.width=m.height=64;const x=m.getContext('2d');x.scale(2,2);drawLogo(x,t,16,16,13);LOGOU[t]=m.toDataURL()}return LOGOU[t]}
@@ -1248,7 +1287,7 @@ function drawMk(){if(!IS_MK)return;window.MKC=MK.cart;const b=mkBill(),cnt=mkCou
   $('#shopIn').innerHTML=MK.cart.length?'🛒 <b>Trong giỏ:</b> '+MK.cart.map(i=>`${icoH(i.e,'ico s')}×${i.q}`).join(' · '):'🛒 Giỏ đang trống, chạm món hàng để bỏ vào giỏ'}
  $('#cartL').innerHTML=MK.cart.length?MK.cart.map((i,k)=>`<div class="cl"><b>${icoH(i.e)}</b><span>${esc(i.n)}<br><small class="note">${i.o&&i.o!==i.p?`<s>${vnd(i.o)}</s> `:''}${vnd(i.p)}${i.b2g1?' · mua 2 tặng 1':''} · ${i.by===ME?'bạn chọn':esc(ctx.partnerName)+' chọn'}</small></span><button data-k="${k}" data-d="-1">−</button>${i.q}<button data-k="${k}" data-d="1">+</button></div>`).join(''):'<p class="note">Giỏ đang trống. Ra quầy hàng nhặt đồ nhé 🛒</p>';
  if(document.activeElement!==$('#mkBudget'))$('#mkBudget').value=MK.budget;
- const t=b.t,nx=MD.TIERS.find(x=>x[0]>MK.life);$('#mkCard').innerHTML=`💳 <b>Thẻ thành viên ${t[2]} ${t[1]}</b> · ${MK.points} điểm${t[3]?` · giảm ${t[3]}% mọi hoá đơn`:''}${nx?`<br><small>Còn ${nx[0]-MK.life} điểm nữa lên hạng ${nx[2]} ${nx[1]}${nx[3]?` (giảm ${nx[3]}%)`:''} · 10.000đ = 1 điểm</small>`:''}`;
+ const t=b.t,nx=TM.TIERS.find(x=>x[0]>MK.life);$('#mkCard').innerHTML=cardHTML(MK.life)+`<button class="btn small" style="margin:6px 0" onclick="window.openTiers()">⚛️ Bảng tuần hoàn hạng thẻ</button><br>💳 <b>Thẻ thành viên ${t[2]} ${t[1]}</b> · ${MK.points} điểm${t[3]?` · giảm ${t[3]}% mọi hoá đơn`:''}${nx?`<br><small>Còn ${nx[0]-MK.life} điểm nữa lên hạng ${nx[2]} ${nx[1]}${nx[3]?` (giảm ${nx[3]}%)`:''} · 10.000đ = 1 điểm</small>`:''}`;
  $('#mkVoucherRow').classList.toggle('hidden',MK.points<100);
  const lv=MK.budget-b.total;$('#cartTot').innerHTML=`${b.tierOff||b.vou?`<small class="note">Tạm tính ${vnd(b.sub)}${b.tierOff?` · thẻ ${t[1]} -${vnd(b.tierOff)}`:''}${b.vou?` · voucher -${vnd(b.vou)}`:''}</small><br>`:''}Tổng: ${vnd(b.total)} · ${lv>=0?`còn ${vnd(lv)}`:`<span style="color:#e63946">vượt ${vnd(-lv)} 😱</span>`}`;
  const h=MK.hist||[];$('#cartHist').textContent=h.length?`Đã đi chợ ${h.length} lần · tổng chi ${vnd(h.reduce((a,x)=>a+x.total,0))}`:'';
@@ -1294,7 +1333,7 @@ async function checkout(){if(paying)return;ac();
  try{
  if(!MK.cart.length){toast('Giỏ trống trơn, đi nhặt đồ đã nào 🛒');return}const b=mkBill();
  if(b.total>MK.budget){toast(`Ví chung còn ${vnd(MK.budget)}, chưa đủ ${vnd(b.total)} 🥺`,'💰 Nạp ví',()=>{topUp(Math.ceil((b.total-MK.budget)/100000)*100000+100000);checkout()});openCart();return}
- paying=true;const cart=MK.cart.map(i=>Object.assign({},i)),d=new Date(),earn=Math.floor(b.total/10000),free=cart.reduce((a,i)=>a+(i.b2g1?Math.floor(i.q/3)*i.p:0),0),save=cart.reduce((a,i)=>a+(i.o?(i.o-i.p)*i.q:0),0)+free+b.tierOff+b.vou;
+ paying=true;const cart=MK.cart.map(i=>Object.assign({},i)),d=new Date(),earn=Math.floor(b.total/10000*(b.t[4].mult||1)),free=cart.reduce((a,i)=>a+(i.b2g1?Math.floor(i.q/3)*i.p:0),0),save=cart.reduce((a,i)=>a+(i.o?(i.o-i.p)*i.q:0),0)+free+b.tierOff+b.vou;
  // cập nhật dữ liệu ngay (không phụ thuộc hiệu ứng), hiệu ứng chỉ để xem
  const before=tierOf(MK.life);MK.points=MK.points-(b.useV?100:0)+earn;MK.life+=earn;if($('#mkVoucher'))$('#mkVoucher').checked=false;
  MK.hist=[...(MK.hist||[]),{at:Date.now(),total:b.total,n:mkCount(),by:ME}].slice(-30);MK.budget-=b.total;MK.cart=[];MK.list=MK.list.filter(l=>!l.done);mkSave();{const isMall=i=>{const a=MD.ALL.find(x=>x.n===i.n);return a&&MD.COUNTERS[a.k].f>=4};const food=cart.filter(i=>!isMall(i)),mall=cart.filter(isMall);if(food.length)stockPantry(food);if(mall.length)stockCloset(mall)}
@@ -1309,11 +1348,13 @@ async function checkout(){if(paying)return;ac();
  $('#rcT').innerHTML=`<div style="border-top:1px dashed #999;margin-top:4px;padding-top:4px"><span>Tạm tính</span><span>${vnd(b.sub)}</span></div>${b.tierOff?`<div><span>Thẻ ${b.t[1]} -${b.t[3]}%</span><span>-${vnd(b.tierOff)}</span></div>`:''}${b.vou?`<div><span>Voucher 100 điểm</span><span>-${vnd(b.vou)}</span></div>`:''}
   <div class="big"><b>TỔNG</b><b>${vnd(b.total)}</b></div>${save>0?`<div><span>🎉 Tiết kiệm</span><span>${vnd(save)}</span></div>`:''}<div><span>Thanh toán</span><span>${how}</span></div><div><span>Điểm thưởng</span><span>+${earn} điểm</span></div><div><span>Ví chung còn</span><span>${vnd(MK.budget)}</span></div><div style="justify-content:center">Cảm ơn hai bạn, hẹn gặp lại 💗</div>`;
  $('#infoT').textContent='🧾 Hoá đơn siêu thị hai đứa';sfxChaching();vib([30,40,80]);burst(me,'💰',4);setTimeout(()=>burst(me,'🛍️',3),250);send('emo',{e:'🧾',burst:'💸'});
- const after=tierOf(MK.life);if(after!==before)setTimeout(()=>toast(`Lên hạng thẻ ${after[2]} ${after[1]}! Từ giờ giảm ${after[3]}% mọi hoá đơn 🎉`),1800);
+ {const gv=b.t[4].gift;if(gv){const pool=MD.ALL.filter(a=>a.p<=gv&&a.p>=gv*.15&&(IS_MALL?MD.COUNTERS[a.k].f>=4:MD.COUNTERS[a.k].f<4));const gf=pool[Math.floor(Math.random()*pool.length)];
+  if(gf){const it={e:gf.e,n:gf.n,q:1,by:ME,tag:gf.tag};if(MD.COUNTERS[gf.k].f>=4)stockCloset([it]);else stockPantry([it]);$('#rcT').insertAdjacentHTML('beforeend',`<div><span>🎁 Quà hạng ${b.t[4].sym}</span><span>${icoH(gf.e,'ico s')} ${esc(gf.n)}</span></div>`)}}}
+ const after=tierOf(MK.life);if(after!==before){const bonus=after[4].gift||0;if(bonus){MK.budget+=bonus;mkSave()}setTimeout(()=>tierUp(TM.TIERS.indexOf(after),bonus),1600)}
  }catch(e){console.error(e);toast('Thanh toán bị lỗi: '+(e.message||e)+' · chụp màn hình gửi mình nhé')}finally{paying=false}}
 /* ví chung: mỗi ngày tự nạp thêm 200.000đ, hết tiền thì nạp tay */
 function topUp(n){MK.budget+=n;mkSave();toast(`Đã nạp ${vnd(n)} vào ví chung 💰`);sfxChaching()}
-if(IS_MK){const today=new Date().toISOString().slice(0,10);if(MK.payday!==today){const first=!MK.payday;MK.payday=today;if(!first){MK.budget+=200000;setTimeout(()=>toast('Hôm nay ví chung được nạp thêm 200.000đ 💰'),1500)}mkSave()}}
+if(IS_MK){const today=new Date().toISOString().slice(0,10);if(MK.payday!==today){const first=!MK.payday;MK.payday=today;if(!first){const tb=tierOf(MK.life)[4],add=200000+(tb.daily||0);MK.budget+=add;setTimeout(()=>toast(`Hôm nay ví chung được nạp thêm ${vnd(add)} 💰${tb.daily?` (có ${vnd(tb.daily)} lương hạng ${tb.sym})`:''}`),1500)}mkSave()}}
 /* danh sách đi chợ (dùng chung) */
 function drawList(){const L=$('#listL');if(!L)return;L.innerHTML=MK.list.length?MK.list.map((l,k)=>`<div class="cl ${l.done?'done':''}"><button data-t="${k}">${l.done?'✓':''}</button><span>${esc(l.n)}</span><button data-f="${k}" title="Tìm">🔎</button><button data-x="${k}">✕</button></div>`).join(''):'<p class="note">Chưa có gì. Ghi món cần mua hoặc chọn món muốn nấu bên dưới nhé.</p>';
  const sel=$('#listRecipe');if(sel&&!sel.options.length&&MD)sel.innerHTML='<option value="">🍳 Muốn nấu món… (tự thêm nguyên liệu còn thiếu)</option>'+MD.RECIPE_CATS.map((c,i)=>`<optgroup label="${esc(c)}">${MD.RECIPES.map((r,k)=>r[3]===i?`<option value="${k}">${esc(r[1])}</option>`:'').join('')}</optgroup>`).join('')}
@@ -1501,7 +1542,7 @@ function drawRMenu(){const M=MD.RESTO_MENU;$('#rmC').innerHTML=Object.entries(M)
 $('#rmC').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;rCat=b.dataset.c;drawRMenu()};
 $('#rmL').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;const it=MD.RESTO_MENU[rCat].items.find(x=>x[1]===b.dataset.n);const i=orderQ.findIndex(x=>x.n===it[1]);if(e.target.closest('em')&&i>=0)orderQ.splice(i,1);else orderQ.push({e:it[0],n:it[1],p:it[2]});sfx.pop();drawRMenu()};
 $('#rmSend').onclick=()=>{if(!orderQ.length){toast('Chưa chọn món nào ạ 🤵');return}const list=orderQ.slice();orderQ=[];$('#mRMenu').classList.remove('on');
- RT.bill.push(...list.map(x=>({n:x.n,p:x.p,by:ME})));rtSave();say('Cho mình gọi món nha 🙋');tone(1568,.15,'sine',.05);
+ RT.bill.push(...list.map(x=>({n:x.n,p:x.p,by:ME})));if(tierIdx(lifeNow())>=8&&!RT.dishes.some(d=>/Champagne/.test(d.n))){RT.dishes.push({id:nid(),e:'🥂',n:'Champagne (quà hạng thẻ '+TM.TIERS[tierIdx(lifeNow())][4].sym+')',b:3,by:ME});setTimeout(()=>toast('🤵 Nhà hàng xin tặng anh chị một chai champagne cho hạng thẻ của mình ạ 🥂'),1200)}rtSave();say('Cho mình gọi món nha 🙋');tone(1568,.15,'sine',.05);
  toast(`🤵 Dạ, ${list.length} món sẽ ra ngay ạ!`);list.forEach((x,k)=>setTimeout(()=>{RT.dishes.push({id:nid(),e:x.e,n:x.n,b:isDrink({e:x.e,n:x.n})?3:4,by:ME});rtSave();tone(2093,.25,'sine',.05);tone(2637,.35,'sine',.04,.12);toast(`🤵 ${x.n} của anh chị đây ạ, chúc ngon miệng!`)},3500+k*2500))};
 function openResto(){drawResto();drawPays();$('#mResto').classList.add('on')}
 function drawResto(){const D=RT.dishes;$('#rsL').innerHTML=D.length?D.map(d=>{const dr=isDrink(d);return`<div class="cl"><b>${icoH(d.e)}</b><span>${esc(d.n)}<br><small class="note">còn ${d.b} ${dr?'ngụm':'miếng'}</small></span><button class="btn small primary" data-eat="${d.id}">${dr?'🥤 Uống':'😋 Ăn'}</button></div>`}).join(''):'<p class="note">Bàn chưa có món. Bấm 📋 Gọi món nhé.</p>';
@@ -1512,14 +1553,14 @@ $('#rsMenu').onclick=()=>{$('#mResto').classList.remove('on');openRMenu()};
 $('#rsPay').onclick=()=>{$('#mResto').classList.remove('on');restoPay()};
 // thanh toán bằng ví chung (như siêu thị): quét món, chọn cách trả, in hoá đơn, cha-ching, rồi đánh giá
 async function restoPay(){if(!RT.bill.length){toast('Chưa gọi món nào để tính tiền ạ 🤵');return}ac();const W=Object.assign({budget:500000},await loadS('market',{}));
- const sub=RT.bill.reduce((a,x)=>a+x.p,0),svc=Math.round(sub*.05/1000)*1000,vat=Math.round(sub*.08/1000)*1000,deco=RB.booking&&RB.booking.decoPaid===false?MD.RESTO_DECO[RB.booking.deco]?.[2]||0:0,total=sub+svc+vat+deco;
+ const sub=RT.bill.reduce((a,x)=>a+x.p,0),svc=Math.round(sub*.05/1000)*1000,vat=Math.round(sub*.08/1000)*1000,deco=RB.booking&&RB.booking.decoPaid===false?MD.RESTO_DECO[RB.booking.deco]?.[2]||0:0,TT=tierOf(W.life||0),tOff=Math.round(sub*TT[3]/100/1000)*1000,total=sub+svc+vat+deco-tOff;
  if(total>W.budget){toast(`Ví chung còn ${vndR(W.budget)}, chưa đủ ${vndR(total)} 🥺 · nạp ví ở Siêu thị nhé`);return}
  const d=new Date();$('#infoT').textContent='🧾 Đang tính tiền…';
  $('#infoB').innerHTML=`<div class="rc"><div><b>NHÀ HÀNG TOMORTLE</b><span>${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</span></div><div id="rcL"></div><div id="rcPay" style="margin-top:6px"></div><div id="rcT"></div></div>`;$('#mInfo').classList.add('on');
  const lines={};for(const x of RT.bill){lines[x.n]=lines[x.n]||{n:x.n,p:x.p,q:0};lines[x.n].q++}
  for(const l of Object.values(lines)){const row=document.createElement('div');row.className='scan';row.innerHTML=`<span>${esc(l.n)} ×${l.q}</span><span>${vndR(l.p*l.q)}</span>`;$('#rcL').append(row);sfxBeep();row.classList.add('hit');await new Promise(r=>setTimeout(r,300))}
  $('#infoT').textContent='💳 Thanh toán…';const how=await payStep(total);$('#infoT').textContent='🖨️ Đang in hoá đơn…';sfxPrint(1.3);await new Promise(r=>setTimeout(r,1400));
- $('#rcT').innerHTML=`<div style="border-top:1px dashed #999;margin-top:4px;padding-top:4px"><span>Tạm tính</span><span>${vndR(sub)}</span></div><div><span>Phí phục vụ 5%</span><span>${vndR(svc)}</span></div><div><span>VAT 8%</span><span>${vndR(vat)}</span></div>${deco?`<div><span>Trang trí ${esc(MD.RESTO_DECO[RB.booking.deco][0])}</span><span>${vndR(deco)}</span></div>`:''}
+ $('#rcT').innerHTML=`<div style="border-top:1px dashed #999;margin-top:4px;padding-top:4px"><span>Tạm tính</span><span>${vndR(sub)}</span></div><div><span>Phí phục vụ 5%</span><span>${vndR(svc)}</span></div><div><span>VAT 8%</span><span>${vndR(vat)}</span></div>${tOff?`<div><span>Thẻ ${TT[4].sym} ${esc(TT[1])} -${TT[3]}%</span><span>-${vndR(tOff)}</span></div>`:''}${TM.TIERS.indexOf(TT)>=8?`<div><span>🥂 Champagne tặng hạng ${TT[4].sym}</span><span>0đ</span></div>`:''}${deco?`<div><span>Trang trí ${esc(MD.RESTO_DECO[RB.booking.deco][0])}</span><span>${vndR(deco)}</span></div>`:''}
   <div class="big"><b>TỔNG</b><b>${vndR(total)}</b></div><div><span>Thanh toán</span><span>${how}</span></div><div><span>Ví chung còn</span><span>${vndR(W.budget-total)}</span></div><div style="justify-content:center">Cảm ơn quý khách, hẹn gặp lại 💗</div>
   <div style="justify-content:center;margin-top:6px" id="rStars">${[1,2,3,4,5].map(k=>`<button class="btn small" data-s="${k}">⭐${k}</button>`).join('')}</div>`;
  $('#infoT').textContent='🧾 Hoá đơn nhà hàng';sfxChaching();burst(me,'💸',4);
