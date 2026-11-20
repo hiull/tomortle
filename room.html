@@ -52,6 +52,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .rtabs button.on,.ftabs button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .rtabs{gap:5px}.rtabs button{padding:6px 7px;font-size:12.5px}@media(min-width:440px){.rtabs button{font-size:14px;padding:7px 12px}}
 .ftabs{align-items:center;margin-top:-2px}.ftabs>span{font-size:18px}.ftabs{gap:4px}.ftabs button{font-size:11.5px;padding:6px 7px}.ftabs.many button{font-size:11px;padding:5px 6px}.ftabs button b{font-weight:900}
+.cs-q{background:#fff4f7;border-radius:14px;padding:10px 12px;margin:4px 0 10px;line-height:1.45}.cs-o{display:flex;flex-wrap:wrap;gap:6px}.cs-o button small{opacity:.7;font-size:.75em}
 </style>
 </head>
 <body>
@@ -151,7 +152,7 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .rc .scan{border-radius:4px}.rc .scan.hit{animation:scanhit .35s}@keyframes scanhit{0%{background:#b9f6ca}100%{background:transparent}}.rc .big b{font-size:17px}.rc #rcL,.rc #rcT{display:block}#rcL{max-height:40vh;overflow:auto}
 .rc{font-family:'Courier New',monospace;text-align:left;background:#fffdf6;color:#333;border-radius:8px;padding:12px;font-size:13px;line-height:1.6}.rc div{display:flex;justify-content:space-between;gap:8px}</style>
 <div class="modal" id="mShop"><div class="sheet">
-  <h3 id="shopT"></h3><p class="note" id="shopSub" style="margin:0 0 8px"></p>
+  <h3 id="shopT"></h3><p class="note" id="shopSub" style="margin:0 0 8px"></p><div class="chips" id="shopSeg" style="margin:0 0 8px"></div>
   <div class="prods" id="shopG"></div>
   <div class="incart" id="shopIn"></div>
   <div class="row" style="gap:8px;margin-top:10px"><button class="btn" id="shopCart">👀 Xem giỏ</button><button class="btn primary" style="flex:1" onclick="this.closest('.modal').classList.remove('on')">Xong</button></div>
@@ -205,6 +206,11 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
   <div class="prods" id="rmL"></div>
   <div class="incart" id="rmQ"></div>
   <div class="row" style="gap:8px;margin-top:10px"><button class="btn" onclick="this.closest('.modal').classList.remove('on')">Để sau</button><button class="btn primary" style="flex:1" id="rmSend">🤵 Gửi món cho bếp</button></div>
+</div></div>
+<div class="modal" id="mConsult"><div class="sheet">
+  <h3 id="csT">💁‍♀️ Nhân viên tư vấn</h3>
+  <div id="csB" style="max-height:62vh;overflow:auto"></div>
+  <div class="row" style="gap:8px;margin-top:10px"><button class="btn" onclick="this.closest('.modal').classList.remove('on')">Đóng</button><button class="btn" id="csBack">↺ Hỏi lại</button><button class="btn primary" style="flex:1" id="csAll">🛒 Lấy hết vào giỏ</button></div>
 </div></div>
 <div class="modal" id="mSkin"><div class="sheet">
   <h3>🧴 Skincare của <span id="skWho"></span></h3>
@@ -305,6 +311,7 @@ const CAT={
  vanity:{n:'Bàn trang điểm',e:'💄',w:2,d:1,h:30,c:'#fbeff2'},
  basin:{n:'Bồn rửa mặt',e:'🚿',w:1,d:1,h:34,c:'#ffffff'},
  skinshelf:{n:'Kệ mỹ phẩm',e:'🧴',w:1,d:1,h:62,c:'#f3e3e8'},
+ consult:{n:'Nhân viên tư vấn',e:'💁‍♀️',w:1,d:1,h:30,c:'#fbeff2'},
  spabed:{n:'Giường spa',e:'💆',w:2,d:1,h:24,c:'#fdfaf6',lie:[[.5,.5]]},
  checkout:{n:'Quầy thu ngân',e:'🧾',w:2,d:1,h:34,c:'#ff8fab'},
  cartrack:{n:'Xe đẩy',e:'🛒',w:1,d:1,h:30,c:'#c8c8cf'},
@@ -342,13 +349,13 @@ function defBalcony(){return{v:1,kind:'balcony',wall:{c:'#e8d6c0',p:'brick'},flo
 const MLAYOUT={
  market:[['veg',0,0,0],['fruit',2,0,0],['dairy',4,0,0],['meat',5,0,0],['frozen',7,0,0],['bakery',0,2,1],['deli',0,3,1],['seafood',2,3,0],['sample',5,3,0],['promo',7,2,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
  market2:[['snacks',0,0,0],['junk',2,0,0],['drinks',4,0,0],['beer',5,0,0],['coffee',6,0,0],['florist',7,0,0],['noodles',0,2,1],['spice',0,4,1],['rice',2,3,0],['sample',5,3,0],['promo',7,2,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
- mall:[['dior',0,0,0],['chanel',2,0,0],['ysl',4,0,0],['lancome',6,0,0],['perfume',0,2,1],['jpk',0,4,1],['mactf',3,3,0],['fitting',7,3,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
- mall2:[['kbeauty',0,0,0],['drug',2,0,0],['skin',4,0,0],['vnb',6,0,0],['body',0,2,1],['fitting',7,3,3],['vase',3,4,0],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
- mall3:[['luxury',0,0,0],['fast',2,0,0],['local',4,0,0],['sport',6,0,0],['acc',0,2,1],['fitting',7,3,3],['fitting',3,4,0],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
- mall4:[['kmake2',0,0,0],['kskin',2,0,0],['jbeauty',4,0,0],['plant',6,0,0],['vase',7,0,0],['fitting',7,3,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
- mall5:[['eumake',0,0,0],['euskin',2,0,0],['pharma',4,0,0],['hairbody',6,0,0],['fitting',7,3,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
+ mall:[['dior',0,0,0],['chanel',2,0,0],['ysl',4,0,0],['lancome',6,0,0],['perfume',0,2,1],['jpk',0,4,1],['mactf',3,2,0],['lux2',3,4,0],['consult',5,3,0],['fitting',7,5,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
+ mall2:[['kbeauty',0,0,0],['drug',2,0,0],['skin',4,0,0],['vnb',6,0,0],['body',0,2,1],['mini',3,3,0],['consult',5,3,0],['fitting',7,5,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
+ mall3:[['luxury',0,0,0],['fast',2,0,0],['local',4,0,0],['sport',6,0,0],['acc',0,2,1],['dresses',3,3,0],['outer',0,4,1],['consult',5,3,0],['fitting',7,5,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
+ mall4:[['kmake2',0,0,0],['kskin',2,0,0],['jbeauty',4,0,0],['plant',6,0,0],['vase',7,0,0],['consult',3,3,0],['fitting',7,3,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
+ mall5:[['eumake',0,0,0],['euskin',2,0,0],['pharma',4,0,0],['hairbody',6,0,0],['consult',3,3,0],['fitting',7,3,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
  market3:[['north',0,0,0],['central',2,0,0],['south',4,0,0],['gifts',6,0,0],['street',0,2,1],['sample',3,3,0],['promo',6,3,3],['lantern',0,5,0],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]]};
-function defMarket(k=KIND){const ml=k.startsWith('mall');return{v:1,mv:4,lux:1,kind:k,wall:{c:{market:'#e3efe6',market2:'#f5ecdc',market3:'#f4e4e1',mall:'#efe6ea',mall2:'#f5e9ec',mall3:'#e9e4ef',mall4:'#f6ebee',mall5:'#e8edf4'}[k],p:ml?'panel':'plain'},floor:{c:ml?'#f3efe9':'#eee9e1',p:ml?'marble':'tiles'},light:true,music:true,rain:false,
+function defMarket(k=KIND){const ml=k.startsWith('mall');return{v:1,mv:5,lux:1,kind:k,wall:{c:{market:'#e3efe6',market2:'#f5ecdc',market3:'#f4e4e1',mall:'#efe6ea',mall2:'#f5e9ec',mall3:'#e9e4ef',mall4:'#f6ebee',mall5:'#e8edf4'}[k],p:ml?'panel':'plain'},floor:{c:ml?'#f3efe9':'#eee9e1',p:ml?'marble':'tiles'},light:true,music:true,rain:false,
  items:MLAYOUT[k].map(([t,x,y,r])=>({id:nid(),t,x,y,r,c:CAT[t].c})),
  walls:(k==='market'||k==='mall'?[{t:'door',w:'B',p:5},{t:'clock',w:'B',p:2}]:[{t:'window',w:'B',p:4}]).concat(ml?[{t:'frame',w:'A',p:1},{t:'mirror',w:'A',p:4}]:[{t:'frame',w:'A',p:1},{t:'clock',w:'A',p:5}]).map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 function defResto(k=KIND){const vip=k==='resto2';return{v:1,mv:4,lux:1,kind:k,wall:{c:vip?'#3d1f2a':'#efe2cf',p:'panel'},floor:{c:vip?'#8a5a3c':'#b98a5e',p:'herring'},light:true,music:true,rain:false,
@@ -366,7 +373,7 @@ function defKitchen(){return{v:1,kind:'kitchen',wall:{c:'#fff1e6',p:'gingham'},f
  walls:[{t:'door',w:'B',p:5},{t:'window',w:'A',p:5},{t:'clock',w:'B',p:2},{t:'garland',w:'A',p:0}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 const UK=id=>'room-u-'+id;
 let [R,UM,UP]=await Promise.all([loadS(RK,null),loadS(UK(ME),{}),loadS(UK(PA),{})]);
-if(!R||!R.items||((IS_MK||IS_RT)&&(R.mv|0)<4))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():IS_RT?defResto():KIND==='kitchen'?defKitchen():KIND==='spa'?defSpa():defRoom();R.kind=KIND;
+if(!R||!R.items||((IS_MK&&(R.mv|0)<5)||(IS_RT&&(R.mv|0)<4)))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():IS_RT?defResto():KIND==='kitchen'?defKitchen():KIND==='spa'?defSpa():defRoom();R.kind=KIND;
 R.items=R.items.filter(i=>CAT[i.t]);
 UM=UM||{};UP=UP||{};if(!UM.av){const bk=lsGet('roomU-'+ME,null);if(bk&&bk.av)UM=bk}
 
@@ -378,9 +385,9 @@ const AVO=[
  {k:'skin',n:'Màu da',type:'col',v:SKIN},
  {k:'hair',n:'Kiểu tóc',type:'chip',v:{short:'Ngắn',spiky:'Vuốt',long:'Dài',twin:'Buộc 2 bên',bun:'Búi',bob:'Bob',curly:'Xoăn'}},
  {k:'hc',n:'Màu tóc',type:'col',v:HAIRC},
- {k:'top',n:'Áo',type:'chip',v:{tee:'Áo thun',hoodie:'Hoodie',shirt:'Sơ mi',dress:'Váy liền'}},
+ {k:'top',n:'Áo',type:'chip',v:{tee:'Áo thun',hoodie:'Hoodie',shirt:'Sơ mi',crop:'Croptop',coat:'Áo khoác dài',dress:'Váy liền',gown:'Đầm dạ hội',aodai:'Áo dài'}},
  {k:'tc',n:'Màu áo',type:'col',v:CLOTH},
- {k:'bot',n:'Dưới',type:'chip',v:{pants:'Quần dài',shorts:'Quần short',skirt:'Chân váy'}},
+ {k:'bot',n:'Dưới',type:'chip',v:{pants:'Quần dài',shorts:'Quần short',skirt:'Chân váy',longskirt:'Váy dài'}},
  {k:'bc',n:'Màu quần/váy',type:'col',v:CLOTH},
  {k:'acc',n:'Phụ kiện',type:'chip',v:{none:'Không',bow:'Nơ',flower:'Kẹp hoa',glasses:'Kính',beanie:'Mũ len',cat:'Tai mèo',cap:'Mũ lưỡi trai',blush:'Má hồng'}},
 ];
@@ -435,7 +442,7 @@ function emj(e,x,y,sz){if(String(e).startsWith('@')){const im=icoOf(e.slice(1));
  g.drawImage(c,x-sz*.75,y-sz*.78,sz*1.5,sz*1.5)}
 /* đồ siêu thị: kệ/quầy vẽ đơn giản + hàng hoá lấy từ danh sách món của quầy */
 const goodsCache={};function goodsOf(k,n){const key=k+n;if(!goodsCache[key]){const L=(MD&&MD.PROD[k])||[];const out=[];for(let i=0;i<n&&L.length;i++)out.push(L[Math.floor(i*L.length/n)][0]);goodsCache[key]=out}return goodsCache[key]}
-const SHOPX=new Set(['checkout','cartrack','lift','sample','promo','fitting','rtable','host','waiter','bar','piano','balloon']);
+const SHOPX=new Set(['consult','checkout','cartrack','lift','sample','promo','fitting','rtable','host','waiter','bar','piano','balloon']);
 function drawShop(it,c){const t=it.t,C2=MD&&MD.COUNTERS[t],h=CAT[t].h;
  if(t==='checkout'){parts(it,[[0,1,.2,.9,0,34,c],[.62,.92,.3,.7,34,12,'#6d6875']]);const p=lp3(it,.3,.55,38);emj('🧾',p[0],p[1],12);const q=lp3(it,.77,.5,52);emj('💳',q[0],q[1],10);const s=lp3(it,.5,.5,70);if(frontVis(it)){g.save();g.font='700 8px "Be Vietnam Pro",sans-serif';g.textAlign='center';g.fillStyle='#e63946';g.fillText('THU NGÂN',s[0],s[1]);g.restore()}return}
  if(t==='cartrack'){const p=lp3(it,.5,.5,14);const G2=(window.MKC||[]).flatMap(i=>Array(Math.min(i.q,3)).fill(i.e)).slice(0,8);G2.forEach((e,k)=>emj(e,p[0]-8+(k%4)*5,p[1]-12-Math.floor(k/4)*6,10));emj('🛒',p[0],p[1],28);return}
@@ -452,6 +459,7 @@ function drawShop(it,c){const t=it.t,C2=MD&&MD.COUNTERS[t],h=CAT[t].h;
  if(t==='fitting'){parts(it,[[.1,.9,.1,.9,0,6,'#d7ccc8'],[.15,.85,.3,.42,6,64,'#c9a227']]);if(frontVis(it)){fquad(it,.2,.8,.3,12,64,'rgba(225,245,255,.85)','#c9a227')}const p=lp3(it,.5,.3,74);emj('🪞',p[0],p[1]-4,12);return}
  if(t==='lift'){parts(it,[[.05,.95,.05,.95,0,72,'#b0bec5']]);if(frontVis(it)){fquad(it,.15,.85,.05,4,60,'#cfd8dc',null);fquad(it,.49,.51,.05,4,60,'#90a4ae',null);fquad(it,.3,.7,.05,63,70,'#263238',null)}const p=lp3(it,.5,.05,66);g.save();g.font='700 7px monospace';g.textAlign='center';g.fillStyle='#ff5252';g.fillText(MD?MD.FLOORS[KIND]?.s||'':'',p[0],p[1]+2);g.restore();return}
  if(t==='sample'){parts(it,[[.1,.9,.2,.8,0,26,'#fff3e0'],[.1,.9,.2,.8,26,2,'#e63946']]);const p=lp3(it,.5,.5,28);ell(p[0],p[1],12,5,'#fff','#ddd');(window.SAMPLE_E||['🍢']).forEach((e,k)=>emj(e,p[0]-7+k*7,p[1]-3,9));const s=lp3(it,.5,.9,0);emj('👩‍🍳',s[0],s[1]-40,22);if((NOW/1000)%9<3.2)bubble(s[0],s[1]-56,'Mời anh chị ăn thử ạ!');return}
+ if(t==='consult'){parts(it,[[.1,.9,.25,.75,0,24,'#fdfaf6'],[.1,.9,.25,.75,24,3,'#c9a227']]);const s=lp3(it,.5,.95,0);emj(KIND==='mall3'?'💁‍♂️':'💁‍♀️',s[0],s[1]-40,22);const q=lp3(it,.3,.5,27);emj('📋',q[0],q[1]-3,9);if((NOW/1000+3)%11<3.4)bubble(s[0],s[1]-56,KIND==='mall3'?'Em phối đồ cho anh chị nhé!':'Em tư vấn da cho chị nha!');return}
  if(t==='promo'){const p=lp3(it,.5,.5,0);g.strokeStyle='#6d6875';g.lineWidth=2;g.beginPath();g.moveTo(p[0],p[1]);g.lineTo(p[0],p[1]-30);g.stroke();ell(p[0],p[1],8,3,'#6d6875');rr(p[0]-17,p[1]-62,34,32,4,'#e63946','#fff');g.save();g.textAlign='center';g.fillStyle='#fff';g.font='900 10px "Be Vietnam Pro",sans-serif';g.fillText('GIÁ SỐC',p[0],p[1]-49);g.font='900 12px "Be Vietnam Pro",sans-serif';g.fillStyle='#ffd60a';g.fillText(Math.sin(NOW/300)>0?'-50%':'SALE',p[0],p[1]-35);g.restore();return}
  if(!C2)return;
  if(C2.s==='tall'){parts(it,[[.03,.97,.35,.95,0,h,c]]);if(frontVis(it)){fquad(it,.06,.94,.35,4,h-4,shade(c,-.3),null);const G=goodsOf(t,12);let k=0;for(const z of[6,25,44]){fquad(it,.06,.94,.35,z-2,z,shade(c,.15),null);for(const a of[.17,.39,.61,.83]){const p=lp3(it,a,.3,z+8);emj(G[k++%G.length],p[0],p[1],11)}}}return}
@@ -739,20 +747,26 @@ function drawChibi(av,sx,sy,o){
  if(!sit){const sw=o.walking?Math.sin(t*11)*2.5:0;const lc=av.bot==='pants'?bc:sk;
   rr(-6,-11+sw*.3,5,11-sw*.3,2,lc);rr(1,-11-sw*.3,5,11+sw*.3,2,lc);rr(-6.5,-2+sw*.3,6,3,1.5,'#5a3d4a');rr(0.5,-2-sw*.3,6,3,1.5,'#5a3d4a')}
  else{rr(-6,-8,5,6,2,av.bot==='pants'?bc:sk);rr(1,-8,5,6,2,av.bot==='pants'?bc:sk)}
- const by=sit?-4:0;
+ const by=sit?-4:0,ONE=av.top==='dress'||av.top==='gown'||av.top==='aodai';
  // back hair (long) behind body
  if(!back)hairBack(av,0,-37+by,false);
  // bottom
- if(av.bot==='skirt'&&av.top!=='dress'){g.fillStyle=bc;g.beginPath();g.moveTo(-8,-17+by);g.lineTo(8,-17+by);g.lineTo(11,-7+by);g.lineTo(-11,-7+by);g.closePath();g.fill()}
- if(av.bot==='shorts'){rr(-8,-16+by,16,8,2,bc)}
- if(av.bot==='pants'){rr(-8,-16+by,16,6,2,bc)}
+ if(av.bot==='longskirt'&&!ONE){g.fillStyle=bc;g.beginPath();g.moveTo(-8,-17+by);g.lineTo(8,-17+by);g.lineTo(12,-2+by*.5);g.lineTo(-12,-2+by*.5);g.closePath();g.fill();g.fillStyle='rgba(0,0,0,.08)';g.fillRect(-2,-16+by,1,13)}
+ if(av.bot==='skirt'&&!ONE){g.fillStyle=bc;g.beginPath();g.moveTo(-8,-17+by);g.lineTo(8,-17+by);g.lineTo(11,-7+by);g.lineTo(-11,-7+by);g.closePath();g.fill()}
+ if(av.top==='aodai'){rr(-7,-12+by,6,12,2,av.bc||'#fff');rr(1,-12+by,6,12,2,av.bc||'#fff')}
+ if(av.bot==='shorts'&&!ONE){rr(-8,-16+by,16,8,2,bc)}
+ if(av.bot==='pants'&&!ONE){rr(-8,-16+by,16,6,2,bc)}
  // body
  if(av.top==='dress'){g.fillStyle=tc;g.beginPath();g.moveTo(-7,-28+by);g.lineTo(7,-28+by);g.lineTo(12,-6+by);g.lineTo(-12,-6+by);g.closePath();g.fill();g.fillStyle='rgba(255,255,255,.5)';g.fillRect(-12,-8+by,24,2)}
+ else if(av.top==='gown'){g.fillStyle=tc;g.beginPath();g.moveTo(-6,-28+by);g.lineTo(6,-28+by);g.quadraticCurveTo(7,-18+by,14,-1);g.lineTo(-14,-1);g.quadraticCurveTo(-7,-18+by,-6,-28+by);g.closePath();g.fill();g.fillStyle='rgba(255,255,255,.35)';g.beginPath();g.moveTo(-6,-21+by);g.lineTo(6,-21+by);g.lineTo(6,-19.5+by);g.lineTo(-6,-19.5+by);g.fill();for(let k=0;k<4;k++){g.globalAlpha=.5+.5*Math.sin(NOW/300+k*1.6);circ(-8+k*5,-6-k%2*5,.9,'#fff')}g.globalAlpha=1}
+ else if(av.top==='aodai'){g.fillStyle=tc;g.beginPath();g.moveTo(-7.5,-28+by);g.lineTo(7.5,-28+by);g.lineTo(9,-3+by);g.lineTo(1.2,-3+by);g.lineTo(0,-14+by);g.lineTo(-1.2,-3+by);g.lineTo(-9,-3+by);g.closePath();g.fill();rr(-3,-29.5+by,6,3,1,shade(tc,-.15));g.strokeStyle='#e9c46a';g.lineWidth=.8;g.beginPath();g.moveTo(0,-27+by);g.quadraticCurveTo(5,-24+by,4,-18+by);g.stroke()}
+ else if(av.top==='coat'){rr(-9,-28+by,18,22,4,tc);if(!back){g.fillStyle=shade(tc,-.18);g.beginPath();g.moveTo(-4,-28+by);g.lineTo(0,-19+by);g.lineTo(4,-28+by);g.fill();circ(-2,-15+by,.9,shade(tc,-.4));circ(-2,-11+by,.9,shade(tc,-.4));g.fillStyle='rgba(0,0,0,.1)';g.fillRect(-.3,-19+by,.8,13)}else{g.fillStyle='rgba(0,0,0,.08)';g.fillRect(-.3,-14+by,.8,8)}}
+ else if(av.top==='crop'){rr(-8,-28+by,16,9,4,tc);rr(-7,-20+by,14,4,2,sk)}
  else{rr(-8,-28+by,16,14,5,tc);if(av.top==='hoodie'){rr(-3,-22+by,6,4,1.5,shade(tc,-.12));if(back)ell(0,-27+by,7,4,shade(tc,-.1))}if(av.top==='shirt'&&!back){g.fillStyle='#fff';g.beginPath();g.moveTo(-4,-28+by);g.lineTo(0,-23+by);g.lineTo(4,-28+by);g.fill();circ(0,-20+by,.9,'#999');circ(0,-17+by,.9,'#999')}}
  // arms
  const hug=o.hug,armA=o.walking?Math.sin(t*11)*.5:0;
  g.fillStyle=av.top==='dress'?sk:tc;
- const arm=(side)=>{g.save();g.translate(side*8,-26+by);g.rotate(hug?-side*1.25:(side*.25+side*armA));rr(-2.5,0,5,11,2.5,av.top==='dress'||av.top==='tee'?(av.top==='tee'?tc:sk):tc);circ(0,11,2.6,sk);if(av.nail)circ(0,12.6,1.3,av.nail);g.restore()};
+ const arm=(side)=>{g.save();g.translate(side*8,-26+by);g.rotate(hug?-side*1.25:(side*.25+side*armA));rr(-2.5,0,5,11,2.5,av.top==='dress'||av.top==='gown'?sk:tc);circ(0,11,2.6,sk);if(av.nail)circ(0,12.6,1.3,av.nail);g.restore()};
  arm(-1);arm(1);
  // head
  const hy=-37+by;
@@ -991,6 +1005,7 @@ function itemMenu(it,sx,sy){const c=CAT[it.t];const B=[];let sub='';
  case'bar':goUse('🍸 Gọi cocktail',()=>{RT.dishes.push({id:nid(),e:'🍸',n:'Cocktail',b:3,by:ME});RT.bill.push({n:'Cocktail',p:150000,by:ME});rtSave();noise(.5,.12,2500,'bandpass');toast('🍸 Bartender lắc cocktail cho anh chị đây!')},1);goUse('🍾 Mở champagne',()=>{RT.dishes.push({id:nid(),e:'🥂',n:'Champagne',b:3,by:ME});RT.bill.push({n:'Champagne (chai)',p:1800000,by:ME});rtSave();noise(.08,.4,1200,'bandpass');burst(me,'🍾',4);burst(me,'✨',6)});break;
  case'piano':goUse(R.music?'🔇 Dừng nhạc':'🎹 Nhờ chơi một bản',()=>{R.music=!R.music;saveRoom();updateAudio();if(R.music)burst(me,'🎶',5)},1);break;
  case'balloon':goUse('🎈 Chọc bóng',()=>{noise(.1,.5,1500,'bandpass');burst(me,'🎉',6)},1);break;
+ case'consult':sub=KIND==='mall3'?'Stylist phối đồ theo dịp & ngân sách':'Tư vấn theo loại da, nhu cầu & ngân sách';B.push([KIND==='mall3'?'👗 Nhờ phối đồ':'💬 Nhờ tư vấn',()=>useItem(it,openConsult),1]);break;
  case'fitting':B.push(['👗 Thử & mặc đồ đã mua',()=>{useItem(it,openAvatar)},1]);sub='Mặc thử đồ trong tủ, son, nước hoa…';break;
  case'promo':B.push(['🔥 Xem giá sốc hôm nay',()=>{$('#findIn').value='';openFind()},1]);B.push(['📝 Danh sách đi chợ',()=>$('#bList').click()]);break;
  case'bed':B.push(['😴 Nằm nghỉ',()=>sitOn(it,'lie'),1]);break;
@@ -1077,7 +1092,8 @@ const tierOf=life=>{let t=MD?MD.TIERS[0]:[0,'',''];for(const x of(MD?MD.TIERS:[]
 const mkSub=()=>MK.cart.reduce((a,i)=>a+lineTotal(i),0),mkCount=()=>MK.cart.reduce((a,i)=>a+i.q,0);
 function mkBill(){const sub=mkSub(),t=tierOf(MK.life),tierOff=Math.round(sub*t[3]/100/500)*500,useV=$('#mkVoucher')?.checked&&MK.points>=100,vou=useV?50000:0;return{sub,t,tierOff,vou,useV,total:Math.max(0,sub-tierOff-vou)}}
 function mkSave(){saveS('market',MK,600);sendMk('mk',{MK});drawMk()}
-let shopKind=null;
+let shopKind=null,shopSeg='all';
+$('#shopSeg').onclick=e=>{const b=e.target.closest('[data-sg]');if(!b)return;shopSeg=b.dataset.sg;sfx.pop();drawMk()};
 function openShop(t){shopKind=t;$('#shopT').textContent=CAT[t].e+' '+CAT[t].n;drawMk();$('#shopG').scrollTop=0;$('#mShop').classList.add('on')}
 function openCart(){drawMk();drawPays();$('#mCart').classList.add('on')}
 function mkApply(o,d){let it=MK.cart.find(i=>i.n===o.n);if(!it){if(d<0)return;it={e:o.e,n:o.n,p:o.p,o:o.o,b2g1:o.b2g1,tag:o.tag,by:o.by,q:0};MK.cart.push(it)}it.q+=d;if(it.q<=0)MK.cart=MK.cart.filter(i=>i!==it)}
@@ -1092,7 +1108,8 @@ function goCounter(k){const f=floorOf(k);if(f===KIND){const it=R.items.find(i=>i
 function drawMk(){if(!IS_MK)return;window.MKC=MK.cart;const b=mkBill(),cnt=mkCount();$('#bCart').textContent=`🛒 Giỏ chung${cnt?` (${cnt} món · ${vnd(b.total)})`:''}`;
  const left=MK.list.filter(l=>!l.done).length;$('#bList').textContent=`📝 Danh sách đi chợ${MK.list.length?` (${MK.list.length-left}/${MK.list.length})`:''}`;
  if(shopKind){$('#shopSub').textContent=`${PROD[shopKind].length} món · giỏ: ${cnt} món · ${vnd(b.total)} / ví ${vnd(MK.budget)}`;
-  $('#shopG').innerHTML=PROD[shopKind].map(p=>{const[e,n]=p,q=MK.cart.find(i=>i.n===n)?.q||0,d=DEALS[n],pr=priceOf(p);
+  const SG=MD.SEGS.find(x=>x[0]===shopSeg)||MD.SEGS[0],isM=MD.COUNTERS[shopKind].f>=4;$('#shopSeg').style.display=isM?'':'none';$('#shopSeg').innerHTML=isM?MD.SEGS.map(x=>`<button data-sg="${x[0]}" class="${x[0]===SG[0]?'on':''}">${x[1]}</button>`).join(''):'';const PL=PROD[shopKind].filter(p=>!isM||(priceOf(p)>=SG[2]&&priceOf(p)<SG[3]));
+  $('#shopG').innerHTML=(PL.length?'':'<p class="note">Quầy này không có món ở phân khúc này · thử phân khúc khác nhé</p>')+PL.map(p=>{const[e,n]=p,q=MK.cart.find(i=>i.n===n)?.q||0,d=DEALS[n],pr=priceOf(p);
    return`<button data-n="${esc(n)}" class="${q?'in':''} ${wanted(p)?'want':''}">${q?`<i data-m="1">−</i><em>${q}</em>`:''}${d?`<u>${d.pct?'-'+d.pct+'%':'Mua 2 tặng 1'}</u>`:''}<b>${icoH(e)}</b>${esc(n)}<small>${pr!==p[2]?`<s>${vnd(p[2])}</s> `:''}${vnd(pr)}</small></button>`}).join('');
   $('#shopIn').innerHTML=MK.cart.length?'🛒 <b>Trong giỏ:</b> '+MK.cart.map(i=>`${icoH(i.e,'ico s')}×${i.q}`).join(' · '):'🛒 Giỏ đang trống, chạm món hàng để bỏ vào giỏ'}
  $('#cartL').innerHTML=MK.cart.length?MK.cart.map((i,k)=>`<div class="cl"><b>${icoH(i.e)}</b><span>${esc(i.n)}<br><small class="note">${i.o&&i.o!==i.p?`<s>${vnd(i.o)}</s> `:''}${vnd(i.p)}${i.b2g1?' · mua 2 tặng 1':''} · ${i.by===ME?'bạn chọn':esc(ctx.partnerName)+' chọn'}</small></span><button data-k="${k}" data-d="-1">−</button>${i.q}<button data-k="${k}" data-d="1">+</button></div>`).join(''):'<p class="note">Giỏ đang trống. Ra quầy hàng nhặt đồ nhé 🛒</p>';
@@ -1287,6 +1304,52 @@ function doMask(){const P=prodFor('mask'),m=mySk(),p=P[0];const c=p?(Object.entr
  clearTimeout(window.__maskT);window.__maskT=setTimeout(()=>{if(UM.av.mask){setAv({mask:null});glowUp(2*3600e3);toast('✨ Gỡ mặt nạ rồi, da mịn màng quá!')}},15*60e3)}
 function cleanFace(){setAv({lip:'',blush:'',mask:null});window.__splash=NOW+1500;noise(.9,.08,1400,'bandpass');burst(me,'🫧',5);toast('✨ Đã tẩy trang sạch sẽ')}
 if(UM.av&&UM.av.mask&&UM.av.mask.t>Date.now()){window.__maskT=setTimeout(()=>{setAv({mask:null});glowUp(2*3600e3)},UM.av.mask.t-Date.now())}
+
+/* ================= 💁‍♀️ Nhân viên tư vấn TTTM: hỏi nhu cầu, loại da/dịp, ngân sách → gợi ý bộ sản phẩm ================= */
+const CS_SKIN={dau:['Da dầu',/kiềm dầu|oil.?control|bha|aha|tràm|tea ?tree|cica|niacinamide|clay|đất sét|bí đao|matte|acne|mụn|heartleaf|diếp cá|gel/i,'Da dầu thì mình ưu tiên kết cấu mỏng nhẹ, có BHA, niacinamide, tràm trà để kiềm dầu ạ'],
+ kho:['Da khô',/ẩm|hydra|hyalu|ceramide|cream|kem|dưỡng|rich|b5|dew|glow|mật ong|honey|squalane|lotion/i,'Da khô cần cấp ẩm sâu: ceramide, HA, kem đặc một chút sẽ căng mướt ạ'],
+ hon:['Da hỗn hợp',/cân bằng|balanc|gel|toner|hydra|niacinamide|cica|vitamin/i,'Da hỗn hợp thì cân bằng: gel nhẹ cho vùng T, cấp ẩm vừa đủ cho hai má ạ'],
+ nhay:['Da nhạy cảm',/cica|centella|rau má|nhạy|b5|la roche|avène|bioderma|cetaphil|cerave|madeca|klairs|không mùi|calm|soothing|aqua/i,'Da nhạy cảm mình chọn đồ dịu nhẹ, ít hương liệu, có rau má/B5 ạ']};
+const CS_NEED={skin:['🧴 Dưỡng da',[['Rửa mặt',SKSTEP.clean[2]],['Toner',SKSTEP.toner[2]],['Serum',SKSTEP.serum[2]],['Kem dưỡng',SKSTEP.moist[2]],['Chống nắng',SKSTEP.sun[2]],['Mặt nạ',SKSTEP.mask[2]]]],
+ makeup:['💄 Trang điểm',[['Nền/cushion',/cushion|phấn nước|kem nền|foundation/i],['Son',/^son (?!dưỡng)/i],['Má hồng',/^má hồng|blush/i],['Bảng mắt',/bảng mắt|phấn mắt|eyeshadow/i],['Mascara',/mascara/i]]],
+ scent:['🌸 Nước hoa',[['Nước hoa ngày',/^nước hoa/i],['Nước hoa tối',/^nước hoa/i],['Body mist',/body mist|xịt thơm|^nước hoa/i]]],
+ gift:['🎁 Quà cho người ấy',[['Son',/^son (?!dưỡng)/i],['Nước hoa',/^nước hoa/i],['Trang sức',/^(nhẫn|vòng|dây chuyền|đồng hồ)/i],['Túi',/^túi/i]]]};
+const CS_OCC={casual:['🛍️ Đi chơi',[['Áo',/^(áo thun|hoodie|croptop|áo croptop|cardigan)/i],['Quần/váy',/^(quần(?! âu)|chân váy (?!dài))/i],['Giày',/^giày/i],['Túi',/^túi/i]],'Đi chơi thì thoải mái, năng động mà vẫn xinh ạ'],
+ date:['💗 Hẹn hò',[['Váy',/^(váy|đầm)(?! dạ hội| đen dior| cưới)/i],['Túi',/^túi/i],['Phụ kiện',/^(kẹp|nơ|nhẫn|vòng|dây chuyền)/i],['Giày',/^giày/i]],'Hẹn hò thì váy nhẹ nhàng + phụ kiện xinh xắn là chuẩn bài ạ'],
+ work:['💼 Đi làm',[['Áo',/^(sơ mi|blazer)/i],['Quần/váy',/^(quần âu|quần kaki|chân váy (dài|midi))/i],['Túi',/^túi/i],['Đồng hồ',/^đồng hồ/i]],'Đi làm thì thanh lịch: sơ mi/blazer với quần âu hoặc chân váy midi ạ'],
+ party:['🥂 Dự tiệc',[['Đầm',/dạ hội|váy lụa|maxi|đầm (ren|đen)|cưới/i],['Túi',/^túi/i],['Trang sức',/^(nhẫn|vòng|dây chuyền)/i],['Nước hoa',/^nước hoa/i]],'Dự tiệc thì phải lộng lẫy: đầm dáng dài, túi nhỏ và trang sức lấp lánh ạ'],
+ sport:['👟 Thể thao · du lịch',[['Áo',/^(áo thun|hoodie)/i],['Quần',/^quần (short|jean|kaki)/i],['Giày',/^giày/i],['Mũ',/^mũ/i]],'Đi chơi xa thì đồ thoáng, giày êm và mũ che nắng ạ'],
+ tet:['🌸 Áo dài · chụp ảnh',[['Áo dài',/^áo dài/i],['Phụ kiện',/nón lá|kẹp hoa|nơ/i],['Túi',/^túi/i]],'Áo dài thì chụp ảnh lên hình đẹp lắm, thêm nón lá hoặc kẹp hoa nữa nha']};
+let CS={};
+const csMall=()=>MD.ALL.filter(a=>MD.COUNTERS[a.k].f>=4);
+function openConsult(){CS={step:0,fashion:KIND==='mall3'};$('#csT').textContent=CS.fashion?'💁‍♂️ Stylist Tomortle':'💁‍♀️ Chuyên viên tư vấn làm đẹp';drawConsult();$('#mConsult').classList.add('on');tone(1568,.12,'sine',.04);tone(2093,.16,'sine',.03,.1)}
+const csQ=(q,opts)=>`<p class="cs-q">💬 ${q}</p><div class="chips cs-o">${opts.map(([k,v])=>`<button data-o="${k}">${v}</button>`).join('')}</div>`;
+function drawConsult(){const el=$('#csB'),segs=MD.SEGS.slice(1).map(x=>[x[0],x[1]+` <small>${x[2]?vnd(x[2]):''}${x[3]<1e12?'–'+vnd(x[3]):'+'}</small>`]);$('#csAll').style.display='none';
+ if(CS.fashion){if(CS.step===0)el.innerHTML=csQ(`Chào ${esc(ctx.myName)}! Hôm nay anh chị mặc đi đâu ạ?`,Object.entries(CS_OCC).map(([k,v])=>[k,v[0]]));
+  else if(CS.step===1)el.innerHTML=csQ('Ngân sách cho cả bộ khoảng bao nhiêu ạ? (mỗi món)',segs);else drawCsResult();return}
+ if(CS.step===0)el.innerHTML=csQ(`Xin chào ${esc(ctx.myName)}! Hôm nay em giúp gì được ạ?`,Object.entries(CS_NEED).map(([k,v])=>[k,v[0]]));
+ else if(CS.step===1)el.innerHTML=csQ('Da mình thuộc loại nào ạ?',Object.entries(CS_SKIN).map(([k,v])=>[k,v[0]]));
+ else if(CS.step===2)el.innerHTML=csQ('Ngân sách mỗi món khoảng bao nhiêu ạ?',segs);else drawCsResult()}
+// chọn 1 món cho mỗi nhóm: đúng phân khúc trước, ưu tiên hợp loại da; thiếu thì lấy món gần phân khúc nhất
+function csPick(groups,seg,skinRe){const S=MD.SEGS.find(x=>x[0]===seg),L=csMall(),used=new Set(),out=[];
+ for(const[lab,re]of groups){const C=L.filter(a=>re.test(a.n)&&!used.has(a.n));if(!C.length)continue;
+  const inS=C.filter(a=>a.p>=S[2]&&a.p<S[3]),pool=inS.length?inS:C.slice().sort((a,b)=>Math.abs(Math.log(a.p/((S[2]+Math.min(S[3],5e7))/2)))-Math.abs(Math.log(b.p/((S[2]+Math.min(S[3],5e7))/2)))).slice(0,4);
+  const sc=a=>(skinRe&&skinRe.test(a.n)?2:0)+Math.random();const a=pool.slice().sort((x,y)=>sc(y)-sc(x))[0];used.add(a.n);out.push({lab,a,off:!inS.length})}return out}
+function drawCsResult(){const f=CS.fashion,occ=f&&CS_OCC[CS.occ],need=!f&&CS_NEED[CS.need],sk=!f&&CS_SKIN[CS.skin];
+ if(!CS.res)CS.res=csPick(f?occ[1]:need[1],CS.seg,sk&&CS.need!=='scent'&&CS.need!=='gift'?sk[1]:null);const R2=CS.res,tot=R2.reduce((s,x)=>s+priceOf([x.a.e,x.a.n,x.a.p,x.a.tag]),0);
+ $('#csB').innerHTML=`<p class="cs-q">💬 ${f?occ[2]:sk&&CS.need!=='scent'&&CS.need!=='gift'?sk[2]:CS.need==='gift'?'Quà tặng thì son + nước hoa + một món trang sức là người ấy vui cả tuần luôn ạ':'Em chọn mấy mùi đang được yêu thích nhất ạ'}. Em gợi ý bộ này nha:</p>`+
+  R2.map((x,i)=>{const a=x.a,fl=MD.FLOORS[floorOf(a.k)],pr=priceOf([a.e,a.n,a.p,a.tag]),q=MK.cart.find(c=>c.n===a.n)?.q||0;return`<div class="cl"><b>${icoH(a.e)}</b><span><small class="note">${esc(x.lab)}${x.off?' · ngoài tầm giá, gần nhất':''}</small><br>${esc(a.n)}<br><small class="note">${vnd(pr)} · <a href="#" data-go="${a.k}">${fl.s} · ${esc(CAT[a.k].n)}</a></small></span>${q?`<small>×${q}</small>`:''}<button class="btn small" data-swap="${i}" title="Đổi món khác">🔄</button><button class="btn small primary" data-add="${esc(a.n)}">+</button></div>`}).join('')+
+  `<p class="note" style="margin-top:8px">Tổng cả bộ: <b>${vnd(tot)}</b> · ví chung còn ${vnd(MK.budget)}</p>`;$('#csAll').style.display=''}
+$('#csB').onclick=e=>{const o=e.target.closest('[data-o]');if(o){const v=o.dataset.o;sfx.pop();
+  if(CS.fashion){if(CS.step===0)CS.occ=v;else CS.seg=v}else{if(CS.step===0){CS.need=v;if(v==='scent'||v==='gift')CS.step++}else if(CS.step===1)CS.skin=v;else CS.seg=v}
+  CS.step++;drawConsult();return}
+ const g=e.target.closest('[data-go]');if(g){e.preventDefault();$('#mConsult').classList.remove('on');goCounter(g.dataset.go);return}
+ const sw=e.target.closest('[data-swap]');if(sw){const i=+sw.dataset.swap,x=CS.res[i],S=MD.SEGS.find(z=>z[0]===CS.seg),grp=(CS.fashion?CS_OCC[CS.occ][1]:CS_NEED[CS.need][1]).find(z=>z[0]===x.lab);
+  const C=csMall().filter(a=>grp[1].test(a.n)&&a.n!==x.a.n&&!CS.res.some(r=>r.a.n===a.n)),inS=C.filter(a=>a.p>=S[2]&&a.p<S[3]),pool=inS.length?inS:C;if(!pool.length){toast('Hết mẫu khác rồi ạ 😅');return}
+  CS.res[i]={lab:x.lab,a:pool[Math.floor(Math.random()*pool.length)],off:!inS.length};sfx.pop();drawCsResult();return}
+ const b=e.target.closest('[data-add]');if(b){const a=MD.ALL.find(x=>x.n===b.dataset.add);if(a){mkAdd(prodObj([a.e,a.n,a.p,a.tag]));drawCsResult()}}};
+$('#csBack').onclick=()=>{CS={step:0,fashion:KIND==='mall3'};drawConsult()};
+$('#csAll').onclick=()=>{for(const x of CS.res||[])if(!MK.cart.some(c=>c.n===x.a.n))mkAdd(prodObj([x.a.e,x.a.n,x.a.p,x.a.tag]));toast('🛒 Đã bỏ cả bộ vào giỏ chung · thanh toán ở quầy thu ngân nhé');drawCsResult()};
 
 /* ================= 🍽️ Nhà hàng Tomortle: hai đứa là khách (đặt bàn, phục vụ, phòng riêng, trang trí) ================= */
 let RB={booking:null,ratings:[]},RT={dishes:[],bill:[],table:null};

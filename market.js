@@ -316,11 +316,11 @@ export const MALL_PROD = {
     ['@dress/f8bbd0/ffffff/', 'Đầm hoa Zara', 1290000, '', 'top:dress:#f8bbd0'], ['@dress/fff3e0/ffffff/', 'Đầm trắng Mango', 1490000, '', 'top:dress:#fff3e0'], ['@tee/bbdefb/1565c0/Zara', 'Sơ mi xanh Zara', 990000, '', 'top:shirt:#bbdefb'],
     ['@pants/1565c0', 'Quần jeans H&M', 699000, '', 'bot:pants:#1565c0'], ['@pants/d7ccc8', 'Quần âu Zara', 1090000, '', 'bot:pants:#bcaaa4'], ['@skirt/212121', 'Chân váy đen H&M', 499000, '', 'bot:skirt:#212121'],
     ['@skirt/f8bbd0', 'Chân váy hồng Bershka', 599000, '', 'bot:skirt:#f8bbd0'], ['@pants/c5e1a5', 'Quần short Pull&Bear', 499000, '', 'bot:shorts:#a5d6a7'], ['@hoodie/ffab91/fafafa/GAP', 'Hoodie GAP', 1190000, '', 'top:hoodie:#ff8a65'],
-    ['@bag/d7ccc8/212121/Zara', 'Túi tote Zara', 790000, '', 'bag:#d7ccc8'], ['@tee/ce93d8/fafafa/Stradivarius', 'Áo croptop Stradivarius', 450000, '', 'top:tee:#ce93d8']],
+    ['@bag/d7ccc8/212121/Zara', 'Túi tote Zara', 790000, '', 'bag:#d7ccc8'], ['@tee/ce93d8/fafafa/Stradivarius', 'Áo croptop Stradivarius', 450000, '', 'top:crop:#ce93d8']],
   local: [['@tee/fafafa/212121/Routine', 'Áo thun Routine', 295000, '', 'top:tee:#eeeeee'], ['@dress/c62828/ffffff/', 'Đầm đỏ Ivy Moda', 1590000, '', 'top:dress:#c62828'], ['@dress/a5d6a7/ffffff/', 'Đầm xanh Elise', 1390000, '', 'top:dress:#a5d6a7'],
     ['@tee/fff59d/212121/Canifa', 'Áo thun Canifa', 199000, '', 'top:tee:#fff59d'], ['@tee/bbdefb/212121/Owen', 'Sơ mi Owen', 450000, '', 'top:shirt:#e3f2fd'], ['@hoodie/212121/fafafa/Dirty Coins', 'Hoodie Dirty Coins', 650000, '', 'top:hoodie:#212121'],
-    ['@tee/fafafa/c62828/Degrey', 'Áo thun Degrey', 350000, '', 'top:tee:#fafafa'], ['@hoodie/795548/fafafa/Bad Habits', 'Hoodie Bad Habits', 690000, '', 'top:hoodie:#795548'], ['@dress/fafafa/c62828/Áo dài', 'Áo dài trắng', 1200000, '', 'top:dress:#fafafa'],
-    ['@dress/c62828/c9a227/Áo dài', 'Áo dài đỏ Tết', 1500000, '', 'top:dress:#c62828'], ['@cap/fafafa/c62828/Nón lá', 'Nón lá Huế', 80000, '', 'acc:cap']],
+    ['@tee/fafafa/c62828/Degrey', 'Áo thun Degrey', 350000, '', 'top:tee:#fafafa'], ['@hoodie/795548/fafafa/Bad Habits', 'Hoodie Bad Habits', 690000, '', 'top:hoodie:#795548'], ['@dress/fafafa/c62828/Áo dài', 'Áo dài trắng', 1200000, '', 'top:aodai:#fafafa'],
+    ['@dress/c62828/c9a227/Áo dài', 'Áo dài đỏ Tết', 1500000, '', 'top:aodai:#c62828'], ['@cap/fafafa/c62828/Nón lá', 'Nón lá Huế', 80000, '', 'acc:cap']],
   sport: [['@shoe/fafafa/212121/Nike', 'Giày Nike Air Force 1', 2900000], ['@shoe/212121/fafafa/Adidas', 'Giày Adidas Samba', 2600000], ['@shoe/fafafa/c62828/Converse', 'Giày Converse Chuck 70', 1800000],
     ['@shoe/212121/fafafa/Vans', 'Giày Vans Old Skool', 1700000], ['@shoe/b0bec5/fafafa/NB', 'Giày New Balance 530', 2500000], ['@shoe/fafafa/f57f17/Puma', 'Giày Puma Suede', 2100000],
     ['@hoodie/212121/fafafa/Nike', 'Hoodie Nike', 1500000, '', 'top:hoodie:#212121'], ['@tee/fafafa/212121/Adidas', 'Áo thun Adidas', 750000, '', 'top:tee:#fafafa'], ['@pants/212121', 'Quần jogger Nike', 1200000, '', 'bot:pants:#212121'],
@@ -482,6 +482,44 @@ Object.assign(MALL_PROD, {
     ...B('Lux', 'ad1457', 'c9a227', [['pet', 'Sữa tắm Lux', 120000]]),
   ],
 });
+/* ---------- thêm: váy đầm · áo khoác · mỹ phẩm sinh viên · mỹ phẩm xa xỉ ---------- */
+Object.assign(MALL_COUNTERS, {
+  dresses: { n: 'Váy đầm & áo dài', e: '👗', w: 2, h: 62, c: '#fce4ec', s: 'tall', f: 6 }, outer: { n: 'Áo khoác · công sở', e: '🧥', w: 2, h: 62, c: '#d7ccc8', s: 'tall', f: 6 },
+  mini: { n: 'Mỹ phẩm sinh viên dưới 250k', e: '🎒', w: 2, h: 30, c: '#c8e6c9', s: 'low', f: 5 }, lux2: { n: 'Xa xỉ: La Mer · Sisley · Clé de Peau', e: '💎', w: 2, h: 30, c: '#2b2b2b', s: 'low', f: 4 },
+});
+Object.assign(MALL_PROD, {
+  dresses: [["@dress/f8bbd0/fafafa/Ivy", "Váy babydoll hồng Ivy Moda", 890000, "", "top:dress:#f8bbd0"], ["@dress/fafafa/f8bbd0/Elise", "Váy trắng tiểu thư Elise", 1290000, "", "top:dress:#fafafa"], ["@dress/212121/c9a227/NEM", "Đầm đen công sở NEM", 1490000, "", "top:dress:#212121"], ["@dress/90caf9/fafafa/Zara", "Váy hoa nhí xanh Zara", 1190000, "", "top:dress:#90caf9"], ["@dress/ffe082/fafafa/H&M", "Váy maxi vàng H&M", 799000, "", "top:gown:#ffe082"], ["@dress/b39ddb/fafafa/Mango", "Váy lụa tím Mango", 1690000, "", "top:gown:#b39ddb"], ["@dress/c62828/c9a227/Lam", "Đầm dạ hội đỏ Lam Gallery", 4900000, "", "top:gown:#b71c1c"], ["@dress/1a237e/c9a227/Chung", "Đầm dạ hội xanh navy Chung Thanh Phong", 12000000, "", "top:gown:#1a237e"], ["@dress/f5f5f5/c9a227/Bridal", "Váy cưới Linh Nga Bridal", 45000000, "", "top:gown:#fdfdfd"], ["@dress/f48fb1/c9a227/Self-Portrait", "Đầm ren hồng Self-Portrait", 9800000, "", "top:dress:#f48fb1"], ["@dress/212121/fafafa/Dior", "Đầm đen Dior Bar", 95000000, "", "top:gown:#111111"], ["@dress/fce4ec/fafafa/Shein", "Váy hai dây Shein", 259000, "", "top:dress:#fce4ec"], ["@dress/a5d6a7/fafafa/Uniqlo", "Váy linen xanh Uniqlo", 790000, "", "top:dress:#a5d6a7"], ["@dress/ce93d8/c9a227/Áo dài", "Áo dài lụa tím Huế", 2200000, "", "top:aodai:#9c27b0"], ["@dress/90caf9/c9a227/Áo dài", "Áo dài xanh ngọc cách tân", 1800000, "", "top:aodai:#4fc3f7"], ["@dress/f8bbd0/c9a227/Áo dài", "Áo dài hồng phấn thêu hoa", 2600000, "", "top:aodai:#f48fb1"], ["@skirt/212121/fafafa/Zara", "Chân váy dài xếp ly Zara", 899000, "", "bot:longskirt:#212121"], ["@skirt/d7ccc8/fafafa/Mango", "Chân váy midi be Mango", 990000, "", "bot:longskirt:#d7ccc8"], ["@skirt/f8bbd0/fafafa/Ivy", "Chân váy dài hồng Ivy Moda", 690000, "", "bot:longskirt:#f8bbd0"], ["@skirt/1565c0/fafafa/Levis", "Chân váy jean Levis", 1290000, "", "bot:skirt:#1565c0"], ["@skirt/fafafa/212121/Tennis", "Chân váy tennis trắng", 259000, "", "bot:skirt:#fafafa"]],
+  outer: [["@hoodie/d7ccc8/5d4037/Burberry", "Áo trench coat Burberry", 68000000, "", "top:coat:#c8a97e"], ["@hoodie/212121/fafafa/Max Mara", "Áo măng tô Max Mara", 75000000, "", "top:coat:#3e2723"], ["@hoodie/bcaaa4/fafafa/Zara", "Áo măng tô dạ Zara", 2490000, "", "top:coat:#a1887f"], ["@hoodie/90a4ae/fafafa/Uniqlo", "Áo phao dáng dài Uniqlo", 1990000, "", "top:coat:#78909c"], ["@hoodie/fafafa/212121/H&M", "Áo khoác dạ trắng H&M", 1590000, "", "top:coat:#eeeeee"], ["@tee/212121/fafafa/Mango", "Blazer đen Mango", 1890000, "", "top:coat:#263238"], ["@tee/f8bbd0/fafafa/Ivy", "Blazer hồng Ivy Moda", 1490000, "", "top:coat:#f8bbd0"], ["@tee/fafafa/212121/Owen", "Sơ mi trắng công sở Owen", 490000, "", "top:shirt:#fafafa"], ["@tee/fff59d/212121/Canifa", "Cardigan len vàng Canifa", 399000, "", "top:crop:#fff59d"], ["@tee/f48fb1/fafafa/Bershka", "Croptop hồng Bershka", 299000, "", "top:crop:#f48fb1"], ["@tee/212121/fafafa/Pull&Bear", "Croptop đen Pull&Bear", 279000, "", "top:crop:#212121"], ["@tee/a5d6a7/fafafa/Shein", "Croptop xanh mint Shein", 149000, "", "top:crop:#a5d6a7"], ["@pants/212121/fafafa/Zara", "Quần âu ống rộng Zara", 990000, "", "bot:pants:#212121"], ["@pants/1565c0/fafafa/Levis", "Quần jean Levis 501", 1890000, "", "bot:pants:#1565c0"], ["@pants/d7ccc8/fafafa/Uniqlo", "Quần kaki be Uniqlo", 790000, "", "bot:pants:#d7ccc8"]],
+  mini: [
+    ...B('Black Rouge', '212121', 'f8bbd0', [['tint', 'Son kem Air Fit Velvet Tint', 159000, '#c2185b'], ['tint', 'Son Half N Half', 179000, '#e57373']]),
+    ...B('Judydoll', 'fce4ec', '212121', [['palette', 'Bảng mắt 4 ô', 189000], ['blush', 'Má hồng dạng kem', 159000, '#f8a5c2']]),
+    ...B('Colorkey', 'f8bbd0', 'fafafa', [['tint', 'Son gương Airy Mirror', 169000, '#d32f2f']]),
+    ...B('Pink Flash', 'f48fb1', 'fafafa', [['lip', 'Son lì', 69000, '#ad1457'], ['cushion', 'Phấn nước', 129000]]),
+    ...B('Focallure', 'e1bee7', '212121', [['palette', 'Bảng mắt', 149000], ['mascara', 'Mascara', 99000]]),
+    ...B('Silkygirl', 'f8bbd0', '212121', [['lip', 'Son Matte', 99000, '#e91e63'], ['nail', 'Sơn móng', 59000, '#f06292']]),
+    ...B('Emmié', 'fff3e0', 'c9a227', [['blush', 'Má hồng', 189000, '#ffab91']]),
+    ...B('Lemonade', 'fff59d', '212121', [['cushion', 'Phấn nước Supermatte', 239000], ['tint', 'Son Perfect Couple Lip', 229000, '#c62828']]),
+    ...B('Cocoon', 'c5e1a5', '33691e', [['drop', 'Tinh chất bí đao', 245000], ['tube', 'Sữa rửa mặt bí đao', 145000], ['tube', 'Gel tẩy trang hoa hồng', 175000]]),
+    ...B('Hada Labo', 'e3f2fd', 'c62828', [['drop', 'Lotion Gokujyun', 199000], ['jar', 'Kem dưỡng ẩm', 229000]]),
+    ...B('Skin Aqua', 'b3e5fc', '0277bd', [['tube', 'Kem chống nắng Tone Up', 129000]]),
+    ...B('Sunplay', 'fff59d', 'e65100', [['tube', 'Kem chống nắng', 99000]]),
+    ...B('Bioré', 'e3f2fd', '1565c0', [['tube', 'Sữa rửa mặt', 89000], ['tube', 'Kem chống nắng UV Aqua Rich', 199000]]),
+    ...B('Some By Mi', 'c8e6c9', '2e7d32', [['drop', 'Toner AHA BHA PHA', 239000]]),
+    ...B('Garnier', 'e8f5e9', '2e7d32', [['tube', 'Nước tẩy trang Micellar', 159000]]),
+    ...B('Mediheal', 'e3f2fd', '1565c0', [['pet', 'Mặt nạ giấy Teatree', 29000]]),
+    ...B('Klairs', 'fafafa', '212121', [['drop', 'Toner không mùi', 245000]]),
+    ...B('Rohto', 'ffe0b2', 'e65100', [['drop', 'Serum Melano CC Vitamin C', 249000]]),
+  ],
+  lux2: [
+    ...B('La Mer', 'eceff1', '37474f', [['jar', 'Kem dưỡng Crème de la Mer', 9800000], ['drop', 'Serum The Concentrate', 12500000], ['drop', 'Nước dưỡng Treatment Lotion', 4900000]]),
+    ...B('Sisley', '212121', 'c9a227', [['jar', "Kem dưỡng Sisleÿa L'Intégral", 14000000], ['jar', 'Mặt nạ Black Rose Cream Mask', 4200000]]),
+    ...B('Clé de Peau', 'fafafa', 'c9a227', [['jar', 'Kem dưỡng La Crème', 16500000], ['drop', 'Serum Le Sérum', 7900000], ['lip', 'Son Lipstick', 1900000, '#b71c1c'], ['cushion', 'Phấn nước Radiant Cushion', 3200000]]),
+    ...B('Guerlain', '212121', 'c9a227', [['drop', 'Serum Orchidée Impériale', 15800000], ['lip', 'Son Rouge G', 1500000, '#c62828']]),
+    ...B('La Prairie', 'b3e5fc', 'c0c0c0', [['jar', 'Kem dưỡng Skin Caviar', 18900000], ['drop', 'Serum Platinum Rare', 32000000]]),
+  ],
+});
+/* phân khúc giá (bộ lọc & nhân viên tư vấn) */
+export const SEGS = [['all', 'Tất cả', 0, 1e12], ['cheap', '💚 Bình dân', 0, 300000], ['mid', '💛 Trung cấp', 300000, 1000000], ['high', '💜 Cao cấp', 1000000, 3500000], ['lux', '💎 Xa xỉ', 3500000, 1e12]];
 Object.assign(COUNTERS, MALL_COUNTERS); Object.assign(PROD, MALL_PROD); for (const [k, v] of Object.entries(MALL_FLOORS)) FLOORS[k] = Object.assign({ b: 'mall' }, v);
 export const ALL = Object.entries(PROD).flatMap(([k, list]) => list.map(p => ({ k, e: p[0], n: p[1], p: p[2], tag: p[3] || '', w: p[4] || '' })));
 export function dealsToday(d = new Date()) {
