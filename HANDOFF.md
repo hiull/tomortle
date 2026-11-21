@@ -13,7 +13,7 @@ Phiên mới đọc file này trước. Nếu file và code nói khác nhau, tin
 - Đây là PWA (web app cài lên điện thoại như app) cho một cặp đôi, viết bằng HTML/JS thuần, không có bước build. Repo `hiull/tomortle`, chạy trên **GitHub Pages**.
 - **Triển khai:**
   - Commit rồi push thẳng lên `main`. Chủ app đã đồng ý cách này.
-  - Mỗi lần đổi file, tăng `CACHE` trong `sw.js` (hiện là `tomortle-v72`).
+  - Mỗi lần đổi file, tăng `CACHE` trong `sw.js` (hiện là `tomortle-v73`).
   - Mỗi lần sửa `app.css`, tăng `?v=` của nó trong mọi trang `.html` và trong `sw.js` (hiện là `v=17`).
 - **Backend:** Supabase, project `yktkofupegtvrviynnjk`.
   - Bảng `shared_state(key, data jsonb, updated_by, updated_at)` có RLS (quy tắc quyền đọc/ghi) qua hàm `is_member()`.
@@ -31,6 +31,9 @@ Phiên mới đọc file này trước. Nếu file và code nói khác nhau, tin
   - Trong `room.html`, không đặt `await` nối tiếp ở cấp cao nhất trước khi gắn sự kiện chạm. Dùng `pre(k, d)` để tải song song; khóa nào quá hạn thì nằm trong `PRE_WAIT`, và lúc đó chặn ghi và broadcast cho đến khi tải lại trang.
   - Hằng dùng trong `frame()` phải khai báo trước `requestAnimationFrame`, nếu không dính lỗi TDZ (dùng biến trước khi khai báo).
   - Bash heredoc có chữ `.remove` bị bộ lọc an toàn chặn nhầm. Viết script bằng công cụ Write rồi chạy bằng `node` hoặc `python3`.
+
+- **Chợ Pass** (app 🏷️ trong điện thoại game, cuối `room.html`): mỗi người lưu ở khóa riêng `pass-<id>`. Khách ảo có các kiểu chill, haggle, lowball, rich, ghost, boom; mặc cả bằng `psHaggle`/`psSell` (có `console.assert` ở demo). Shop ảo đổi hàng mỗi ngày và có thể bán hàng fake. Người ấy đổi đồ bằng ôm/hôn/trà sữa qua các tin `pass`, `passoff`, `passok`, `passno`.
+- Tin realtime phải đặt tên không trùng: `mk` là đồng bộ ví, hiệu ứng trang điểm dùng `mkup`.
 
 ## Kiểm tra
 - Chạy máy chủ tại chỗ: `python3 -m http.server 8765` trong thư mục repo.
