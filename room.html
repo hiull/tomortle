@@ -484,9 +484,9 @@ const MLAYOUT={
 function defMarket(k=KIND){const ml=k.startsWith('mall');return{v:1,mv:5,lux:1,kind:k,wall:{c:{market:'#e3efe6',market2:'#f5ecdc',market3:'#f4e4e1',mall:'#efe6ea',mall2:'#f5e9ec',mall3:'#e9e4ef',mall4:'#f6ebee',mall5:'#e8edf4',mall6:'#eceff3'}[k],p:ml?'panel':'plain'},floor:{c:ml?'#f3efe9':'#eee9e1',p:ml?'marble':'tiles'},light:true,music:true,rain:false,
  items:MLAYOUT[k].map(([t,x,y,r])=>({id:nid(),t,x,y,r,c:CAT[t].c})),
  walls:(k==='market'||k==='mall'?[{t:'door',w:'B',p:5},{t:'clock',w:'B',p:2}]:[{t:'window',w:'B',p:4}]).concat(ml?[{t:'frame',w:'A',p:1},{t:'mirror',w:'A',p:4}]:[{t:'frame',w:'A',p:1},{t:'clock',w:'A',p:5}]).map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
-function defResto(k=KIND){const vip=k==='resto2';return{v:1,mv:4,lux:1,kind:k,wall:{c:vip?'#3d1f2a':'#efe2cf',p:'panel'},floor:{c:vip?'#8a5a3c':'#b98a5e',p:'herring'},light:true,music:true,rain:false,
+function defResto(k=KIND){const vip=k==='resto2';return{v:1,mv:vip?4:5,lux:1,kind:k,wall:{c:vip?'#3d1f2a':'#efe2cf',p:'panel'},floor:{c:vip?'#8a5a3c':'#b98a5e',p:'herring'},light:true,music:true,rain:false,
  items:(vip?[['rug',2,2,0],['rtable',3,3,0],['chair',3,2,0],['chair',3,4,2],['waiter',6,3,3],['piano',6,0,0],['plant',0,0,1],['host',0,2,1]]:
-  [['host',0,3,1],['bar',3,0,0],['piano',6,0,0],['plant',0,0,1],['waiter',7,4,3],['rtable',2,2,0],['chair',2,1,0],['chair',2,3,2],['rtable',5,2,0],['chair',5,1,0],['chair',5,3,2],['rtable',2,5,0,1],['chair',2,4,0,1],['chair',2,6,2,1],['rtable',5,6,0,1],['chair',5,5,0,1],['chair',5,7,2,1],['vase',7,7,0]])
+  [['host',0,3,1],['bar',3,0,0],['piano',6,0,0],['plant',0,0,1],['waiter',7,4,3],['rtable',2,2,0],['chair',2,1,0],['chair',2,3,2],['rtable',5,2,0],['chair',5,1,0],['chair',5,3,2],['rtable',2,5,0,1],['chair',2,4,0,1],['chair',2,6,2,1],['rtable',5,6,0,1],['chair',5,5,0,1],['chair',5,7,2,1],['vase',7,7,0],['rug',3,3,0],['plant',7,0,0],['lamp',0,1,1],['plant',0,7,1],['lamp',7,2,3],['rtable',4,4,0,1],['chair',4,3,0,1],['vase',0,6,1]])
   .map(([t,x,y,r,npc])=>Object.assign({id:nid(),t,x,y,r,c:t==='chair'?(vip?'#c9a227':'#7a4b2e'):t==='rug'?'#8e2a3a':CAT[t].c},npc?{npc:1}:{})),
  walls:[{t:'door',w:'B',p:5},{t:vip?'fairy':'window',w:'A',p:vip?1:4},{t:'frame',w:'B',p:2},{t:'clock',w:'A',p:vip?5:2}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 function defSpa(){return{v:1,mv:4,lux:1,kind:'spa',wall:{c:'#f6e6ea',p:'panel'},floor:{c:'#f5f1ec',p:'marble'},light:true,music:true,rain:false,
@@ -499,7 +499,7 @@ function defKitchen(){return{v:1,kind:'kitchen',wall:{c:'#fff1e6',p:'gingham'},f
  walls:[{t:'door',w:'B',p:5},{t:'window',w:'A',p:5},{t:'clock',w:'B',p:2},{t:'garland',w:'A',p:0}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 const UK=id=>'room-u-'+id;
 let [R,UM,UP]=await Promise.all([loadS(RK,null),loadS(UK(ME),{}),loadS(UK(PA),{})]);
-if(!R||!R.items||((IS_MK&&(R.mv|0)<5)||(IS_RT&&(R.mv|0)<4)))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():IS_RT?defResto():KIND==='kitchen'?defKitchen():KIND==='spa'?defSpa():defRoom();R.kind=KIND;
+if(!R||!R.items||((IS_MK&&(R.mv|0)<5)||(IS_RT&&(R.mv|0)<(KIND==='resto'?5:4))))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():IS_RT?defResto():KIND==='kitchen'?defKitchen():KIND==='spa'?defSpa():defRoom();R.kind=KIND;
 R.items=R.items.filter(i=>CAT[i.t]);
 UM=UM||{};UP=UP||{};if(!UM.av){const bk=lsGet('roomU-'+ME,null);if(bk&&bk.av)UM=bk}
 
