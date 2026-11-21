@@ -1148,9 +1148,9 @@ function drawPet(sx,sy){
 const FX=[];function spawn(x,y,txt,o={}){FX.push({x,y,txt,vx:(o.vx??(Math.random()-.5)*12),vy:o.vy??-24,life:o.life??1.8,age:0,size:o.size??14})}
 function burst(c,txt,n=6){const[sx,sy]=charScreen(c);for(let i=0;i<n;i++)spawn(sx+(Math.random()-.5)*18,sy-48-Math.random()*10,txt,{vy:-20-Math.random()*20,life:1.6+Math.random()})}
 function drawFX(dt){g.textAlign='center';g.textBaseline='middle';for(let i=FX.length-1;i>=0;i--){const p=FX[i];p.age+=dt;if(p.age>p.life){FX.splice(i,1);continue}p.x+=p.vx*dt;p.y+=p.vy*dt;g.globalAlpha=Math.min(1,(p.life-p.age)*2);g.font=`${p.size}px sans-serif`;g.fillText(p.txt,p.x,p.y)}g.globalAlpha=1}
-function bubble(x,y,text,dim){g.save();g.font='600 10.5px "Be Vietnam Pro",sans-serif';const words=String(text).split(' ');const lines=[];let cur='';for(const w of words){const tt=cur?cur+' '+w:w;if(g.measureText(tt).width>120&&cur){lines.push(cur);cur=w}else cur=tt}if(cur)lines.push(cur);const ls=lines.slice(0,3);
+function bubble(x,y,text,dim,shown){g.save();g.font='600 10.5px "Be Vietnam Pro",sans-serif';const words=String(text).split(' ');const lines=[];let cur='';for(const w of words){const tt=cur?cur+' '+w:w;if(g.measureText(tt).width>120&&cur){lines.push(cur);cur=w}else cur=tt}if(cur)lines.push(cur);const ls=lines.slice(0,3);
  const bw=Math.max(...ls.map(l=>g.measureText(l).width))+14,bh=ls.length*13+8;let bx=Math.max(4,Math.min(W-bw-4,x-bw/2));const by=y-bh;g.globalAlpha=dim?.85:1;rr(bx,by,bw,bh,9,'#fff','rgba(200,100,140,.35)');g.fillStyle='#fff';g.beginPath();g.moveTo(x-5,by+bh-1);g.lineTo(x+5,by+bh-1);g.lineTo(x,by+bh+6);g.fill();
- g.fillStyle=dim?'#8a6f7c':'#4a2c3a';g.textAlign='left';g.textBaseline='top';ls.forEach((l,i)=>g.fillText(l,bx+7,by+5+i*13));g.restore()}
+ g.fillStyle=dim?'#8a6f7c':'#4a2c3a';g.textAlign='left';g.textBaseline='top';let left=shown==null?1e9:shown;ls.forEach((l,i)=>{g.fillText(l.slice(0,Math.max(0,left)),bx+7,by+5+i*13);left-=l.length+1});g.restore()}
 function nameTag(x,y,name,col){g.save();g.font='700 9px "Be Vietnam Pro",sans-serif';const w=g.measureText(name).width+10;rr(x-w/2,y,w,13,6.5,col);g.fillStyle='#fff';g.textAlign='center';g.textBaseline='middle';g.fillText(name,x,y+6.8);g.restore()}
 
 /* ================= partner online / offline ================= */
@@ -1201,15 +1201,19 @@ function drawAura(c,sx,sy){const i=tierIdx(lifeNow());if(i<4||c.pose==='lie')ret
 /* ================= 🧑‍🤝‍🧑 NPC: mỗi phòng 1–2 nhân vật tự đi lại, dùng đồ, chào hỏi người chơi ================= */
 const rnd1=a=>a[Math.floor(Math.random()*a.length)];
 const NPC_AV=(tc,bc,o={})=>Object.assign({skin:rnd1(['#f9d0b0','#f1c27d','#e0ac69','#ffe0bd']),hair:rnd1(['short','long','bob','bun','curly','spiky']),hc:rnd1(['#2b1d16','#5a3825','#8d5524','#1b1b1b']),top:'tee',tc,bot:'pants',bc,acc:'none'},o);
-const NPCL={shopper:['Hôm nay giảm giá nhiều ghê!','Hai bạn đi chung dễ thương quá 😍','Món này ngon nè, thử đi!','Mua gì cho bữa tối đây ta…','Quầy này đồ tươi lắm nha'],
- mshopper:['Son này lên màu xinh quá!','Hai bạn hợp nhau ghê 💕','Đang sale đó, nhanh tay nha!','Váy này mặc đi hẹn hò hợp nè'],
- staff:['Anh chị cần tìm gì cứ hỏi em nha!','Hàng mới về đó ạ!','Quầy giá sốc đang giảm mạnh ạ 🔥','Em vừa xếp hàng mới lên kệ ạ'],
- tech:['Máy mới về, anh chị cầm thử nha 📱','Mua iPhone hôm nay tặng ốp lưng ạ!','Trả góp 0% luôn ạ 💳','Camera máy này chụp đêm đẹp lắm ạ 🌙'],
- advisor:['Chị ơi thử son mới bên này nha 💄','Em tư vấn da miễn phí ạ!','Hôm nay có quà tặng kèm ạ 🎁','Mùi nước hoa này đang hot lắm ạ'],
- stylist:['Anh chị mặc tông pastel hợp lắm ạ!','Mẫu áo dài mới về xinh lắm ạ 🌸','Để em phối đồ cho anh chị nha!'],
- waiter:['Mời anh chị dùng bữa ngon miệng ạ!','Anh chị cần gọi thêm món không ạ?','Tráng miệng hôm nay ngon lắm ạ 🍮','Rượu vang bàn bên vừa mở, thơm lắm ạ 🍷'],
- spa:['Nhớ thoa kem chống nắng nha ☀️','Đắp mặt nạ giúp da căng bóng đó ạ 🧖','Uống đủ nước da mới đẹp nha 💧'],
- cat:['Meo~','Meoo 🐾','Prrr…','Meo meo 😽'],robot:['Bíp bíp 🧹','Đang dọn dẹp…','Phát hiện bụi! 🤖','Sàn sạch bong ✨'],bird:['Chíp chíp 🎶','Chiu chiu~','Chíp! 🐦']};
+const NPCL={shopper:['Giá này mà không mua là có lỗi với ví 😤','Đi chợ thì ít, đi ngắm thì nhiều 👀','Hai bạn tình cảm quá, tui đi chợ một mình nè 🥲','Mua rau mà như mua vàng vậy trời','Tối nay ăn gì? Câu hỏi khó nhất thế kỷ 🤯','Định mua 1 món, ra quầy thành 15 món, bình thường mà','Ai cho tui mượn cái ví với 😭','Hai đứa đi chợ mà như đi hẹn hò, ghen tị thiệt'],
+ mshopper:['Tủ đầy đồ mà vẫn không có gì để mặc 🙃','Cây son thứ 47 nhưng màu này khác thật mà!','Sale 50% là tiết kiệm 50% đúng hông 🤓','Ví ơi xin lỗi, hôm nay mày khổ rồi','Hai bạn đẹp đôi quá, chụp giùm tui tấm hình đi 📸','Thử 10 cái váy, mua cái đầu tiên 💅','Lương chưa về mà giỏ hàng đã đầy'],
+ staff:['Anh chị tìm gì cứ hỏi, trừ người yêu cũ, cái đó em không bán 😌','Hàng mới về, em vừa bê muốn gãy lưng 😵','Quầy giá sốc: sốc là sốc anh chị luôn đó','Sếp em đang nhìn, anh chị mua giùm em 1 món đi 🥺','Em xếp kệ 3 lần rồi, đừng ai đụng nữa nha 😭','Cần gì gọi em, em chạy nhanh hơn wifi'],
+ tech:['Cầm thử thoải mái, đừng làm rơi là được 😬','Camera 200MP, chụp rõ luôn cái mụn 🫣','Trả góp 0%, trả bằng cả thanh xuân','Pin trâu cả ngày, bền hơn mấy lời hứa 🔋','Mua máy tặng ốp, mua 2 máy tặng… thêm 1 ốp','Đổi máy đi anh chị, máy cũ nó mệt lắm rồi'],
+ advisor:['Thoa son này vô, người ấy nhìn hoài không chán 💄','Da chị đẹp vậy còn skincare chi nữa trời','Nước hoa này thơm tới mức hàng xóm cũng biết chị tới','Em tư vấn miễn phí, mua thì không miễn phí nha 😌','Kem nền này che được mọi thứ, trừ nợ','Thử mẫu thoải mái, em không tính tiền nụ cười đâu'],
+ stylist:['Mặc bộ này vô là có người xin info liền 😎','Tông pastel hợp anh chị lắm, ngọt như trà sữa','Áo này mặc đi date là auto được khen','Để em phối đồ, anh chị chỉ việc đẹp thôi','Đồ đôi mặc vô là hội FA nhìn muốn khóc 🥲'],
+ waiter:['Món này đầu bếp nấu bằng cả trái tim… và hơi nhiều bơ 🧈','Bụng còn chỗ là còn chiến, gọi thêm không ạ?','Tráng miệng ngon tới mức muốn quỳ luôn 🍮','Bàn bên vừa khen anh chị đẹp đôi, em nghe lén đó','Ăn từ từ thôi, không ai giành đâu ạ 😆','Hóa đơn để sau, ăn trước cho vui'],
+ spa:['Không thoa kem chống nắng là thành cục than đó nha ☀️','Mặt nạ 15 phút thôi, đừng ngủ quên tới sáng 🧖','Uống nước đi, da khô như tin nhắn người yêu cũ 💧','Skincare đều đặn thì già chậm hơn deadline','Mụn ơi, hôm nay mày tới số rồi 😤'],
+ cat:['Meo. (Đưa đồ ăn đây, con người)','Meoo 🐾 *ngồi đè lên đồ của bạn*','Prrr… vuốt thêm 5 phút nữa','Meo meo 😽 tui mới là chủ cái nhà này','*nhìn bạn khinh bỉ* Meo.','Meo! *đẩy ly xuống bàn*'],
+ robot:['Bíp bíp 🧹 phát hiện dép nằm sai chỗ','Ai làm rơi vụn bánh vậy 🤖','Lỗi 404: không tìm thấy chỗ sạch','Sàn sạch bong ✨ trượt té ráng chịu','Bíp! Pin yếu, cần được khen để sạc 🔋','Tui dọn, mấy người cứ bày, công bằng ghê'],
+ bird:['Chíp chíp 🎶 (dịch: cho xin hạt hướng dương)','Chiu chiu~ tui hát hay hơn ca sĩ nha','Chíp! 🐦 hai người này lại tình cảm nữa rồi','Chíp chíp, trời đẹp vầy đi chơi đi']};
+// NPC nói chuyện với nhau: [câu hỏi, câu đáp]
+const NPC_CHAT=[['Hôm nay đông khách ghê','Đông mà toàn đi ngắm 😮‍💨'],['Ăn trưa chưa mậy?','Ăn rồi, ăn hành của sếp 🥲'],['Cặp kia dễ thương ghê','Ừ, nhìn mà muốn có bồ quá'],['Lương về chưa?','Về rồi… đi luôn rồi 💸'],['Ca này mệt quá','Ráng đi, còn có 7 tiếng nữa thôi 😵'],['Chào chị ạ!','Chào em, nay em đẹp trai đột xuất ha'],['Sếp đâu rồi?','Suỵt, sếp đứng sau lưng mày đó 😶']];
 function npcDefs(){const k=KIND;
  if(k==='room')return[{type:'robot',role:'robot',name:'Robot hút bụi'}];
  if(k==='balcony')return[{type:'cat',role:'cat',name:'Mèo hàng xóm'},{type:'bird',role:'bird',name:'Chim sẻ'}];
@@ -1220,7 +1224,7 @@ function npcDefs(){const k=KIND;
  if(IS_RT)return[{type:'chibi',role:'waiter',name:'Phục vụ',av:NPC_AV('#ffffff','#1b1b1b',{top:'shirt'})}];
  return[]}
 const NPCS=npcDefs().map((d,i)=>{const ft=freeTiles(),t=ft[Math.floor(Math.random()*ft.length)]||[4,4];return Object.assign(mkChar('npc'+i),d,{x:t[0]+.5,y:t[1]+.5,lineT:0,seed:3+i,npc:true})});
-function npcSay(n,txt,ms=4200){n.say={text:txt,t:NOW+ms};try{if(Math.hypot(n.x-me.x,n.y-me.y)<6){if(n.role==='cat')meow();else if(n.role==='bird')chirp();else if(n.role==='robot')beepBoop();else voice(txt,VOICE[n.role]||500)}}catch(e){}}
+function npcSay(n,txt,ms=6000){n.say={text:txt,s:NOW,t:NOW+ms+String(txt).length*55};try{if(Math.hypot(n.x-me.x,n.y-me.y)<6){if(n.role==='cat')meow();else if(n.role==='bird')chirp();else if(n.role==='robot')beepBoop();else voice(txt,VOICE[n.role]||500)}}catch(e){}}
 // bộ não: chọn việc mỗi vài giây
 function npcBrain(){for(const n of NPCS){if(n.path.length||(n.busyT||0)>NOW)continue;const r=Math.random(),items=R.items.filter(i=>!CAT[i.t].flat);
  const pickUse=f=>{const L=items.filter(f);const it=rnd1(L);if(!it)return false;const adj=adjOfItem(it);const p=bfs(n.x,n.y,(x,y)=>adj.has(x+','+y));if(!p)return false;const t=p[p.length-1];
@@ -1231,21 +1235,21 @@ function npcBrain(){for(const n of NPCS){if(n.path.length||(n.busyT||0)>NOW)cont
   if(pickUse(want))continue}
  if(r<.85){const ft=freeTiles(),t=rnd1(ft);if(t)walkTo(n,t[0],t[1]);continue}
  // nói chuyện với NPC khác hoặc tự cười
- const o=NPCS.find(m=>m!==n&&Math.hypot(m.x-n.x,m.y-n.y)<2.2);if(o&&n.type==='chibi'&&o.type==='chibi'){faceToward(n,o.x,o.y);faceToward(o,n.x,n.y);npcSay(n,rnd1(['Chào chị ạ!','Hôm nay đông khách ghê','Cố lên nha 💪']),3000);setTimeout(()=>npcSay(o,rnd1(['Chào em!','Ừa, vui ghê 😄','Em cũng vậy nha']),3000),1600)}
+ const o=NPCS.find(m=>m!==n&&Math.hypot(m.x-n.x,m.y-n.y)<2.2);if(o&&n.type==='chibi'&&o.type==='chibi'){faceToward(n,o.x,o.y);faceToward(o,n.x,n.y);const q=rnd1(NPC_CHAT);npcSay(n,q[0],4500);o.busyT=NOW+9000;n.busyT=NOW+9000;setTimeout(()=>npcSay(o,q[1],5000),2600+q[0].length*55)}
  else n.emo={e:rnd1(n.role==='cat'?['😺','💤','🐾']:['😊','🎶','💭']),t:NOW+2200}}}
 function npcUse(n,it){const C2=MD&&MD.COUNTERS[it.t];
  if(C2){const G=goodsOf(it.t,6);const e=rnd1(G);n.emo={e:n.role==='staff'||n.role==='advisor'||n.role==='stylist'?'📦':e,t:NOW+3000};if(Math.random()<.35){const P=PROD[it.t]||[];const p=rnd1(P);if(p)npcSay(n,n.role==='shopper'||n.role==='mshopper'?`Lấy ${p[1]} nè`:`Xếp thêm ${p[1]} lên kệ…`,3200)}return}
  const E={rtable:'🍽️',bar:'🍷',piano:'🎹',vanity:'🧴',basin:'🫧',skinshelf:'🧴',spabed:'💆',fitting:'👗',bed:'💤',sofa:'💤',rug:'🐾',fridge:'🐟',ktable:'🐟',petbed:'💤',plant:'🌿',chair:'😺'};
  n.emo={e:E[it.t]||USE_EMO[it.t]||'✨',t:NOW+3000}}
 // gần người chơi thì quay sang chào
-function npcNotice(){for(const n of NPCS){if(n.walking||n.lineT>NOW)continue;for(const c of[me,pa]){if(c===pa&&!livePa())continue;if(Math.hypot(c.x-n.x,c.y-n.y)<1.7){faceToward(n,c.x,c.y);const ti=tierIdx(lifeNow());if(ti>=6&&['staff','advisor','stylist','waiter','spa'].includes(n.role)&&Math.random()<.6){n.emo={e:'🙇',t:NOW+1500};setTimeout(()=>npcSay(n,`Kính chào quý khách hạng ${TM.TIERS[ti][1]} (${TM.TIERS[ti][4].sym})! ${rnd1(['Hân hạnh được phục vụ ạ 🙇','Mời anh chị lối VIP ạ ✨','Hôm nay có quà riêng cho hạng thẻ của mình ạ 🎁'])}`),1500)}else npcSay(n,rnd1(NPCL[n.role]||['Xin chào!']));n.lineT=NOW+22000+Math.random()*10000;break}}}}
-if(NPCS.length){setInterval(()=>{try{npcBrain()}catch(e){}},2600);setInterval(()=>{try{npcNotice()}catch(e){}},1000)}
+function npcNotice(){for(const n of NPCS){if(n.walking||n.lineT>NOW)continue;for(const c of[me,pa]){if(c===pa&&!livePa())continue;if(Math.hypot(c.x-n.x,c.y-n.y)<1.7){faceToward(n,c.x,c.y);const ti=tierIdx(lifeNow());if(ti>=6&&['staff','advisor','stylist','waiter','spa'].includes(n.role)&&Math.random()<.6){n.emo={e:'🙇',t:NOW+1500};setTimeout(()=>npcSay(n,`Kính chào quý khách hạng ${TM.TIERS[ti][1]} (${TM.TIERS[ti][4].sym})! ${rnd1(['Hân hạnh được phục vụ ạ 🙇','Mời anh chị lối VIP ạ ✨','Hôm nay có quà riêng cho hạng thẻ của mình ạ 🎁'])}`),1500)}else npcSay(n,rnd1(NPCL[n.role]||['Xin chào!']));n.lineT=NOW+35000+Math.random()*15000;break}}}}
+if(NPCS.length){setInterval(()=>{try{npcBrain()}catch(e){}},4000);setInterval(()=>{try{npcNotice()}catch(e){}},1000)}
 function drawNPC(n){const[sx,sy]=iso(n.x,n.y);
  if(n.type==='chibi')drawChibi(n.av,sx,sy,{face:n.face,flip:n.flip,pose:'stand',walking:n.walking,seed:n.seed,scale:.9});
  else if(n.type==='robot'){const b=n.walking?Math.sin(NOW/60)*.5:0;ell(sx,sy,12,5.5,'rgba(0,0,0,.15)');ell(sx,sy-3+b,11,5.5,'#4a4e69','#22223b');ell(sx,sy-5+b,8,3.6,'#9a8c98');circ(sx+(n.flip?-4:4),sy-5+b,1.4,(NOW/400|0)%2?'#80ffdb':'#ff6b6b')}
  else{const hop=n.walking?Math.abs(Math.sin(NOW/(n.type==='bird'?90:140)))*(n.type==='bird'?5:2):0;ell(sx,sy,8,3.5,'rgba(0,0,0,.14)');g.save();g.translate(sx,sy-10-hop);if(!n.flip)g.scale(-1,1);g.font=(n.type==='bird'?16:20)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#222';g.fillText(n.type==='bird'?'🐦':'🐈',0,0);g.restore()}
  OVER.push(()=>{const top=n.type==='chibi'?sy-56:sy-24;g.save();g.font='600 7.5px "Be Vietnam Pro",sans-serif';const w=g.measureText(n.name).width+8;rr(sx-w/2,sy+2,w,11,5.5,'rgba(255,255,255,.85)');g.fillStyle='#6d6875';g.textAlign='center';g.textBaseline='middle';g.fillText(n.name,sx,sy+7.8);g.restore();
-  if(n.emo&&NOW<n.emo.t){if(String(n.emo.e).startsWith('@'))emj(n.emo.e,sx,top-10,16);else{g.save();g.font='15px sans-serif';g.textAlign='center';g.textBaseline='bottom';g.fillText(n.emo.e,sx,top);g.restore()}}else if(n.say&&NOW<n.say.t)bubble(sx,top,n.say.text)})}
+  if(n.emo&&NOW<n.emo.t){if(String(n.emo.e).startsWith('@'))emj(n.emo.e,sx,top-10,16);else{g.save();g.font='15px sans-serif';g.textAlign='center';g.textBaseline='bottom';g.fillText(n.emo.e,sx,top);g.restore()}}else if(n.say&&NOW<n.say.t)bubble(sx,top,n.say.text,false,n.say.s?Math.floor((NOW-n.say.s)/55):null)})}
 function npcMenu(n,sx,sy){const B=[];const talk=()=>{faceToward(n,me.x,me.y);npcSay(n,rnd1(NPCL[n.role]||['Xin chào!']));n.lineT=NOW+15000};
  const go=fn=>()=>{const adj=new Set();const fx=Math.floor(n.x),fy=Math.floor(n.y);for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]])if(inB(fx+a,fy+b)&&!BM[fx+a][fy+b])adj.add((fx+a)+','+(fy+b));n.path=[];n.busyT=NOW+6000;goNear(adj,{face:[n.x,n.y]},()=>{faceToward(me,n.x,n.y);faceToward(n,me.x,me.y);fn()})};
  if(n.type==='chibi'){B.push(['👋 Chào',go(()=>{me.emo={e:'👋',t:NOW+2000};send('emo',{e:'👋'});setTimeout(talk,700)}),1]);B.push(['💬 Hỏi chuyện',go(talk)]);
@@ -1328,7 +1332,7 @@ function drawProj(){for(let i=PROJ.length-1;i>=0;i--){const p=PROJ[i],T=THROWS[p
 
 /* ================= scene compose ================= */
 let HITS=[],OVER=[];
-if(DEMO)window.__dbg={auto:()=>({auto:me.auto,hidden:document.hidden,editing,modal:!!document.querySelector('.modal.on'),ctxm:!!document.querySelector('.ctxm'),idle:Math.round(NOW-lastInput),err:window.__autoErr||null}),amb:()=>AMB&&{key:AMB.key,n:AMB.nodes.length,ac:AC&&AC.state},wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
+if(DEMO)window.__npcSay=(i,t)=>NPCS[i]&&npcSay(NPCS[i],t);if(DEMO)window.__dbg={auto:()=>({auto:me.auto,hidden:document.hidden,editing,modal:!!document.querySelector('.modal.on'),ctxm:!!document.querySelector('.ctxm'),idle:Math.round(NOW-lastInput),err:window.__autoErr||null}),amb:()=>AMB&&{key:AMB.key,n:AMB.nodes.length,ac:AC&&AC.state},wx:k=>{WX_AUTO=false;WX={k,t:wxTemp(Date.now(),k)};$("#wxChip").textContent=WXT[k][0]+" "+WX.t+"°"},free:()=>freeTiles(),scr:(x,y)=>{const r=cv.getBoundingClientRect(),[a,b]=iso(x+.5,y+.5);return[r.x+a*r.width/W,r.y+b*r.width/W]},me:()=>[me.x,me.y,me.path.length],reach:(x,y)=>!!bfs(me.x,me.y,(a,b)=>a===x&&b===y),close:()=>closeMenu(),hit:(x,y)=>{const r=cv.getBoundingClientRect(),h=pickAt((x-r.x)*W/r.width,(y-r.y)*W/r.width);return h?h.kind+":"+(h.ref?.t||h.ref?.name||h.ref?.id||""):null}};
 if(DEMO)window.__meScreen=()=>{const r=cv.getBoundingClientRect(),[x,y]=charScreen(me);return[r.x+x*r.width/W,r.y+y*r.width/W]};
 function charScreen(c){const z=c.pose==='sit'?16:c.pose==='lie'?24:0;return iso(c.x,c.y,z)}
 function itemKey(it){const f=fp(it);return f.x+f.y+f.w+f.d-1}
