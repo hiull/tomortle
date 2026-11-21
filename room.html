@@ -1377,12 +1377,12 @@ function onMsg(m){
  case'ttt':tttRecv(m);break;
  case'nty':doNaughty(pa,m.a,true);break;
  case'love':LOVE+=m.n;LOVEB.pts=(LOVEB.pts||0)+m.n;renderLove();break;
- case'mk':MK=m.MK;CARD_LIFE=MK.life||0;drawMk();break;
+ case'mk':if(!m.MK)break;MK=m.MK;CARD_LIFE=MK.life||0;drawMk();break;
  case'pt':PT=m.PT;window.DISHES=PT.dishes;drawCook();if($('#mTable').classList.contains('on'))drawTable();break;
  case'cook':window.COOKING={until:NOW+COOK_MS};pa.emo={e:m.e,t:NOW+COOK_MS};sfx.whoosh();break;
  case'rt':RT=m.RT;window.RT_DISHES=RT.dishes;if($('#mResto').classList.contains('on'))drawResto();break;
  case'rb':RB=m.RB;applyDeco();break;
- case'mk':try{mkFx(pa,m.w,m.e)}catch(e){}break;
+ case'mkup':try{mkFx(pa,m.w,m.e)}catch(e){}break;
  case'eat':burst(pa,m.drink?'💦':'😋',3);pa.emo={e:m.e,t:NOW+1800};pa.hold={e:m.e,t:NOW+1800};try{eatFx(pa,m.e,m.drink)}catch(e){}if(m.drink)sfxSlurp();else sfxChew();break;
  case'mkop':if(m.o){mkApply(m.o,m.d);drawMk()}break;
  case'mkhello':if(IS_MK)sendMk('mk',{MK});break;
@@ -1875,7 +1875,7 @@ $('#bagL').onclick=async e=>{const L=bagGroups()[BAGT];const u=e.target.closest(
    else{for(let k=0;k<4;k++)noise(.05,.18,900,'lowpass',k*.16);setAv({glow:Date.now()+H});burst(me,'✨',6);toast(`✨ Đã dùng ${x.n}, da căng bóng 1 tiếng`)}}
   else if(x.w&&/^phone/.test(x.w)){AVD=Object.assign({},UM.av||avOf(ME));wearOn(x.w,true);setAv(AVD);$('#mBag').classList.remove('on');openPhone()}
   else if(x.w){AVD=Object.assign({},UM.av||avOf(ME));const on=!isWorn(x.w);wearOn(x.w,on);setAv(AVD);const mk=on&&MK_FX[x.w.split(':')[0]];
-   if(mk){peekModal(1900);mkFx(me,x.w,x.e);send('mk',{w:x.w,e:x.e})}else{burst(me,on?'✨':'👋',5);sfx.pop()}toast(on?`Đã ${/^scent/.test(x.w)?'xịt':/^(lip|blush|eye|lash|base|nail|contour|hl|brow|liner|gloss|lens|freck|glit)/.test(x.w)?'dùng':'mặc'} ${x.n} 💗`:`Đã tháo ${x.n}`)}
+   if(mk){peekModal(1900);mkFx(me,x.w,x.e);send('mkup',{w:x.w,e:x.e})}else{burst(me,on?'✨':'👋',5);sfx.pop()}toast(on?`Đã ${/^scent/.test(x.w)?'xịt':/^(lip|blush|eye|lash|base|nail|contour|hl|brow|liner|gloss|lens|freck|glit)/.test(x.w)?'dùng':'mặc'} ${x.n} 💗`:`Đã tháo ${x.n}`)}
   else{me.emo={e:x.e,t:NOW+2500};send('emo',{e:x.e});toast(`Ngắm ${x.n} một chút… đẹp ghê 😍`)}
   drawBag();return}
  if(gf){const x=L[+gf.dataset.gift];if(!x)return;if(!confirm(`Tặng ${x.n} cho ${ctx.partnerName}?`))return;const c=BAG.cl;const i=(c[ME]||[]).findIndex(y=>y.n===x.n);if(i<0)return;const [it]=c[ME].splice(i,1);c[PA]=c[PA]||[];c[PA].push(Object.assign({},it,{at:Date.now(),from:ME}));
