@@ -106,7 +106,11 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .tt-side{position:absolute;right:10px;bottom:110px;display:flex;flex-direction:column;gap:14px;z-index:3}.tt-side button{background:none;border:0;color:#fff;font-size:26px;display:flex;flex-direction:column;align-items:center;cursor:pointer}.tt-side small{font-size:10px;font-weight:700}
 .tt-side button.on{animation:tz .3s 2 alternate}.tt-cap{position:absolute;left:12px;right:62px;bottom:34px;font-size:12.5px;text-shadow:0 1px 3px rgba(0,0,0,.6);z-index:3}.tt-cap i{color:#ffe082;font-style:normal}.tt-cap u{text-decoration:none;background:#ff4d8d;border-radius:6px;padding:0 4px;font-size:10px}
 .ph-exit{margin-top:10px;border:0;border-radius:999px;padding:10px 22px;background:rgba(255,255,255,.95);color:#3a2430;font:700 14px "Be Vietnam Pro",sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
-.ph-sheet{flex-direction:column;align-items:center}.ph-f{height:min(600px,74vh)!important}
+.ph-sheet{flex-direction:column;align-items:center}
+.ps-msg{display:flex;gap:6px;margin:8px 0 2px}.ps-msg input{flex:1;min-width:0;border:0;border-radius:999px;padding:10px 14px;background:rgba(255,255,255,.95);color:#222;font:500 16px "Be Vietnam Pro",sans-serif}.ps-msg button{border:0;border-radius:999px;width:46px;background:#ff2d55;color:#fff;font-size:18px;font-weight:800;cursor:pointer}
+.ps-ban{margin:10px 0;padding:16px 14px;border-radius:20px;background:#fff;color:#222;text-align:center;box-shadow:0 0 0 3px #ff3b30,0 10px 30px rgba(255,59,48,.35);animation:psBan 1s infinite alternate}.ps-ban .big{font-size:54px;line-height:1}.ps-ban h3{margin:6px 0;color:#d70015;font-size:19px;letter-spacing:.5px}.ps-ban p{margin:6px 0;font-size:13px}.ps-ban b.f{display:block;font-size:24px;color:#d70015;margin:4px 0}.ps-ban i{display:block;margin:6px 0;padding:8px;border-radius:12px;background:#fff1f0;font-size:13px}.ps-ban input{width:100%;margin:6px 0;border:2px solid #ffccc7;border-radius:12px;padding:9px;font:500 16px "Be Vietnam Pro",sans-serif;color:#222}.ps-ban button{width:100%;border:0;border-radius:14px;padding:12px;background:#d70015;color:#fff;font-weight:800;font-size:15px;cursor:pointer}.ps-ban small{display:block;margin-top:8px;color:#888;font-size:11px}
+@keyframes psBan{to{box-shadow:0 0 0 3px #ff3b30,0 10px 40px rgba(255,59,48,.7)}}
+.ps-warn{color:#ff9f0a;font-weight:800}.ph-f{width:min(460px,97vw)!important;height:calc(100dvh - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;border-radius:40px!important;padding:8px!important}#mPhone{padding:4px}#mPhone .ph-sheet{max-height:none!important;overflow:visible!important;border:0!important;width:auto!important}#mPhone .ph-exit{margin-top:6px;padding:8px 20px}
 .tt-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}.tt-side.real{bottom:120px;right:4px;background:rgba(0,0,0,.35);border-radius:16px;padding:6px 2px}.tt-side.real button{font-size:20px}.tt-cap.real{bottom:auto;top:78px;background:rgba(0,0,0,.45);border-radius:10px;padding:4px 8px;right:12px}
 
 /* thanh điều hướng dưới đáy (như thanh app), nút đầu là Home = phòng chung */
@@ -2482,12 +2486,67 @@ var PS=null,PSP={L:[],offers:[]},PSUB='mkt',PCH=null,PSEL=null,PS_DAY=null;
 const PK=id=>'pass-'+id;
 const PS_COND={new:['Mới 100% nguyên seal',.85],n99:['Như mới 99%',.7],used:['Đã dùng',.5]};
 const PS_NPC=[['Thu Trang','🌸'],['Minh Béo','🍜'],['Bé Na','🎀'],['Tuấn Kiều','😎'],['Chị Hoa','💎'],['Mẹ Bỉm Sữa','🍼'],['Hà My','🛍️'],['Khoa','🎧'],['Linh Linh','🌈'],['Anh Ba Xe Ôm','🛵'],['Trinh Sang Chảnh','👠'],['Cô Sáu','👵'],['Bảo Gen Z','🧢'],['Vy Săn Sale','🏷️']];
-const PS_TYPES=[['chill',3],['haggle',4],['lowball',2],['rich',1],['ghost',1],['boom',1],['scam',1],['over',1]];
+const PS_TYPES=[['chill',3],['haggle',4],['lowball',2],['rich',1],['ghost',1],['boom',2],['scam',3],['weird',2]];
+// lừa đảo như thật: tên giả, kịch bản, nút "dính" (mất tiền) và nút "tỉnh" (+uy tín) · mỗi cái kèm mẹo ngoài đời
+const PS_SCAM={
+ link:{say:['Shop ơi em chuyển khoản rồi nè, shop bấm link này xác nhận để nhận tiền nha 😇 👉 nhận·tiền·nhanh·24h·vn'],push:['Shop bấm link đi mà, 1 giây thôi 😇','Link an toàn 100% shop ơi, em thề 🙏','Không bấm là tiền bị hoàn về em đó nha 😤'],
+  bad:['🔗 Bấm link',200000,'🔓 Bấm link xong… tài khoản bị hack, mất 200.000đ 😭 · ngoài đời: đừng bấm link lạ để “nhận tiền”'],good:['🚫 Chặn & báo cáo','🛡️ Đã chặn kẻ gửi link lừa đảo · uy tín +1']},
+ over:{say:['Em lỡ chuyển DƯ 500.000đ rồi 😭 shop chuyển lại giúp em với, em gửi ảnh bill nè 🧾','🧾 [Ảnh bill: +500.000đ · nhìn hơi mờ, font chữ hơi lạ]'],push:['Shop ơi em là sinh viên, tiền đó tiền học của em 😭','Shop không chuyển lại em báo công an đó nha 😤'],
+  bad:['💸 Chuyển lại 500k',500000,'💸 Đã chuyển lại 500.000đ… mà ví chưa từng nhận đồng nào 🤡 · ngoài đời: kiểm tra tài khoản thật, đừng tin ảnh bill'],good:['🔍 Kiểm tra ví trước','🔍 Ví không hề nhận thêm đồng nào → lừa đảo! Đã chặn · uy tín +1']},
+ otp:{say:['Shop ơi em đặt nhầm đơn bằng số của shop 😭 có tin nhắn mã OTP 6 số vừa gửi về máy shop đó, đọc giúp em với ạ','Gấp lắm shop ơi, mã hết hạn trong 60 giây 😭🙏'],push:['Đọc nhanh giúp em đi shop, sắp hết hạn rồi 😭','Mã đó của em mà shop, shop giữ làm gì 🥺'],
+  bad:['🔢 Đọc mã OTP',1000000,'🔢 Đọc OTP xong… ví bị rút 1.000.000đ trong 3 giây 😭 · ngoài đời: OTP là chìa khoá tài khoản, KHÔNG BAO GIỜ đọc cho ai'],good:['🙅 Không đọc, chặn luôn','🛡️ OTP là của mình, không đưa ai · đã chặn · uy tín +1']},
+ ship:{nm:['Giao Hàng Siêu Tốc','🚚'],say:['📦 [THÔNG BÁO] Đơn hàng của bạn đang bị giữ tại kho do thiếu phí bảo hiểm 25.000đ.','Thanh toán tại: giaohang-sieutoc·vn-xacnhan·top · quá 30 phút đơn sẽ bị huỷ và bạn chịu phí hoàn 300.000đ ⚠️'],push:['⚠️ Còn 12 phút trước khi đơn bị huỷ','Bạn vui lòng thanh toán để tránh bị phạt ạ 🙏'],
+  bad:['💳 Thanh toán 25k',350000,'💳 Nhập thẻ vào trang giả… bị trừ 350.000đ thay vì 25.000đ 😭 · ngoài đời: shipper thật không bắt trả phí qua link lạ'],good:['🔍 Tra mã vận đơn','🔍 Mã vận đơn không tồn tại → shipper giả! Đã chặn · uy tín +1']},
+ cskh:{nm:['CSKH Chợ Pass ✔︎','👩‍💼'],say:['Chào bạn, mình là nhân viên CSKH sàn Chợ Pass 👩‍💼 Tài khoản của bạn chưa xác minh nên tiền bán hàng đang bị TREO 🔒','Bạn kết bạn Zalo và chuyển 99.000đ phí kích hoạt ví người bán, tiền sẽ được hoàn lại gấp đôi ạ'],push:['Hệ thống sẽ khoá tài khoản sau 15 phút nếu chưa kích hoạt ạ ⚠️','Bên mình là sàn chính thức nha bạn, có tích xanh mà ✔︎'],
+  bad:['💸 Chuyển 99k kích hoạt',1089000,'💸 Chuyển 99k xong lại đòi thêm “phí thuế” 990k… mất 1.089.000đ 😭 · ngoài đời: sàn thật không bao giờ bắt chuyển tiền để “kích hoạt”'],good:['🙅 Sàn thật không làm vậy','🛡️ Báo cáo tài khoản giả mạo CSKH · uy tín +1']},
+ police:{nm:['Số lạ +84 9xx xxx xxx','📞'],say:['📞 Alo, đây là Cơ quan Công an. Tài khoản của bạn liên quan đến một đường dây rửa tiền 🚨','Bạn cần chuyển toàn bộ số dư vào “tài khoản tạm giữ” để chứng minh trong sạch. Tuyệt đối không được nói với ai.'],push:['Nếu không hợp tác, bạn sẽ bị bắt trong 24 giờ 🚨','Đây là bí mật điều tra, không được cúp máy!'],
+  bad:['😰 Chuyển hết số dư',1500000,'😰 Chuyển xong… “công an” tắt máy luôn 🤡 mất 1.500.000đ · ngoài đời: công an thật không làm việc qua điện thoại và không bắt chuyển tiền'],good:['📵 Cúp máy, báo người thân','📵 Đã cúp máy & báo người thân · uy tín +1']},
+ job:{nm:['Tuyển CTV Online 💰','💼'],say:['Hi bạn 👋 Bên mình tuyển cộng tác viên thả tim video, 50.000đ/nhiệm vụ, làm tại nhà, việc nhẹ lương cao 💰','Bạn nạp 200.000đ làm nhiệm vụ đầu, hoàn lại 260.000đ ngay nha 😍'],push:['Hôm nay còn 3 suất cuối thôi bạn ơi 🔥','Nhiều bạn sinh viên làm tháng kiếm 30 triệu đó 😍'],
+  bad:['💰 Nạp 200k làm thử',540000,'💰 Lần đầu được hoàn 260k thật, lần 2 nạp 600k thì… “hệ thống lỗi” 🤡 lỗ 540.000đ · ngoài đời: việc nhẹ lương cao mà phải nạp tiền = lừa đảo'],good:['🙅 Việc nhẹ lương cao = lừa','🛡️ Đã chặn “tuyển dụng” lừa đảo · uy tín +1']},
+ gift:{nm:['Tri Ân Khách Hàng 🎉','🎁'],say:['🎉 CHÚC MỪNG! Shop đã trúng thưởng iPhone 17 Pro Max từ chương trình tri ân Chợ Pass!','Chỉ cần đóng phí vận chuyển + thuế 1.200.000đ là nhận máy ngay 📱✨'],push:['Quà sẽ được chuyển cho người khác sau 10 phút ⏰','Chúc mừng bạn lần nữa nha 🎉🎉🎉'],
+  bad:['🎁 Đóng phí nhận quà',1200000,'🎁 Đóng phí xong… hộp quà là cục gạch 🧱 mất 1.200.000đ · ngoài đời: trúng thưởng mà phải đóng phí = lừa đảo'],good:['🧐 Không tham gia mà trúng?','🛡️ Không chơi mà trúng là lừa · đã chặn · uy tín +1']},
+ qr:{say:['Shop ơi em gửi mã QR, shop quét rồi bấm “Xác nhận” là tiền vào liền nha 😇','▣ [Mã QR · ghi chú nhỏ xíu: “THANH TOÁN 300.000đ”]'],push:['Quét đi shop, nhập mã PIN là xong à 😇'],
+  bad:['📷 Quét & xác nhận',300000,'📷 Mã QR đó là mã THANH TOÁN, không phải nhận tiền 🤡 mất 300.000đ · ngoài đời: nhận tiền không bao giờ phải quét QR hay nhập mã PIN'],good:['🔍 Đọc kỹ dòng chữ nhỏ','🔍 Phát hiện mã thanh toán đội lốt “nhận tiền” · uy tín +1']}};
+const PS_BOOM=[['📵 Gọi 3 lần khách không nghe máy · đơn bị hoàn',30000,'Sorry shop, em ngủ quên 😴'],['🏝️ Khách nhắn: “Em đi Đà Lạt rồi shop ơi, tuần sau giao lại nha” · đơn bị hoàn',30000,'Đà Lạt lạnh quá shop ơi 🥶'],['🙅 Người nhà bảo “không ai đặt cái này hết” · hoàn hàng',30000,''],
+ ['😤 Khách bóc hàng xong bảo “không giống ảnh”, không nhận · hoàn hàng + móp hộp',45000,'Ảnh shop chụp đẹp quá nên em tưởng 😅'],['📞 “Ủa em đặt hồi nào vậy?” · khách chối đã đặt · hoàn hàng',30000,''],['💀 Khách chặn số shipper luôn · hoàn hàng',30000,''],
+ ['🐕 Chó nhà khách sủa quá, shipper chạy mất dép · hoàn hàng 🤡',30000,'Con chó nhà em hiền lắm mà 🐶'],['💸 Khách bảo “hết tiền rồi, tháng sau lấy nha” · hoàn hàng',30000,'Lương chưa về shop ơi 🥲']];
+const PS_WEIRD=['Shop ơi món này ăn được không 🤔','Đổi lấy 2 con gà được không shop 🐔🐔','Mua về có hết ế không shop 🥲','Shop bán kèm người yêu không 😳','Em trả bằng thẻ cào điện thoại được hông 📱','Món này có chịu được nước mắt không shop 😭','Cho em trả góp 12 tháng, mỗi tháng 5k nha 🙏','Mẹ em hỏi món này có phong thuỷ không shop 🔮'];
+const PS_BADREV=['⭐ Hàng ok nhưng shop rep chậm 3 giây, 1 sao cho nhớ 😤','⭐⭐ Giao nhanh quá chưa kịp hồi hộp, trừ 3 sao','⭐ Mua về người yêu không khen, 1 sao 🥲','⭐⭐⭐ Hàng đẹp nhưng hộp không thơm như shop nói 👃'];
+// khách trả lời theo câu mình nhắn
+const PS_KW_B=[[/^(hi|hello|helo|alo|chào|hế lô|ê|ơi)/,['Chào shop 👋 món này còn không ạ','Hế lô shop xinh đẹp 😚','Dạ em nghe nè shop 👂']],[/ship|giao|cod|freeship/,['Freeship cho em đi shop, em ở xa lắm (cách 2 căn) 🥺','Ship COD nha shop, kiểm hàng rồi em mới trả tiền 😇','Ship hoả tốc 5 phút được không shop 🛵💨']],
+ [/ảnh|hình|video|pic|chụp/,['Shop chụp thêm 47 tấm nữa cho em xem kỹ nha 📸','Ảnh thật chưa shop? Không filter đúng không 🧐','Quay video unbox lại giùm em được không 🎥']],[/fake|auth|chính hãng|hàng thật|real/,['Shop thề đi, thề với con mèo 🐱','Auth hông shop, em check mã vạch đó nha 🔍']],
+ [/cọc|chuyển khoản|\bck\b|stk|số tài khoản/,['Em chuyển khoản sau khi nhận hàng nha shop 😇','Cho em xin STK, em chuyển khoản… tháng sau 🥲']],[/zalo|sđt|sdt|số điện thoại|facebook|\bfb\b|insta/,['Nói chuyện trong app thôi shop, em sợ bị lừa lắm 😅','Shop xin info em làm gì đó 😳 em có người yêu rồi']],
+ [/yêu|crush|người yêu|\bny\b|độc thân|xinh|đẹp trai|dễ thương/,['Shop thả thính em hả 😳','Em có bồ rồi shop ơi, em chỉ mua hàng thôi 🙈','Bán hàng hay bán thính vậy shop 😆']],[/cảm ơn|cám ơn|thanks|tks|thank/,['Dạ hông có chi 🥰','Cảm ơn thì giảm giá cho em đi 😆']],
+ [/mắc|đắt|chát/,['Mắc là em chứ ai 😤','Shop nói em mới mắc đó 🥲']],[/bớt|giảm|fix/,['Ủa shop bớt cho em hả? Bớt luôn đi 😆','Em mới là người xin bớt mà 🤔']],[/còn/,['Còn thì em mới hỏi nè shop 😅']],[/\?$/,['Câu này khó quá, để em hỏi mẹ em đã 🤔','Em không biết, em chỉ muốn mua thôi 😵']]];
+const PS_DEF_B=['Dạ? 🤔','Shop nói gì em hổng hiểu, chốt giá đi shop 😅','Ok shop… vậy giá sao? 💬','Haha shop vui tính ghê 😆','Em đọc rồi, em suy nghĩ đã 🤔','Shop gõ dài quá em lười đọc, cho em giá thôi 🫠'];
+// shop ảo trả lời mình (shop bán hàng fake sẽ lộ dấu hiệu: chỉ nhận chuyển khoản trước, không có ảnh thật…)
+const PS_KW_S=[[/^(hi|hello|helo|alo|chào|hế lô|ê|ơi)/,['Chào bạn 👋 cần gì cứ hỏi nha','Hế lô, hàng đẹp giá yêu đây 💕'],0],[/còn/,['Còn nha, mà 7 người đang hỏi đó, nhanh tay 👀','Còn 1 cái cuối cùng (cái cuối thứ 37) 😌'],0],
+ [/ship|giao|cod/,['COD toàn quốc, kiểm hàng thoải mái 📦','Ship hoả tốc, trễ shop đền… một lời xin lỗi 🙏'],['Shop chỉ nhận CHUYỂN KHOẢN TRƯỚC thôi nha, COD hông được đâu 😇','Ship xa nên phải chuyển khoản 100% trước á bạn 😇']],
+ [/ảnh|hình|video|pic|chụp/,['📷 [Ảnh thật] chụp hơi mờ vì tay run do hàng đẹp quá','🎥 [Video] quay ngang, tiếng gió vù vù, nhưng hàng thật nha'],['Ảnh mạng thôi, hàng thật còn đẹp hơn (tin shop đi) 😇','Không có ảnh thật đâu, mua đi rồi biết 🤭']],
+ [/fake|auth|chính hãng|hàng thật|real/,['Auth nha bạn, còn bill mua ở TTTM luôn 🧾'],['Auth 1000%, shop thề với con mèo 🐱','Real hay fake quan trọng gì, quan trọng là bạn thích 💅']],
+ [/cọc|chuyển khoản|\bck\b|stk/,['Chuyển khoản hay COD đều được nha'],['Chuyển khoản 100% trước, shop gửi liền (thật mà) 😇']],[/yêu|crush|người yêu|xinh|đẹp trai|dễ thương/,['Shop có chủ rồi nha 😌','Khen nữa đi, khen đủ 10 câu shop giảm 1k 😆'],0],
+ [/cảm ơn|cám ơn|thanks|tks/,['Dạ có gì đâu, mua thêm cái nữa đi 😆'],0],[/mắc|đắt|chát/,['Mắc đâu mà mắc, giá này shop lỗ vốn khóc ròng 😭','Tiền nào của nấy bạn ơi 💅'],0]];
+const PS_DEF_S=['Dạ? 🤔','Bạn chốt không, nhiều người hỏi lắm á 👀','Haha bạn vui tính ghê, mua đi rồi nói tiếp 😆','Shop đang bận gói hàng, bạn trả giá luôn đi 📦'];
+// chửi bậy: cảnh báo, phạt, khoá tài khoản
+const PS_BAD1=new Set(['đụ','địt','lồn','cặc','buồi','đéo','đĩ','đm','đmm','đcm','đkm','đcmm','đkmm','ngu','đần','cút','lìn','đù','dm','dmm','dcm','dkm','dcmm','dkmm','vcl','vkl','vl','clm','clmm','cl','cc','cmm','djt','loz','duma','dume','ditme','dmcs','vcd']);
+const PS_BAD2=['óc chó','mẹ mày','má mày','con chó','thằng chó','súc vật','khốn nạn','mất dạy','đồ ngu','con đĩ','vãi lồn','vãi l','đù má','đụ má','địt mẹ','oc cho','me may'];
+const psDeacc=t=>t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D');
+function psBad(t){const low=String(t).normalize('NFC').toLowerCase(),tok=low.split(/[^\p{L}\p{N}]+/u).filter(Boolean),j=' '+tok.join(' ')+' ';return tok.some(w=>PS_BAD1.has(w))||PS_BAD2.some(w=>j.includes(' '+w+' '))}
+const psFine=n=>n<=1?500000:n===2?2000000:5000000*2**(n-3);
+// đọc giá trong câu chữ: 450k · 4tr5 · 1.200.000 · 300 (=300k) · 2 lít (=200k) · 3 củ
+function psPrice(t){const x=String(t).toLowerCase();let m=x.match(/(\d+(?:[.,]\d+)?)\s*(tr|triệu|trieu|củ|cu)\s*(\d{1,3})?/);if(m)return r1k(parseFloat(m[1].replace(',','.'))*1e6+(m[3]?parseInt(m[3].padEnd(3,'0'))*1000:0));
+ m=x.match(/(\d+(?:[.,]\d+)?)\s*(lít|lit|xị|xi)(?![\p{L}])/u);if(m)return r1k(parseFloat(m[1].replace(',','.'))*1e5);
+ m=x.match(/(\d+(?:[.,]\d+)?)\s*(k|nghìn|ngàn|nghin|ngan|n)(?![\p{L}])/u);if(m)return r1k(parseFloat(m[1].replace(',','.'))*1000);
+ m=x.match(/\d{1,3}(?:[.,]\d{3})+|\d+/);if(!m)return 0;const v=+m[0].replace(/[.,]/g,'');return v<1000?(v>=1?r1k(v*1000):0):r1k(v)}
+
 const PS_TRADE={hug:['🤗','1 cái ôm thật chặt'],kiss:['😘','3 nụ hôn'],tea:['🧋','1 ly trà sữa'],date:['🎬','1 buổi hẹn xem phim']};
 const PS_NOTES=['Pass gấp do lỡ tay chốt đơn 🥲','Mới dùng 1 lần, còn thơm phức','Hàng auth, bao check 💯','Không hợp màu nên pass lại','Dọn tủ đồ, giá hữu nghị','Fix nhẹ cho bạn nào thiện chí ✨'];
-const PS_REVIEW=['⭐⭐⭐⭐⭐ Hàng đẹp, shop dễ thương, sẽ ủng hộ tiếp 💕','⭐⭐⭐⭐⭐ Đóng gói kỹ, còn tặng kèm kẹo 🍬','⭐⭐⭐⭐ Giao hơi lâu nhưng hàng ok nha','⭐⭐⭐⭐⭐ Đúng mô tả, xịn hơn mong đợi 😍'];
+const PS_REVIEW=['⭐⭐⭐⭐⭐ Mua tặng người yêu, giờ người yêu thương mình hơn 💕','⭐⭐⭐⭐⭐ Rẻ quá mua 2 cái, giờ hối hận vì không mua 3 😆','⭐⭐⭐⭐⭐ Hàng đẹp, shop dễ thương, sẽ ủng hộ tiếp 💕','⭐⭐⭐⭐⭐ Đóng gói kỹ, còn tặng kèm kẹo 🍬','⭐⭐⭐⭐ Giao hơi lâu nhưng hàng ok nha','⭐⭐⭐⭐⭐ Đúng mô tả, xịn hơn mong đợi 😍'];
 const pk=a=>a[Math.random()*a.length|0];
 const r1k=v=>Math.max(1000,Math.round(v/1000)*1000);
+if(DEMO){console.assert(psPrice('450k')===450000&&psPrice('4tr5')===4500000&&psPrice('1.200.000 nha')===1200000&&psPrice('300')===300000&&psPrice('2 lít')===200000&&psPrice('còn ko shop')===0,'đọc giá');
+ console.assert(psBad('đm shop')&&psBad('DM')&&psBad('Đéo mua')&&psBad('đồ óc chó')&&!psBad('còn không shop')&&!psBad('nguyễn văn a')&&!psBad('đủ không')&&!psBad('hàng lớn đẹp'),'lọc chửi bậy');
+ console.assert(psFine(1)===500000&&psFine(3)===5000000&&psFine(5)===20000000,'tiền phạt tăng dần')}
 const getMD=async()=>MD||window.__MD||(window.__MD=await import('./market.js'));
 function psOrig(n){const M=MD||window.__MD;const a=M&&M.ALL.find(x=>x.n===n);return a?a.p:200000}
 const psFair=l=>r1k(l.orig*PS_COND[l.cond][1]);
@@ -2528,35 +2587,36 @@ function psType(){let t=Math.random()*PS_TYPES.reduce((a,x)=>a+x[1],0);for(const
 function psQ(l,t,o,d=0,w='b',fn){const last=l.q.length?l.q[l.q.length-1].at:Date.now();l.q.push({at:Math.max(last,Date.now())+d+1200+Math.random()*2200,t,o,w,fn})}
 function psNewBuyer(l){const[nm,av]=pk(PS_NPC),ty=psType(),F=psFair(l);
  const M=r1k(ty==='chill'?F*(1+Math.random()*.15):ty==='haggle'?F*(.8+Math.random()*.15):ty==='lowball'?F*(.6+Math.random()*.15):ty==='rich'?F*1.3:ty==='boom'?Math.max(F*1.2,l.price):F*.9);
- l.b={nm,av,ty,M,o:0,pat:2+(Math.random()*3|0)};l.q=l.q||[];l.chat.push({w:'sys',t:`${av} ${nm} đang xem tin của bạn…`,at:Date.now()});
+ l.b={nm,av,ty,M,o:0,pat:2+(Math.random()*3|0)};l.q=l.q||[];
+ if(ty==='scam'){const k=pk(Object.keys(PS_SCAM)),S=PS_SCAM[k];if(S.nm){l.b.nm=S.nm[0];l.b.av=S.nm[1]}l.b.ask=k;l.chat.push({w:'sys',t:`${l.b.av} ${l.b.nm} đã nhắn tin cho bạn`,at:Date.now()});S.say.forEach((t,i)=>psQ(l,t,0,i?600:0));return}
+ l.chat.push({w:'sys',t:`${av} ${nm} đang xem tin của bạn…`,at:Date.now()});
  if(ty!=='rich'&&ty!=='boom'&&l.price>M*1.7){psQ(l,'Giá này em mua hàng mới luôn rồi shop ơi 😅');psQ(l,`${nm} đã rời cuộc trò chuyện`,0,0,'sys','leave');return}
  if(ty==='ghost'){psQ(l,pk(['còn ko ạ','Còn không shop?','ib giá ạ']));return}
- if(ty==='scam'){l.b.ask='link';psQ(l,'Shop ơi em chuyển khoản rồi nè, shop bấm link này xác nhận để nhận tiền nha 😇 👉 nhận·tiền·nhanh·24h');return}
- if(ty==='over'){l.b.ask='over';psQ(l,'Em lỡ chuyển DƯ 500.000đ rồi 😭 shop chuyển lại giúp em với, em gửi ảnh bill nè 🧾');return}
+ if(ty==='weird'){l.b.o=r1k(F*(.55+Math.random()*.15));psQ(l,pk(PS_WEIRD));psQ(l,`Thôi nghiêm túc: ${vnd(l.b.o)} được hông shop 🤝`,l.b.o);return}
  if(ty==='rich'){l.b.o=l.price<=M?l.price:r1k(F*1.1);psQ(l,`Chị lấy luôn ${vnd(l.b.o)} nha em, gói đẹp giùm chị 💅`,l.b.o);return}
  if(ty==='boom'){l.b.o=l.price;psQ(l,'Ok em chốt giá đăng luôn nha shop, ship COD giùm em 🛵💨',l.b.o);return}
  l.b.o=r1k(ty==='chill'?Math.min(l.price,M*.85):ty==='haggle'?F*(.5+Math.random()*.12):Math.max(10000,l.price*.12));
- if(ty==='lowball'){psQ(l,`${vnd(l.b.o)} được ko shop 😗`,l.b.o);psQ(l,pk(['Đồ cũ mà shop 🙄','Bán cho em lấy hên đi 🙏','Em thấy chỗ khác rẻ hơn á']))}
+ if(ty==='lowball'){psQ(l,pk([`${vnd(l.b.o)} được ko shop 😗`,`${vnd(l.b.o)} bán thì bán, không bán em đi 😏`,`Em có ${vnd(l.b.o)} à, bán em đi rồi em giới thiệu bạn bè 🙏`]),l.b.o);psQ(l,pk(['Đồ cũ mà shop 🙄','Bán cho em lấy hên đi 🙏','Em thấy chỗ khác rẻ hơn á','Em mua về thờ thôi chứ có xài đâu 🙏','Đồ này bên Trung Quốc 1 tệ à shop 🤔']))}
  else if(ty==='haggle'){psQ(l,pk(['Còn ko shop','Shop ơi cho em hỏi nè']));psQ(l,`${vnd(l.b.o)} em lấy liền, ok thì ib 💬`,l.b.o)}
  else{psQ(l,pk(['Shop ơi còn không ạ? 🥺','Ơ món này xinh quá']));psQ(l,`Em lấy ${vnd(l.b.o)} được không shop? 🥰`,l.b.o)}}
-function psCounter(l,c){const b=l.b;if(!b||l.st!=='on')return;c=r1k(c);l.chat.push({w:'me',t:`${vnd(c)} nha bạn`,o:c,at:Date.now()});l.unread=0;
+function psCounter(l,c,txt){const b=l.b;if(!b||l.st!=='on')return;c=r1k(c);l.chat.push({w:'me',t:txt||`${vnd(c)} nha bạn`,o:c,at:Date.now()});l.unread=0;
  const r=psHaggle(b,c);
  if(r.act==='ghost'){psQ(l,'👀 Đã xem',0,800,'sys');psQ(l,`${b.nm} đã rời cuộc trò chuyện`,0,0,'sys','leave')}
  else if(r.act==='ok'){b.o=r.o;psQ(l,pk(['Ok chốt shop ơi 🥳','Deal! Em chuyển khoản liền 💸','Chốt đơn! Gói kỹ giùm em nha 📦']),r.o,0,'b','deal')}
- else if(r.act==='leave'){psQ(l,pk(['Thôi em đi chỗ khác 😤','Mắc quá shop ơi, em lượn 🛵💨','Để em suy nghĩ thêm nha…']));psQ(l,`${b.nm} đã rời cuộc trò chuyện`,0,0,'sys','leave')}
- else{b.o=r.o;psQ(l,pk([`${vnd(r.o)} thôi shop, em sinh viên 🥺`,`Thêm chút nè: ${vnd(r.o)} nha`,`${vnd(r.o)} là hết cỡ rồi á 😭`,`Em bớt ăn sáng 1 tuần, ${vnd(r.o)} nha shop 🥲`]),r.o)}
+ else if(r.act==='leave'){psQ(l,pk(['Thôi em đi chỗ khác 😤','Mắc quá shop ơi, em lượn 🛵💨','Để em suy nghĩ thêm nha…','Giá này shop giữ lại làm của hồi môn đi 🙄','Em block shop đây, bye 👋','Em hỏi ý kiến người yêu đã… (người yêu cũ) 🥲']));psQ(l,`${b.nm} đã rời cuộc trò chuyện`,0,0,'sys','leave')}
+ else{b.o=r.o;psQ(l,pk([`${vnd(r.o)} thôi shop, em sinh viên 🥺`,`Thêm chút nè: ${vnd(r.o)} nha`,`${vnd(r.o)} là hết cỡ rồi á 😭`,`Em bớt ăn sáng 1 tuần, ${vnd(r.o)} nha shop 🥲`,`${vnd(r.o)}, thêm 1 cái like cho shop nữa 👍`,`Em vét heo đất được ${vnd(r.o)} à 🐷`]),r.o)}
  psSave();drawPhone()}
-function psDeal(l,p){l.st='ship';l.sold={p,nm:l.b.nm,boom:l.b.ty==='boom'&&Math.random()<.75,done:Date.now()+9e3+Math.random()*9e3};
+function psDeal(l,p){l.st='ship';l.sold={p,nm:l.b.nm,boom:l.b.ty==='boom'?Math.random()<.75:Math.random()<.06,done:Date.now()+9e3+Math.random()*9e3};
  l.chat.push({w:'sys',t:`🤝 Chốt đơn ${vnd(p)} với ${l.b.nm} · đang đóng gói`,at:Date.now()});psQ(l,'🛵 Shipper đã lấy hàng, đang giao…',0,1500,'sys');sfxTing();vib(20);psSave();psRedraw()}
 async function psDeliver(l){const s=l.sold;l.st='busy';
- if(s.boom){l.st='on';l.b=null;l.next=Date.now()+psGap();delete l.sold;l.chat.push({w:'sys',t:'📵 Khách không nghe máy · đơn bị hoàn · mất 30.000đ phí ship 😭',at:Date.now()});
-  await walletAdd(-30000);sfxBoom();vib([60,40,60]);me.emo={e:'💣',t:NOW+2500};toast('💣 Bị boom hàng! Mất 30.000đ phí ship 😭');psSave();psRedraw();return}
+ if(s.boom){const[bt,fee,said]=pk(PS_BOOM);l.st='on';l.b=null;l.next=Date.now()+psGap();delete l.sold;l.chat.push({w:'sys',t:`${bt} · mất ${vnd(fee)} phí ship 😭`,at:Date.now()});if(said)l.chat.push({w:'b',t:said,at:Date.now()+1});
+  await walletAdd(-fee);sfxBoom();vib([60,40,60]);me.emo={e:'💣',t:NOW+2500};toast(`💣 Bị boom hàng! Mất ${vnd(fee)} phí ship 😭`);psSave();psRedraw();return}
  const c=Object.assign({},await loadS('closet',{})||{}),L=(c[ME]||[]).slice(),i=L.findIndex(x=>x.n===l.n);
  if(i<0){l.st='off';l.chat.push({w:'sys',t:'⚠️ Trong tủ đồ không còn món này · đơn bị huỷ',at:Date.now()});psSave();psRedraw();return}
  L.splice(i,1);c[ME]=L;await saveS('closet',c);CLOSET=c;
  if(l.w&&!L.some(x=>x.n===l.n)){AVD=Object.assign({},UM.av||avOf(ME));if(isWorn(l.w)){wearOn(l.w,false);setAv(AVD)}}
  await walletAdd(s.p);PS.sold=(PS.sold|0)+1;PS.earn=(PS.earn|0)+s.p;PS.rep=(PS.rep|0)+1;l.st='sold';
- l.chat.push({w:'sys',t:`💸 Ting ting! +${vnd(s.p)} vào ví chung`,at:Date.now()},{w:'b',t:pk(PS_REVIEW),at:Date.now()+1});
+ l.chat.push({w:'sys',t:`💸 Ting ting! +${vnd(s.p)} vào ví chung`,at:Date.now()},{w:'b',t:Math.random()<.15?pk(PS_BADREV):pk(PS_REVIEW),at:Date.now()+1});
  sfxChaching();burst(me,'💸',6);vib([20,40,20]);toast(`💸 Bán ${l.n} được ${vnd(s.p)}!`);psSave(true);psRedraw()}
 
 /* ---- lướt chợ: shop ảo đổi hàng mỗi ngày ---- */
@@ -2567,8 +2627,9 @@ function psDaily(){const d=new Date(),key=d.toDateString();if(PS_DAY&&PS_DAY.k==
   const price=r1k(a.p*(fake?.22+rnd()*.1:PS_COND[cond][1]*(.7+rnd()*.3)));return{id:'d'+seed%100000+'-'+i,n:a.n,e:a.e,w:a.w||'',orig:a.p,cond,price,min:r1k(price*(.7+rnd()*.18)),nm,av,fake}});
  PS_DAY={k:key,L};return L}
 function psBuyS(it){const s=PS.buys[it.id]=PS.buys[it.id]||{chat:[{w:'sys',t:`${it.av} Shop của ${it.nm} · “${PS_NOTES[(it.price/1000|0)%PS_NOTES.length]}”`,at:Date.now()}],q:[],st:'chat',it:Object.assign({},it)};return s}
-function psOffer(it,c){const s=psBuyS(it);if(s.st!=='chat')return;c=r1k(c);s.chat.push({w:'me',t:c>=it.price?`Mình lấy giá ${vnd(c)} nha`:`${vnd(c)} được không shop?`,o:c,at:Date.now()});
- const r=psSell(it,c,s),q=(t,o,fn,w='b')=>{const last=s.q.length?s.q[s.q.length-1].at:Date.now();s.q.push({at:Math.max(last,Date.now())+1200+Math.random()*2200,t,o,fn,w})};
+function psQS(s,t,o,fn,w='b'){const last=s.q.length?s.q[s.q.length-1].at:Date.now();s.q.push({at:Math.max(last,Date.now())+1200+Math.random()*2200,t,o,fn,w})}
+function psOffer(it,c,txt){const s=psBuyS(it);if(s.st!=='chat')return;c=r1k(c);s.chat.push({w:'me',t:txt||(c>=it.price?`Mình lấy giá ${vnd(c)} nha`:`${vnd(c)} được không shop?`),o:c,at:Date.now()});
+ const r=psSell(it,c,s),q=(t,o,fn,w)=>psQS(s,t,o,fn,w);
  if(r.act==='ok')q(pk(['Ok bạn, chốt! Chuyển khoản rồi shop gửi liền 📦','Bán cho bạn lấy hên nha 🥰','Deal! Bạn khéo trả giá ghê 😆']),r.o,'deal');
  else if(r.act==='block'){q(pk(['Trả giá kiểu này shop chặn đó nha 😤','Bạn đùa shop hả 🙄']));q('🚫 Shop đã chặn bạn',0,'block','sys')}
  else{s.o=r.o;q(pk([`${vnd(r.o)} là thấp nhất rồi bạn ơi 🥲`,`Shop bớt còn ${vnd(r.o)} thôi nha`,`${vnd(r.o)}, không lời đồng nào luôn á 😭`]),r.o)}
@@ -2615,33 +2676,35 @@ psLoad().then(()=>setInterval(psTick,1500)).catch(e=>console.warn(e));
 /* ---- giao diện trong điện thoại ---- */
 const psIt=(e,title,sub,right,attr,dot)=>`<button class="ps-it" ${attr}>${icoH(e,'ico')}<span>${esc(title)}<small>${sub}</small></span>${right?`<b class="p">${right}</b>`:''}${dot?`<em class="ps-dot">${dot}</em>`:''}</button>`;
 const psChatH=(chat,av,typing)=>`<div class="ps-chat" id="psChat">${chat.map(m=>m.w==='sys'?`<div class="ps-sys">${esc(m.t)}</div>`:`<div class="${m.w==='me'?'me':''}">${m.w==='b'?`<i>${av||'🙂'}</i>`:''}<span>${esc(m.t)}${m.o?`<b class="ps-o">${vnd(m.o)}</b>`:''}</span></div>`).join('')}${typing?'<div><i>'+(av||'🙂')+'</i><span class="ps-typing">đang soạn tin<em>.</em><em>.</em><em>.</em></span></div>':''}</div>`;
-function psDraw(B,head){const fid=document.activeElement&&document.activeElement.id,kv={};for(const id of['psC','psPrice','psNote']){const el=document.getElementById(id);if(el)kv[id]=el.value}
+function psDraw(B,head){const fid=document.activeElement&&document.activeElement.id,kv={};for(const id of['psC','psPrice','psNote','psT','psVow']){const el=document.getElementById(id);if(el)kv[id]=el.value}
  psDraw0(B,head);for(const[id,v]of Object.entries(kv)){const el=document.getElementById(id);if(el&&fid===id){el.value=v;el.focus()}}}
 function psDraw0(B,head){if(!PS){B.innerHTML=head('🏷️ Chợ Pass')+'<p class="ph-note">Đang mở chợ…</p>';psLoad().then(()=>drawPhone());return}
  const back=`<div class="ph-head"><button data-ps="back">‹</button><b>`;
+ if(PS.ban){const n=PS.ban.n,f=PS.ban.fine;B.innerHTML=head('🏷️ Chợ Pass')+`<div class="ps-ban"><div class="big">🚨</div><h3>TÀI KHOẢN ĐÃ BỊ KHOÁ</h3><p>Lý do: dùng ngôn từ thô tục, xúc phạm người khác · vi phạm lần thứ <b>${n}</b></p><p>Tiền phạt phải nộp:</p><b class="f">${vnd(f)}</b><p>Gõ đúng câu cam kết dưới đây để mở khoá:</p><i>Tôi xin hứa ăn nói lịch sự, không chửi bậy nữa</i><input id="psVow" autocomplete="off" placeholder="Gõ lại câu cam kết…"><button data-ps="payfine">💸 Nộp phạt ${vnd(f)} & mở khoá</button><small>Ví chung không đủ thì ví bị âm, nợ cứ nợ 😭 · lần sau tái phạm tiền phạt nhân đôi: ${vnd(psFine(n+1))}</small></div>`;return}
+ const msgF=`<form class="ps-msg" id="psMsgF" autocomplete="off"><input id="psT" maxlength="160" enterkeyhint="send" placeholder="Nhắn gì đó… vd: 450k, còn ko, ship ko?"><button aria-label="Gửi">➤</button></form>`;
  if(PHAPP==='passchat'){const l=PS.L.find(x=>x.id===PCH);if(!l){PHAPP='pass';return psDraw0(B,head)}l.unread=0;const b=l.b,F=psFair(l),offers=psPaOffers(l);
   let act='';
   if(l.st==='on'){
    if(offers.length)act+=offers.map(o=>{const T=PS_TRADE[o.k]||PS_TRADE.hug;return`<div class="ps-pa">💗 <b>${esc(ctx.partnerName)}</b> muốn đổi bằng ${T[0]} ${T[1]}<div class="ps-row"><button data-ps="paok:${o.at}">💞 Đồng ý</button><button class="g" data-ps="pano:${o.at}">Từ chối</button></div></div>`}).join('');
-   if(b&&b.ask&&!l.q.length)act+=`<div class="ps-pa">🤔 Khách này hơi lạ…<div class="ps-row">${b.ask==='link'?'<button data-ps="ask:bad">🔗 Bấm link</button><button class="g" data-ps="ask:good">🚫 Chặn & báo cáo</button>':'<button data-ps="ask:bad">💸 Chuyển lại 500k</button><button class="g" data-ps="ask:good">🔍 Kiểm tra ví trước</button>'}</div></div>`;
+   if(b&&b.ask&&!l.q.length){const S=PS_SCAM[b.ask]||PS_SCAM.link;act+=`<div class="ps-pa">🤔 Tin nhắn này hơi lạ…<div class="ps-row"><button data-ps="ask:bad">${S.bad[0]}</button><button class="g" data-ps="ask:good">${S.good[0]}</button></div></div>`}
    else if(b&&!b.ask&&!l.q.some(m=>m.fn==='leave'))act+=`<div class="ps-act">${b.o?`<button class="ph-big" data-ps="accept">✅ Chốt ${vnd(b.o)}</button>`:''}<div class="ps-row"><input id="psC" type="number" inputmode="numeric" placeholder="Giá bạn muốn…" value="${l.price}"><button data-ps="counter">Trả giá</button></div><div class="ps-chips"><button data-ps="fix:.9">Fix 10%</button><button data-ps="fix:1">Giá cuối 😤</button><button data-ps="skip">🙅 Bỏ qua</button></div></div>`;
    else act+=`<p class="ph-note">Đang chờ khách hỏi… ${l.q.length?'':'(tin đang được đẩy lên top)'}</p><div class="ps-row"><button data-ps="boost">🚀 Đẩy tin · 10.000đ</button><button class="g" data-ps="unlist">Gỡ tin</button></div>`}
   else if(l.st==='ship'||l.st==='busy')act='<p class="ph-note">🚚 Đang giao hàng…</p>';
   else if(l.st==='sold')act=`<p class="ph-note">✅ Đã bán${l.sold&&l.sold.p?' '+vnd(l.sold.p):''} cho ${esc(l.sold?l.sold.nm:'')}</p><button class="ph-big g" data-ps="del">🗑️ Xoá tin</button>`;
   else act='<button class="ph-big g" data-ps="del">🗑️ Xoá tin</button>';
-  B.innerHTML=back+(b?`${b.av} ${esc(b.nm)}`:'Tin của bạn')+`</b></div><div class="ps-card">${icoH(l.e,'ico')}<span>${esc(l.n)}<small>${PS_COND[l.cond][0]} · gốc ${vnd(l.orig)} · đáng giá ~${vnd(F)}</small></span><b class="p">${vnd(l.price)}</b></div>`+psChatH(l.chat.slice(-30),b&&b.av,l.q.some(m=>m.w!=='sys'))+act;psScroll();return}
+  B.innerHTML=back+(b?`${b.av} ${esc(b.nm)}`:'Tin của bạn')+`</b></div><div class="ps-card">${icoH(l.e,'ico')}<span>${esc(l.n)}<small>${PS_COND[l.cond][0]} · gốc ${vnd(l.orig)} · đáng giá ~${vnd(F)}</small></span><b class="p">${vnd(l.price)}</b></div>`+psChatH(l.chat.slice(-30),b&&b.av,l.q.some(m=>m.w!=='sys'))+act+(l.st==='on'&&b?msgF:'');psScroll();return}
  if(PHAPP==='passbuy'){const it=psDaily().find(x=>x.id===PCH)||(PS.buys[PCH]&&PS.buys[PCH].it);if(!it){PHAPP='pass';return psDraw0(B,head)}const s=PS.buys[it.id];if(s)s.unread=0;
   let act='';const st=s?s.st:'chat';
   if(st==='chat')act=`<div class="ps-act">${s&&s.o?`<button class="ph-big" data-ps="bacc">✅ Chốt ${vnd(s.o)}</button>`:''}<div class="ps-row"><input id="psC" type="number" inputmode="numeric" value="${r1k(it.price*.8)}"><button data-ps="boffer">Trả giá</button></div><div class="ps-chips"><button data-ps="bfix:.9">-10%</button><button data-ps="bfix:.75">-25%</button><button data-ps="bfix:.5">-50% 😈</button><button data-ps="bnow">Mua ngay ${vnd(it.price)}</button></div></div>`;
   else act=`<p class="ph-note">${st==='ship'?'🚚 Hàng đang tới…':st==='blocked'?'🚫 Bạn đã bị shop chặn':'✅ Đã mua xong'}</p>`;
-  B.innerHTML=back+`${it.av} ${esc(it.nm)}</b></div><div class="ps-card">${icoH(it.e,'ico')}<span>${esc(it.n)}<small>${PS_COND[it.cond][0]} · giá gốc ${vnd(it.orig)}</small></span><b class="p">${vnd(it.price)}</b></div>`+(s?psChatH(s.chat.slice(-30),it.av,s.q.some(m=>m.w!=='sys')):'<p class="ph-note">Nhắn shop để trả giá nhé · giá rẻ bất thường thì coi chừng hàng fake 👀</p>')+act;psScroll();return}
+  B.innerHTML=back+`${it.av} ${esc(it.nm)}</b></div><div class="ps-card">${icoH(it.e,'ico')}<span>${esc(it.n)}<small>${PS_COND[it.cond][0]} · giá gốc ${vnd(it.orig)}</small></span><b class="p">${vnd(it.price)}</b></div>`+(s?psChatH(s.chat.slice(-30),it.av,s.q.some(m=>m.w!=='sys')):'<p class="ph-note">Nhắn shop để trả giá nhé · giá rẻ bất thường, chỉ nhận chuyển khoản trước, không có ảnh thật… coi chừng hàng fake 👀</p>')+act+(st==='chat'?msgF:'');psScroll();return}
  if(PHAPP==='passpa'){const l=(PSP.L||[]).find(x=>x.id===PCH);if(!l){PHAPP='pass';return psDraw0(B,head)}const mine=(PS.offers||[]).filter(o=>o.lid===l.id);
   B.innerHTML=back+`💗 Tin của ${esc(ctx.partnerName)}</b></div><div class="ps-card">${icoH(l.e,'ico')}<span>${esc(l.n)}<small>${PS_COND[l.cond][0]} · “${esc(l.note||'')}”</small></span><b class="p">${vnd(l.price)}</b></div>`+
    `<p class="ph-note">Người yêu thì không trả bằng tiền 😌 chọn cách “thanh toán”:</p><div class="ps-list">${Object.entries(PS_TRADE).map(([k,[e,n]])=>`<button class="ps-it" data-ps="trade:${k}"><i class="ps-e">${e}</i><span>${n}</span></button>`).join('')}</div>`+
    (mine.length?`<div class="ps-chat">${mine.map(o=>`<div class="ps-sys">${PS_TRADE[o.k][0]} Đã đề nghị ${PS_TRADE[o.k][1]} · ${o.st==='ok'?'💞 đã đồng ý':o.st==='no'?'🙅 bị từ chối':'⏳ chờ trả lời'}</div>`).join('')}</div>`:'');return}
  // trang chính
  const u=psUnread(),tabs=[['mkt','🛍️ Lướt chợ'],['mine','📦 Tin của tôi'+(u?` (${u})`:'')],['sell','➕ Đăng bán']];
- let h=head('🏷️ Chợ Pass')+`<div class="ps-tabs">${tabs.map(([k,v])=>`<button data-ps="tab:${k}" class="${PSUB===k?'on':''}">${v}</button>`).join('')}</div><div class="ps-rep">${psStars()} · đã bán ${PS.sold|0} món · thu ${vnd(PS.earn|0)}</div>`;
+ let h=head('🏷️ Chợ Pass')+`<div class="ps-tabs">${tabs.map(([k,v])=>`<button data-ps="tab:${k}" class="${PSUB===k?'on':''}">${v}</button>`).join('')}</div><div class="ps-rep">${psStars()} · đã bán ${PS.sold|0} món · thu ${vnd(PS.earn|0)}${PS.strike?` · <span class="ps-warn">⚠️ vi phạm ${PS.strike} lần</span>`:''}</div>`;
  if(PSUB==='sell'){
   if(PSEL){const F=psFair(PSEL);h+=`<div class="ps-form"><div class="ps-card">${icoH(PSEL.e,'ico')}<span>${esc(PSEL.n)}<small>Giá gốc ${vnd(PSEL.orig)}</small></span></div>
    <b>Tình trạng</b><div class="ps-chips">${Object.entries(PS_COND).map(([k,[n]])=>`<button data-ps="cond:${k}" class="${PSEL.cond===k?'on':''}">${n}</button>`).join('')}</div>
@@ -2660,6 +2723,8 @@ function psDraw0(B,head){if(!PS){B.innerHTML=head('🏷️ Chợ Pass')+'<p clas
 function psScroll(){const c=$('#psChat');if(c)c.scrollTop=c.scrollHeight;const b=$('#phBody');if(b)b.scrollTop=b.scrollHeight}
 $('#phBody').addEventListener('click',async e=>{const t=e.target.closest('[data-ps]');if(!t||!PS)return;ac();const[cmd,arg]=t.dataset.ps.split(/:(.*)/s);const inp=$('#psC');
  if(cmd==='back'){PHAPP='pass';PCH=null;drawPhone();return}
+ if(cmd==='payfine'&&PS.ban){const v=psDeacc((($('#psVow')||{}).value||'').toLowerCase());if(!v.includes('an noi lich su')||!v.includes('khong chui bay')){toast('✍️ Gõ đúng câu cam kết mới được mở khoá nha');vib(30);return}
+  const f=PS.ban.fine;await walletAdd(-f);PS.ban=null;PS.rep=Math.max(0,(PS.rep|0)-5);sfxChaching();toast(`💸 Đã nộp phạt ${vnd(f)} · tài khoản được mở khoá. Ăn nói lịch sự nha 🙏`);psSave(true);drawPhone();return}
  if(cmd==='tab'){PSUB=arg;PSEL=null;sfx.pop();if(arg==='sell'){try{CLOSET=await loadS('closet',{})||{}}catch(e){}}drawPhone();return}
  if(cmd==='pick'){const n=decodeURIComponent(arg),x=(CLOSET[ME]||[]).find(y=>y.n===n);if(!x)return;const orig=psOrig(n);PSEL={n,e:x.e,w:wearOf(x),orig,cond:'n99',note:PS_NOTES[0]};PSEL.price=psFair(PSEL);drawPhone();return}
  if(PSEL&&$('#psPrice')){PSEL.price=+$('#psPrice').value||0;PSEL.note=$('#psNote').value}
@@ -2673,8 +2738,9 @@ $('#phBody').addEventListener('click',async e=>{const t=e.target.closest('[data-
  if(cmd==='pal'){PCH=arg;PHAPP='passpa';drawPhone();return}
  const l=PS.L.find(x=>x.id===PCH);
  if(cmd==='ask'&&l&&l.b&&l.b.ask){const k=l.b.ask,now=Date.now();
-  if(arg==='bad'){await walletAdd(k==='link'?-200000:-500000);sfxBoom();vib([60,40,60]);me.emo={e:'😭',t:NOW+3000};l.chat.push({w:'sys',t:k==='link'?'🔓 Bấm link xong… tài khoản bị hack, mất 200.000đ 😭 · ngoài đời: đừng bấm link lạ để “nhận tiền”':'💸 Đã chuyển lại 500.000đ… mà ví chưa từng nhận đồng nào 🤡 · ngoài đời: kiểm tra tài khoản thật, đừng tin ảnh bill',at:now});toast('😭 Dính lừa rồi!')}
-  else{PS.rep=(PS.rep|0)+1;burst(me,'🛡️',4);l.chat.push({w:'sys',t:k==='link'?'🛡️ Đã chặn kẻ gửi link lừa đảo · uy tín +1':'🔍 Ví không hề nhận thêm đồng nào → lừa đảo! Đã chặn · uy tín +1',at:now});sfxTing()}
+  const S=PS_SCAM[k]||PS_SCAM.link;
+  if(arg==='bad'){await walletAdd(-S.bad[1]);sfxBoom();vib([60,40,60]);me.emo={e:'😭',t:NOW+3000};l.chat.push({w:'sys',t:S.bad[2],at:now});toast(`😭 Dính lừa rồi! Mất ${vnd(S.bad[1])}`)}
+  else{PS.rep=(PS.rep|0)+1;burst(me,'🛡️',4);l.chat.push({w:'sys',t:S.good[1],at:now});sfxTing()}
   l.chat.push({w:'sys',t:`${l.b.nm} đã bị chặn`,at:now+1});l.b=null;l.next=now+psGap();psSave();drawPhone();return}
  if(cmd==='accept'&&l&&l.b&&l.b.o){l.chat.push({w:'me',t:`Ok chốt ${vnd(l.b.o)} nha bạn 🤝`,at:Date.now()});psQ(l,pk(['Yeahh cảm ơn shop 🥰','Chuyển khoản rồi nha shop 💸']),0,0,'b');psDeal(l,l.b.o);return}
  if(cmd==='counter'&&l){const c=+(inp&&inp.value)||0;if(c<1000){toast('Nhập giá nha');return}psCounter(l,c);return}
@@ -2692,6 +2758,34 @@ $('#phBody').addEventListener('click',async e=>{const t=e.target.closest('[data-
  if(cmd==='trade'){const pl=(PSP.L||[]).find(x=>x.id===PCH);if(!pl)return;if((PS.offers||[]).some(o=>o.lid===pl.id&&o.st==='wait')){toast('Đã đề nghị rồi, chờ người ấy trả lời nha 😌');return}
   PS.offers=(PS.offers||[]).concat([{lid:pl.id,k:arg,at:Date.now(),st:'wait'}]).slice(-30);psSave(true);send('passoff',{n:pl.n,k:arg});sfxTing();burst(me,PS_TRADE[arg][0],4);toast(`Đã đề nghị đổi ${pl.n} bằng ${PS_TRADE[arg][1]} 💗`);drawPhone();return}
 });
+function psSiren(){for(let i=0;i<3;i++){tone(960,.24,'square',.035,i*.5);tone(700,.24,'square',.035,i*.5+.25)}}
+function psViolate(chat){const n=PS.strike=(PS.strike|0)+1,f=psFine(n),at=Date.now();
+ chat.push({w:'me',t:'🚫 Tin nhắn đã bị ẩn vì vi phạm tiêu chuẩn cộng đồng',at});
+ chat.push({w:'sys',t:n===1?`⚠️ BAN QUẢN TRỊ: cảnh báo lần 1 · phát hiện ngôn từ thô tục · phạt ${vnd(f)}. Tái phạm sẽ bị KHOÁ TÀI KHOẢN.`:n===2?`⛔ CẢNH BÁO CUỐI CÙNG · phạt ${vnd(f)} · lần sau KHOÁ TÀI KHOẢN + phạt ${vnd(psFine(3))}`:`🔒 TÀI KHOẢN ĐÃ BỊ KHOÁ · vi phạm lần ${n} · phải nộp phạt ${vnd(f)} mới được dùng lại`,at:at+1});
+ if(n<3)walletAdd(-f);else PS.ban={n,fine:f,at};PS.rep=Math.max(0,(PS.rep|0)-3);
+ psSiren();vib([90,50,90,50,200]);me.emo={e:'🚨',t:NOW+4000};send('emo',{e:'🚨'});toast(n<3?`🚨 Chửi bậy bị phạt ${vnd(f)}!`:`🔒 Tài khoản Chợ Pass bị KHOÁ · phạt ${vnd(f)}`)}
+function psText(v){if(PS.ban){toast('🔒 Tài khoản đang bị khoá');return}const low=v.toLowerCase(),now=Date.now(),okRe=/(^|\s)(ok|oke|okela|chốt|chot|deal|đồng ý|dong y)(\s|$|[!.,])/;
+ if(PHAPP==='passchat'){const l=PS.L.find(x=>x.id===PCH);if(!l)return;const b=l.b;l.unread=0;
+  if(psBad(v)){psViolate(l.chat);if(b&&!b.ask){psQ(l,pk(['Ủa?? Shop chửi em hả 😳','Shop ăn nói vậy ai dám mua 😤','Em chụp màn hình gửi Ban Quản Trị rồi nha 📸']));psQ(l,`${b.nm} đã rời cuộc trò chuyện`,0,0,'sys','leave')}psSave(true);drawPhone();return}
+  if(!b||l.st!=='on'){l.chat.push({w:'me',t:v,at:now},{w:'sys',t:'Chưa có khách nào trong cuộc trò chuyện 🦗',at:now+1});psSave();drawPhone();return}
+  if(b.ask){l.chat.push({w:'me',t:v,at:now});psQ(l,pk((PS_SCAM[b.ask]||PS_SCAM.link).push));psSave();drawPhone();return}
+  const p=psPrice(v);
+  if(okRe.test(low)&&b.o&&!p){l.chat.push({w:'me',t:v,at:now});psQ(l,pk(['Yeahh cảm ơn shop 🥰','Chuyển khoản rồi nha shop 💸']),0,0,'b');psDeal(l,b.o);return}
+  if(p){psCounter(l,p,v);return}
+  l.chat.push({w:'me',t:v,at:now});
+  if(/không bán|ko bán|k bán|hổng bán|thôi khỏi|thôi nha/.test(low)){psQ(l,pk(['Dạ vâng 😢','Hứ, keo kiệt 😤','Không bán thì thôi, em mua chỗ khác rẻ hơn 🙄']));psQ(l,`${b.nm} đã rời cuộc trò chuyện`,0,0,'sys','leave')}
+  else if(b.ty==='ghost')psQ(l,'👀 Đã xem',0,800,'sys');
+  else{let a=null;for(const[re,L]of PS_KW_B)if(re.test(low)){a=L;break}psQ(l,pk(a||PS_DEF_B))}
+  psSave();drawPhone();return}
+ if(PHAPP==='passbuy'){const it=psDaily().find(x=>x.id===PCH)||(PS.buys[PCH]&&PS.buys[PCH].it);if(!it)return;const s=psBuyS(it);s.unread=0;if(s.st!=='chat'){toast('Cuộc trò chuyện đã kết thúc');return}
+  if(psBad(v)){psViolate(s.chat);psQS(s,pk(['Bạn ăn nói kiểu đó shop chặn nha 🙅','Văn minh lên bạn ơi 😤']));psQS(s,'🚫 Shop đã chặn bạn',0,'block','sys');psSave(true);drawPhone();return}
+  const p=psPrice(v);if(p){psOffer(it,p,v);return}
+  if(okRe.test(low)&&s.o){psOffer(it,s.o,v);return}
+  s.chat.push({w:'me',t:v,at:now});
+  if(/bớt|giảm|fix/.test(low)){s.o=r1k(Math.max(it.min,(s.o||it.price)*.95));psQS(s,`Thôi bớt cho bạn còn ${vnd(s.o)} nè, không lời đồng nào 🥲`,s.o)}
+  else{let a=null;for(const[re,L,F]of PS_KW_S)if(re.test(low)){a=it.fake&&F?F:L;break}psQS(s,pk(a||PS_DEF_S))}
+  psSave();drawPhone()}}
+$('#phBody').addEventListener('submit',e=>{if(e.target.id!=='psMsgF')return;e.preventDefault();const i=$('#psT'),v=(i&&i.value||'').trim();if(!v||!PS)return;i.value='';ac();psText(v)});
 /* ================= 🔴 Livestream trong điện thoại: bán hàng · makeup · mukbang · tâm sự · live ngủ · ăn cay · xem bói · khách ảo loạn cực độ · người ấy vào xem / live chung ================= */
 var LV=null,LVW=null,LV_RAF=0,LV_MODE='sell',LV_TITLE='';
 const LV_MODES={sell:['🛍️','Bán hàng chốt đơn','XẢ KHO GIÁ SỐC 🔥 chốt nhanh kẻo lỡ'],makeup:['💄','Makeup','Makeup đi hẹn hò 💄 xinh xỉu'],mukbang:['🍜','Mukbang','Ăn sập thế giới 🍜 không no không về'],chill:['💃','Tâm sự & nhảy','Tâm sự mỏng lúc nửa đêm 🌙'],
