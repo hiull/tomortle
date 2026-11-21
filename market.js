@@ -338,12 +338,12 @@ export const MALL_PROD = {
 /* ================= Thêm ~100 hãng mỹ phẩm: Tầng 4 K/J-beauty · Tầng 5 Âu Mỹ & chuyên sâu =================
    B('Hãng', 'màu bao bì', 'màu phụ', [[kiểu, 'tên', giá, 'màu son/má/móng/mùi' (tuỳ chọn)], ...])
    kiểu: lip tint cushion palette blush drop tube jar pet perfume nail mascara */
-const ICONT = { lip: 'lip', tint: 'lip', cushion: 'cushion', palette: 'palette', blush: 'palette', drop: 'drop', tube: 'tube', jar: 'jar', pet: 'pet', perfume: 'perfume', nail: 'nail', mascara: 'tube' };
-const WEART = { lip: 'lip', tint: 'lip', blush: 'blush', perfume: 'scent', nail: 'nail' };
+const ICONT = { lip: 'lip', tint: 'lip', cushion: 'cushion', palette: 'palette', blush: 'palette', drop: 'drop', tube: 'tube', jar: 'jar', pet: 'pet', perfume: 'perfume', nail: 'nail', mascara: 'tube', lens: 'jar', glit: 'palette', freck: 'tube' };
+const WEART = { lip: 'lip', tint: 'lip', blush: 'blush', perfume: 'scent', nail: 'nail', lens: 'lens', glit: 'glit', freck: 'freck' };
 function B(brand, a, b, items) {
   const short = brand.length > 11 ? brand.split(/[\s-]/)[0] : brand;
   return items.map(([t, n, p, wc]) => {
-    const ic = ICONT[t] || 'tube', c1 = (t === 'lip' || t === 'tint' || t === 'nail') && wc ? wc.slice(1) : t === 'blush' && wc ? wc.slice(1) : a, c2 = t === 'blush' ? a : b;
+    const ic = ICONT[t] || 'tube', c1 = (t === 'lens' && wc) ? wc.slice(1) : (t === 'lip' || t === 'tint' || t === 'nail') && wc ? wc.slice(1) : t === 'blush' && wc ? wc.slice(1) : a, c2 = t === 'blush' ? a : b;
     const w = WEART[t] && wc ? `${WEART[t]}:${wc}` : '';
     return [`@${ic}/${c1}/${c2}/${short}`, `${n} ${brand}`.replace(/\s+/g, ' ').trim(), p, '', w];
   });
@@ -538,6 +538,21 @@ Object.assign(MALL_PROD, {
 });
 /* phân khúc giá (bộ lọc & nhân viên tư vấn) */
 export const SEGS = [['all', 'Tất cả', 0, 1e12], ['cheap', '💚 Bình dân', 0, 300000], ['mid', '💛 Trung cấp', 300000, 1000000], ['high', '💜 Cao cấp', 1000000, 3500000], ['lux', '💎 Xa xỉ', 3500000, 1e12]];
+/* ================= Thêm mỹ phẩm có hiệu ứng mới: lens màu (đổi màu mắt), nhũ kim tuyến (lấp lánh), bút tàn nhang + thêm màu son/má/sơn móng ================= */
+MALL_PROD.kmake2.push(
+  ...B('Olens', 'b3e5fc', '0277bd', [['lens', 'Lens màu Nâu Choco', 350000, '#7b4a2e'], ['lens', 'Lens màu Xám Khói', 350000, '#78909c'], ['lens', 'Lens màu Xanh Biển', 380000, '#1e88e5']]),
+  ...B('Unleashia', 'f3e5f5', '8e24aa', [['glit', 'Nhũ kim tuyến Get Loose Glitter Gel', 290000, '1'], ['tint', 'Son Non-Sticky Dazzle Tint', 300000, '#f06292']]),
+);
+MALL_PROD.eumake.push(
+  ...B('Freck', 'efebe9', '6d4c41', [['freck', 'Bút tàn nhang Freck OG', 590000, '1']]),
+  ...B('Lemonhead', 'fff59d', '212121', [['glit', 'Nhũ kim tuyến Spacepaste', 650000, '1']]),
+  ...B('Fenty', 'fce4ec', '212121', [['lip', 'Son bóng Gloss Bomb Fu$$y', 590000, '#e8a598'], ['blush', 'Má hồng Cheeks Out Petal Poppin', 590000, '#ff8a65']]),
+);
+MALL_PROD.drug.push(
+  ...B('Essence', 'fafafa', 'ec407a', [['freck', 'Bút tàn nhang Freckle Pen', 99000, '1'], ['glit', 'Nhũ kim tuyến Glitter Gel', 89000, '1']]),
+  ...B('Seed', 'e3f2fd', '1565c0', [['lens', 'Lens màu Eye Coffret Nâu Mật', 250000, '#a1662f'], ['lens', 'Lens màu Xanh Ngọc', 260000, '#26a69a']]),
+  ...B('Kiss', 'fce4ec', '212121', [['nail', 'Sơn móng Hồng Đào', 90000, '#ffab91'], ['nail', 'Sơn móng Tím Lavender', 90000, '#b39ddb'], ['nail', 'Sơn móng Xanh Mint', 90000, '#80cbc4']]),
+);
 Object.assign(COUNTERS, MALL_COUNTERS); Object.assign(PROD, MALL_PROD); for (const [k, v] of Object.entries(MALL_FLOORS)) FLOORS[k] = Object.assign({ b: 'mall' }, v);
 export const ALL = Object.entries(PROD).flatMap(([k, list]) => list.map(p => ({ k, e: p[0], n: p[1], p: p[2], tag: p[3] || '', w: p[4] || '' })));
 export function dealsToday(d = new Date()) {
