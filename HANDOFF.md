@@ -13,7 +13,7 @@ Phiên mới đọc file này trước. Nếu file và code nói khác nhau, tin
 - Đây là PWA (web app cài lên điện thoại như app) cho một cặp đôi, viết bằng HTML/JS thuần, không có bước build. Repo `hiull/tomortle`, chạy trên **GitHub Pages**.
 - **Triển khai:**
   - Commit rồi push thẳng lên `main`. Chủ app đã đồng ý cách này.
-  - Mỗi lần đổi file, tăng `CACHE` trong `sw.js` (hiện là `tomortle-v74`).
+  - Mỗi lần đổi file, tăng `CACHE` trong `sw.js` (hiện là `tomortle-v75`).
   - Mỗi lần sửa `app.css`, tăng `?v=` của nó trong mọi trang `.html` và trong `sw.js` (hiện là `v=17`).
 - **Backend:** Supabase, project `yktkofupegtvrviynnjk`.
   - Bảng `shared_state(key, data jsonb, updated_by, updated_at)` có RLS (quy tắc quyền đọc/ghi) qua hàm `is_member()`.
@@ -34,6 +34,7 @@ Phiên mới đọc file này trước. Nếu file và code nói khác nhau, tin
 
 - **Chợ Pass** (app 🏷️ trong điện thoại game, cuối `room.html`): mỗi người lưu ở khóa riêng `pass-<id>`. Khách ảo có các kiểu chill, haggle, lowball, rich, ghost, boom; mặc cả bằng `psHaggle`/`psSell` (có `console.assert` ở demo). Shop ảo đổi hàng mỗi ngày và có thể bán hàng fake. Người ấy đổi đồ bằng ôm/hôn/trà sữa qua các tin `pass`, `passoff`, `passok`, `passno`.
 - **Live** (app 🔴 trong điện thoại game, cuối `room.html`, sau Chợ Pass): camera vẽ lại vùng quanh nhân vật từ canvas chính. Khách ảo, sự kiện ngẫu nhiên và báo cáo hater (5 lần thì khoá live) chạy trong `lvTick` mỗi giây. Người live gửi `lv` (`on`/`st`/`off`/`co`) mỗi giây; người xem gửi `lvc`, `lvh`, `lvg`, `lvr`, `lvy`, `lvco`. Ở demo có `window.__lv` để thử phía người xem.
+- **Bựa** (cuối `room.html`): `buaTick` 6 giây/lần sinh NPC tạm (`buaSpawn`): shipper COD, kẻ lừa đảo, người mượn tiền, dì hàng xóm, khách ăn quỵt. Ngoài ra mèo trộm đồ trong tủ lạnh, chim ị (+lộc), robot kẹt. Thời gian chờ lưu ở localStorage `bua-*`. Mỗi lần dính lừa đều kèm lời nhắc ngoài đời. Chợ Pass có thêm khách lừa `scam` (gửi link) và `over` (chuyển dư). Live có sự kiện `scamdm`.
 - Tin realtime phải đặt tên không trùng: `mk` là đồng bộ ví, hiệu ứng trang điểm dùng `mkup`.
 
 ## Kiểm tra
