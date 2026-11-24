@@ -13,7 +13,7 @@ Phiên mới đọc file này trước. Nếu file và code nói khác nhau, tin
 - Đây là PWA (web app cài lên điện thoại như app) cho một cặp đôi, viết bằng HTML/JS thuần, không có bước build. Repo `hiull/tomortle`, chạy trên **GitHub Pages**.
 - **Triển khai:**
   - Commit rồi push thẳng lên `main`. Chủ app đã đồng ý cách này.
-  - Mỗi lần đổi file, tăng `CACHE` trong `sw.js` (hiện là `tomortle-v78`).
+  - Mỗi lần đổi file, tăng `CACHE` trong `sw.js` (hiện là `tomortle-v79`).
   - Mỗi lần sửa `app.css`, tăng `?v=` của nó trong mọi trang `.html` và trong `sw.js` (hiện là `v=17`).
 - **Backend:** Supabase, project `yktkofupegtvrviynnjk`.
   - Bảng `shared_state(key, data jsonb, updated_by, updated_at)` có RLS (quy tắc quyền đọc/ghi) qua hàm `is_member()`.

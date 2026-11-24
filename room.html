@@ -181,8 +181,8 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .lv-pin{position:absolute;top:94px;left:6px;right:40px;background:rgba(255,214,10,.9);color:#222;border-radius:10px;padding:4px 7px;font-size:10.5px}
 .lv-banner{position:absolute;left:8px;right:8px;top:40%;text-align:center;font-weight:800;font-size:13px;padding:8px;border-radius:12px;background:rgba(255,45,85,.92);opacity:0;transform:scale(.6);transition:.25s;pointer-events:none}.lv-banner.on{opacity:1;transform:scale(1)}.lv-banner.gold{background:linear-gradient(90deg,#f9a825,#ff6f00)}.lv-banner.warn{background:rgba(40,40,40,.92);color:#ffd60a}
 .lv-hearts{position:absolute;right:4px;bottom:20px;width:34px;height:60%;pointer-events:none}.lv-hearts span{position:absolute;bottom:0;font-size:18px;animation:lvh 2.2s ease-out forwards}@keyframes lvh{0%{transform:translateY(0) scale(.6);opacity:1}100%{transform:translateY(-190px) translateX(-10px) scale(1.2);opacity:0}}
-.lv-feed{position:absolute;left:4px;right:40px;bottom:4px;max-height:40%;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;-webkit-mask-image:linear-gradient(transparent,#000 30%)}
-.lv-c{font-size:11px;line-height:1.3;background:rgba(0,0,0,.38);border-radius:9px;padding:2px 7px;align-self:flex-start;max-width:100%;cursor:pointer;text-shadow:0 1px 2px #000}.lv-c b{color:#ffd1dc}.lv-c.sel{outline:2px solid #fff}
+.lv-feed{position:absolute;left:4px;right:40px;bottom:4px;max-height:40%;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;-webkit-mask-image:linear-gradient(transparent,#000 18%)}
+.lv-c{font-size:13px;line-height:1.35;background:rgba(0,0,0,.55);border-radius:10px;padding:3px 9px;align-self:flex-start;max-width:100%;cursor:pointer;text-shadow:0 1px 2px #000}.lv-c b{color:#ffd1dc}.lv-c.sel{outline:2px solid #fff}
 .lv-c.k-hater b,.lv-c.k-spam b{color:#ff8a80}.lv-c.k-gift{background:rgba(249,168,37,.7)}.lv-c.k-pa{background:rgba(255,45,85,.75)}.lv-c.k-me{background:rgba(10,132,255,.7)}.lv-c.k-sys{background:rgba(255,255,255,.25)}.lv-c.k-chot b{color:#b9fbc0}.lv-c.k-boss{background:rgba(60,60,60,.85)}
 .lv-cm{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap}.lv-cm button{border:0;border-radius:8px;padding:3px 6px;font-size:10.5px;font-family:inherit;font-weight:700;cursor:pointer}
 .lv-bar{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.lv-bar button{border:0;border-radius:12px;padding:7px 9px;background:#ff2d55;color:#fff;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer}.lv-bar button.g{background:rgba(255,255,255,.25)}
@@ -2811,7 +2811,11 @@ const LV_ANS=['Có rồi nha, đang xem live luôn đó 😳💗','Bí mật �
 const lvViewOn=()=>$('#mPhone').classList.contains('on')&&PHAPP==='live';
 const lvS=()=>LV&&LV.on?LV:LVW&&LVW.on?LVW:null;
 const lvTime=s=>String(s/60|0).padStart(2,'0')+':'+String(s%60|0).padStart(2,'0');
-function lvAdd(nm,t,k='n',x){if(!LV||!LV.on)return;const c=Object.assign({id:++LV.fid,nm,t,k,at:Date.now()},x||{});LV.feed.push(c);if(LV.feed.length>60)LV.feed.shift();LV.out.push(c);
+const LV_NOW=new Set(['me','pa','gift','sys','boss']);
+function lvAdd(nm,t,k='n',x){if(!LV||!LV.on)return;if(!LV_NOW.has(k)){const Q=LV.qd=LV.qd||[];Q.push([nm,t,k,x]);if(Q.length>3)Q.shift();return}return lvPush(nm,t,k,x)}
+// shortcut: hàng chờ chỉ giữ 3 bình luận mới nhất, live đông thì bình luận cũ bị bỏ qua cho dễ đọc
+setInterval(()=>{if(LV&&LV.on&&LV.qd&&LV.qd.length)lvPush(...LV.qd.shift())},1600);
+function lvPush(nm,t,k='n',x){if(!LV||!LV.on)return;const c=Object.assign({id:++LV.fid,nm,t,k,at:Date.now()},x||{});LV.feed.push(c);if(LV.feed.length>60)LV.feed.shift();LV.out.push(c);
  if(k==='hater')LV.pend.push({id:c.id,at:Date.now()});if(LV.mode==='sell'&&LV.item&&k==='chot'&&!LV.buyers.includes(nm))LV.buyers.push(nm);lvFeedPaint();return c}
 function lvComment(){if(!LV||!LV.on)return;const m=LV.mode,r=Math.random();
  if(m==='sell'&&LV.item&&(LV.flash||r<.18))return lvAdd(lvName(),pk(LV_C.chot),'chot');
@@ -2838,7 +2842,7 @@ function lvTick(){if(!LV||!LV.on)return;const now=Date.now(),el=(now-LV.t0)/1000
  LV.hype=LV.hype*.94-(away?.25:0);
  let tg=(8+Math.min(el,900)*1.1+Math.max(0,LV.hype)*35)*(LV.trend>now?6:1)*(LV.mode==='sleep'&&LV.sleep?1.7:1);if(LV.lag>now)tg*=.6;
  LV.view=Math.max(1,LV.view+(tg-LV.view)*.12+(Math.random()-.5)*3);LV.peak=Math.max(LV.peak,LV.view);
- if(!(LV.lag>now)){const n=Math.min(2,Math.floor(LV.view/300+Math.max(0,LV.hype)*.12+Math.random()*1.15));for(let i=0;i<n;i++)setTimeout(lvComment,i*500+Math.random()*400)}// chậm lại cho kịp đọc
+ if(!(LV.lag>now)){const n=Math.min(2,Math.floor(LV.view/300+Math.max(0,LV.hype)*.12+Math.random()*1.15));for(let i=0;i<n;i++)setTimeout(lvComment,i*900+Math.random()*400)}// chậm lại cho kịp đọc
  if(away&&Math.random()<.12)lvAdd(lvName(),pk(['alo idol đâu rồi 😴','ủa camera đâu','idol đi vệ sinh à 🚽']));
  const hh=Math.floor(LV.view/40*Math.random())+(Math.random()<.4?1:0);if(hh){LV.hearts+=hh;lvFloat(Math.min(hh,4))}
  if(Math.random()<.02+Math.max(0,LV.hype)*.012+LV.view/5000)lvGift(lvName());
@@ -2886,7 +2890,7 @@ function lvFrame(){if(!lvViewOn()){LV_RAF=0;return}LV_RAF=requestAnimationFrame(
  if(LV&&LV.cat>now){const k=1-(LV.cat-now)/2600;x.font='54px sans-serif';x.fillText('🐈',-60+k*(c.width+120),c.height*.78+Math.sin(k*20)*6)}
  if(m==='spicy'&&LV&&LV.spicy>=4){x.font='22px sans-serif';for(let i=0;i<LV.spicy-2;i++)x.fillText('🔥',(i*53+now/7)%c.width,c.height-8-Math.abs(Math.sin(now/200+i))*18)}}
 // ---- giao diện ----
-function lvFeedHTML(S){const view=S===LVW;return S.feed.slice(-6).map(c=>`<div class="lv-c k-${c.k} ${LV&&LV.sel===c.id?'sel':''}" ${view?'':`data-lv="sel:${c.id}"`}><b>${esc(c.nm)}</b> ${esc(c.t)}${!view&&LV&&LV.sel===c.id?`<span class="lv-cm"><button data-lv="pin:${c.id}">📌 Ghim</button><button data-lv="ban:${c.id}">🚫 Cấm</button><button data-lv="rep:${c.id}">💬 Trả lời</button></span>`:''}${!view&&c.k==='co'&&!LV.co?`<span class="lv-cm"><button data-lv="coyes">🎙️ Cho lên live chung</button></span>`:''}</div>`).join('')}
+function lvFeedHTML(S){const view=S===LVW;return S.feed.slice(-5).map(c=>`<div class="lv-c k-${c.k} ${LV&&LV.sel===c.id?'sel':''}" ${view?'':`data-lv="sel:${c.id}"`}><b>${esc(c.nm)}</b> ${esc(c.t)}${!view&&LV&&LV.sel===c.id?`<span class="lv-cm"><button data-lv="pin:${c.id}">📌 Ghim</button><button data-lv="ban:${c.id}">🚫 Cấm</button><button data-lv="rep:${c.id}">💬 Trả lời</button></span>`:''}${!view&&c.k==='co'&&!LV.co?`<span class="lv-cm"><button data-lv="coyes">🎙️ Cho lên live chung</button></span>`:''}</div>`).join('')}
 function lvFeedPaint(){const S=lvS(),f=$('#lvFeed');if(S&&f&&lvViewOn()){f.innerHTML=lvFeedHTML(S);f.scrollTop=f.scrollHeight}}
 function lvStatPaint(){const S=lvS();if(!S||!lvViewOn())return;const v=$('#lvV'),h=$('#lvH'),t=$('#lvT'),fl=$('#lvFl');if(v)v.textContent='👁 '+(S.view|0).toLocaleString('vi-VN');if(h)h.textContent='❤️ '+(S.hearts|0).toLocaleString('vi-VN');if(t)t.textContent=lvTime((Date.now()-(S.t0||Date.now()))/1000);
  const fe=S===LV?(LV.flash&&LV.flash.end):S.fe;if(fl)fl.textContent=fe&&fe>Date.now()?`⚡ ${Math.ceil((fe-Date.now())/1000)}s`:''}
