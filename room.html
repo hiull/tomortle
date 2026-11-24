@@ -518,10 +518,10 @@ const MLAYOUT={
  mall2:[['kbeauty',0,0,0],['drug',2,0,0],['skin',4,0,0],['vnb',6,0,0],['body',0,2,1],['mini',3,3,0],['consult',5,3,0],['fitting',7,5,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
  mall3:[['luxury',0,0,0],['fast',2,0,0],['local',4,0,0],['sport',6,0,0],['acc',0,2,1],['dresses',3,3,0],['outer',0,4,1],['consult',5,3,0],['fitting',7,5,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
  mall4:[['kmake2',0,0,0],['kskin',2,0,0],['jbeauty',4,0,0],['plant',6,0,0],['vase',7,0,0],['consult',3,3,0],['fitting',7,3,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
- mall6:[['apple',0,0,0],['samsung',2,0,0],['cnphone',4,0,0],['phoneacc',6,0,0],['vase',0,3,0],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
+ mall6:[['apple',0,0,0],['samsung',2,0,0],['cnphone',4,0,0],['phoneacc',6,0,0],['gaming',0,2,1],['laptop',0,4,1],['camera',7,2,3],['oldphone',3,3,0],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
  mall5:[['eumake',0,0,0],['euskin',2,0,0],['pharma',4,0,0],['hairbody',6,0,0],['consult',3,3,0],['fitting',7,3,3],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]],
  market3:[['north',0,0,0],['central',2,0,0],['south',4,0,0],['gifts',6,0,0],['street',0,2,1],['sample',3,3,0],['promo',6,3,3],['lantern',0,5,0],['checkout',5,6,2],['cartrack',7,7,0],['lift',0,7,1]]};
-function defMarket(k=KIND){const ml=k.startsWith('mall');return{v:1,mv:5,lux:1,kind:k,wall:{c:{market:'#e3efe6',market2:'#f5ecdc',market3:'#f4e4e1',mall:'#efe6ea',mall2:'#f5e9ec',mall3:'#e9e4ef',mall4:'#f6ebee',mall5:'#e8edf4',mall6:'#eceff3'}[k],p:ml?'panel':'plain'},floor:{c:ml?'#f3efe9':'#eee9e1',p:ml?'marble':'tiles'},light:true,music:true,rain:false,
+function defMarket(k=KIND){const ml=k.startsWith('mall');return{v:1,mv:k==='mall6'?6:5,lux:1,kind:k,wall:{c:{market:'#e3efe6',market2:'#f5ecdc',market3:'#f4e4e1',mall:'#efe6ea',mall2:'#f5e9ec',mall3:'#e9e4ef',mall4:'#f6ebee',mall5:'#e8edf4',mall6:'#eceff3'}[k],p:ml?'panel':'plain'},floor:{c:ml?'#f3efe9':'#eee9e1',p:ml?'marble':'tiles'},light:true,music:true,rain:false,
  items:MLAYOUT[k].map(([t,x,y,r])=>({id:nid(),t,x,y,r,c:CAT[t].c})),
  walls:(k==='market'||k==='mall'?[{t:'door',w:'B',p:5},{t:'clock',w:'B',p:2}]:[{t:'window',w:'B',p:4}]).concat(ml?[{t:'frame',w:'A',p:1},{t:'mirror',w:'A',p:4}]:[{t:'frame',w:'A',p:1},{t:'clock',w:'A',p:5}]).map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 function defResto(k=KIND){const vip=k==='resto2';return{v:1,mv:vip?4:5,lux:1,kind:k,wall:{c:vip?'#3d1f2a':'#efe2cf',p:'panel'},floor:{c:vip?'#8a5a3c':'#b98a5e',p:'herring'},light:true,music:true,rain:false,
@@ -539,7 +539,7 @@ function defKitchen(){return{v:1,kind:'kitchen',wall:{c:'#fff1e6',p:'gingham'},f
  walls:[{t:'door',w:'B',p:5},{t:'window',w:'A',p:5},{t:'clock',w:'B',p:2},{t:'garland',w:'A',p:0}].map(o=>Object.assign({id:nid()},o)),pet:null,plant:{w:0,at:0,by:null}}}
 const UK=id=>'room-u-'+id;
 let [R,UM,UP]=await Promise.all([loadS(RK,null),loadS(UK(ME),{}),loadS(UK(PA),{})]);
-if(!R||!R.items||((IS_MK&&(R.mv|0)<5)||(IS_RT&&(R.mv|0)<(KIND==='resto'?5:4))))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():IS_RT?defResto():KIND==='kitchen'?defKitchen():KIND==='spa'?defSpa():defRoom();R.kind=KIND;
+if(!R||!R.items||((IS_MK&&(R.mv|0)<(KIND==='mall6'?6:5))||(IS_RT&&(R.mv|0)<(KIND==='resto'?5:4))))R=KIND==='balcony'?defBalcony():IS_MK?defMarket():IS_RT?defResto():KIND==='kitchen'?defKitchen():KIND==='spa'?defSpa():defRoom();R.kind=KIND;
 R.items=R.items.filter(i=>CAT[i.t]);
 UM=UM||{};UP=UP||{};if(!UM.av){const bk=lsGet('roomU-'+ME,null);if(bk&&bk.av)UM=bk}
 
@@ -654,7 +654,7 @@ const BRANDS={dior:['dior'],chanel:['chanel'],ysl:['ysl'],lancome:['lancome','es
  kbeauty:['romand','3ce','laneige'],drug:['maybelline','loreal'],skin:['larocheposay','cerave','cetaphil'],vnb:['cocoon'],body:['dove','nivea'],mini:['blackrouge','cocoon','hadalabo'],
  luxury:['gucci','louisvuitton','prada'],fast:['zara','hm','uniqlo'],local:['ivy','canifa'],sport:['nike','adidas','converse'],acc:['pandora','swarovski','charleskeith'],dresses:['ivy','mango'],outer:['burberry','maxmara'],
  kmake2:['romand','3ce','blackrouge'],kskin:['laneige','innisfree','sulwhasoo'],jbeauty:['shiseido','anessa','hadalabo'],eumake:['nyx','fenty'],euskin:['kiehls','clinique','clarins'],pharma:['bioderma','vichy','larocheposay'],hairbody:['loreal'],
- drinks:['cocacola','pepsi','redbull'],beer:['heineken','tiger'],coffee:['highlands','nescafe','starbucks'],dairy:['vinamilk','thmilk'],snacks:['oreo','orion'],junk:['lays'],noodles:['acecook'],apple:['apple'],samsung:['samsung'],cnphone:['xiaomi','oppo','vivo'],phoneacc:['sony','jbl','beats']};
+ drinks:['cocacola','pepsi','redbull'],beer:['heineken','tiger'],coffee:['highlands','nescafe','starbucks'],dairy:['vinamilk','thmilk'],snacks:['oreo','orion'],junk:['lays'],noodles:['acecook'],apple:['apple'],samsung:['samsung'],cnphone:['xiaomi','oppo','vivo'],phoneacc:['sony','jbl','beats'],gaming:['sony'],laptop:['apple','samsung'],camera:['sony'],oldphone:[]};
 const LIMG={};function limg(b){if(!(b in LIMG)){const im=new Image();im.onload=()=>{for(const k in PLATE)delete PLATE[k]};im.onerror=()=>{LIMG[b]=null};im.src='logos/'+b+'.png';LIMG[b]=im}return LIMG[b]}
 const PLATE={};
 function plateOf(t,lux){const L=(BRANDS[t]||[]).map(limg).filter(im=>im&&im.complete&&im.naturalWidth);if(!L.length)return null;const key=t;if(PLATE[key])return PLATE[key];
