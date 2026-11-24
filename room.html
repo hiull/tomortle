@@ -2000,10 +2000,39 @@ const CAMFS=[['none','Gốc'],['pink','Hồng'],['bw','Đen trắng'],['vintage'
 function camFilter(c,f){if(f==='none')return;const x=c.getContext('2d'),im=x.getImageData(0,0,c.width,c.height),d=im.data;for(let i=0;i<d.length;i+=4){let r=d[i],g2=d[i+1],b=d[i+2];
  if(f==='bw'){const l=.3*r+.59*g2+.11*b;r=g2=b=Math.min(255,(l-128)*1.15+128)}else if(f==='vintage'){const nr=.393*r+.769*g2+.189*b,ng=.349*r+.686*g2+.168*b,nb=.272*r+.534*g2+.131*b;r=nr*.8+r*.2;g2=ng*.8+g2*.2;b=nb*.8+b*.2}
  else if(f==='pink'){r=r*1.06+14;g2=g2*.96+4;b=b*1.02+16}else if(f==='cool'){r*=.92;b=b*1.1+10}else if(f==='warm'){r=r*1.08+10;b*=.88}d[i]=Math.min(255,r);d[i+1]=Math.min(255,g2);d[i+2]=Math.min(255,b)}x.putImageData(im,0,0)}
+/* --- 📷 chụp bằng máy ảnh đã mua: mỗi loại máy một kiểu ảnh --- */
+const CAMB=[['phone','📱','Điện thoại',null],['pro','📷','Máy ảnh xịn',/canon eos|sony a7|zv-e10|rx100|nikon z|lumix|hasselblad|g7 x|ricoh/i],['fuji','🎞️','Fujifilm',/fujifilm x/i],['leica','🔴','Leica',/leica/i],
+ ['film','🎞️','Máy phim',/máy ảnh phim|pentax 17|kodak ektar/i],['polaroid','🖼️','Polaroid',/polaroid/i],['instax','🌸','Instax',/instax/i],['y2k','✨','Máy Y2K',/ixus|cyber-shot/i],['lomo','🌀','Lomo',/lomo|diana/i],
+ ['wide','🐟','Mắt cá',/gopro|insta360|osmo/i],['tele','🔭','Ống tele',/100-400/i],['bokeh','🌫️','Xoá phông',/50mm|85mm|18-50/i],['cam','📼','Handycam',/handycam/i]];
+var CAMB_SEL='phone';
+const camOwn=k=>{const b=CAMB.find(v=>v[0]===k);return!!b&&(!b[3]||(CLOSET[ME]||[]).some(x=>b[3].test(x.n)))};
+function camLook(c,k){if(!k||k==='phone')return c;const x=c.getContext('2d'),W=c.width,H=c.height,d=new Date(),ds=`'${String(d.getFullYear()).slice(2)} ${d.getMonth()+1} ${d.getDate()}`;
+ const px=fn=>{const im=x.getImageData(0,0,W,H),D=im.data;for(let i=0;i<D.length;i+=4){const o=fn(D[i],D[i+1],D[i+2]);D[i]=o[0];D[i+1]=o[1];D[i+2]=o[2]}x.putImageData(im,0,0)};
+ const grain=a=>px((r,g,b)=>{const n=(Math.random()-.5)*a;return[r+n,g+n,b+n]});
+ const glow=(gx,gy,rad,col,a)=>{const gr=x.createRadialGradient(gx,gy,0,gx,gy,rad);gr.addColorStop(0,`rgba(${col},${a})`);gr.addColorStop(1,`rgba(${col},0)`);x.fillStyle=gr;x.fillRect(0,0,W,H)};
+ const vig=a=>{const gr=x.createRadialGradient(W/2,H/2,Math.min(W,H)*.3,W/2,H/2,Math.max(W,H)*.72);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,`rgba(0,0,0,${a})`);x.fillStyle=gr;x.fillRect(0,0,W,H)};
+ const stamp=(t,col='#ff8f1f')=>{x.save();x.font=`bold ${Math.round(W/20)}px monospace`;x.textAlign='right';x.shadowColor=col;x.shadowBlur=6;x.fillStyle=col;x.fillText(t,W-10,H-10);x.restore()};
+ const copy=(sc=1)=>{const t=document.createElement('canvas');t.width=Math.max(1,W/sc|0);t.height=Math.max(1,H/sc|0);t.getContext('2d').drawImage(c,0,0,t.width,t.height);return t};
+ const frame=(pad,bot,bg)=>{const o=document.createElement('canvas');o.width=W+pad*2;o.height=H+pad+bot;const y=o.getContext('2d');y.fillStyle=bg;y.fillRect(0,0,o.width,o.height);y.drawImage(c,pad,pad);return o};
+ if(k==='pro')px((r,g,b)=>{const l=(r+g+b)/3;return[(r-l)*1.3+l+(r-128)*.12,(g-l)*1.3+l+(g-128)*.12,(b-l)*1.3+l+(b-128)*.12]});
+ else if(k==='fuji'){px((r,g,b)=>[r*1.02+6,g*1.05+4,b*.9]);grain(14);vig(.25);x.font=`bold ${W/24|0}px sans-serif`;x.fillStyle='rgba(255,255,255,.8)';x.fillText('FUJIFILM',10,H-10)}
+ else if(k==='leica'){px((r,g,b)=>{const v=(.3*r+.59*g+.11*b-128)*1.5+128;return[v,v,v]});grain(18);vig(.45);x.fillStyle='#e30613';x.beginPath();x.arc(W-16,16,7,0,7);x.fill()}
+ else if(k==='film'){px((r,g,b)=>[r*1.06+12,g+6,b*.84]);grain(28);glow(0,H*.2,W*.6,'255,120,40',.55);vig(.3);stamp(ds)}
+ else if(k==='polaroid'){px((r,g,b)=>[r*.9+24,g*.9+20,b*.84+26]);vig(.2);c=frame(W/16|0,W/4|0,'#fbfaf5')}
+ else if(k==='instax'){px((r,g,b)=>[r*.88+32,g*.88+30,b*.88+34]);c=frame(W/20|0,W/6|0,'#fff');const y=c.getContext('2d');y.font=`${W/16|0}px sans-serif`;y.textAlign='center';y.fillText('💗',c.width/2,c.height-W/16)}
+ else if(k==='y2k'){glow(W/2,H*.45,W*.5,'255,255,255',.6);px((r,g,b)=>[r*1.04,g*1.02+4,b*1.14+12]);stamp(ds)}
+ else if(k==='lomo'){px((r,g,b)=>[r*1.18,g*1.06,b*.72+34]);vig(.75)}
+ else if(k==='wide'){const src=x.getImageData(0,0,W,H),o=x.createImageData(W,H),R=Math.hypot(W,H)/2;for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){const dx=xx-W/2,dy=yy-H/2,f=.55+.45*Math.hypot(dx,dy)/R,
+   sx=Math.min(W-1,Math.max(0,W/2+dx*f|0)),sy=Math.min(H-1,Math.max(0,H/2+dy*f|0)),si=(sy*W+sx)*4,oi=(yy*W+xx)*4;o.data[oi]=src.data[si];o.data[oi+1]=src.data[si+1];o.data[oi+2]=src.data[si+2];o.data[oi+3]=255}x.putImageData(o,0,0);vig(.6)}
+ else if(k==='tele'){const t=copy();x.drawImage(t,W*.25,H*.25,W*.5,H*.5,0,0,W,H)}
+ else if(k==='bokeh'){const sharp=copy(),b1=copy(4),b2=copy(10);x.drawImage(b2,0,0,W,H);x.save();x.beginPath();x.ellipse(W/2,H*.52,W*.34,H*.44,0,0,7);x.clip();x.drawImage(b1,0,0,W,H);x.restore();x.save();x.beginPath();x.ellipse(W/2,H*.52,W*.26,H*.36,0,0,7);x.clip();x.drawImage(sharp,0,0);x.restore()}
+ else if(k==='cam'){px((r,g,b)=>[r*1.05+8,g*.98+6,b*.9+10]);x.fillStyle='rgba(0,0,0,.13)';for(let y=0;y<H;y+=3)x.fillRect(0,y,W,1);const f=Math.round(W/18);x.font=`bold ${f}px monospace`;x.fillStyle='#ff1744';x.beginPath();x.arc(14,14+f/2-4,f/3,0,7);x.fill();x.fillStyle='#fff';x.fillText('REC',14+f/2,14+f/2);
+  x.fillText(d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),10,H-12-f);x.fillText(d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase(),10,H-10)}
+ return c}
 function shoot(w){// chụp: cả phòng hoặc selfie (cận cảnh hai đứa), có bộ lọc
  const sx=cv.width/W;let X=0,Y=0,Wd=cv.width,Hd=cv.height;if(CAMSELF){const a=charScreen(me),b=livePa()?charScreen(pa):a,cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2-28,ww=Math.max(130,Math.abs(a[0]-b[0])+90),hh=ww*.85;X=Math.max(0,(cx-ww/2)*sx);Y=Math.max(0,(cy-hh/2)*sx);Wd=Math.min(cv.width-X,ww*sx);Hd=Math.min(cv.height-Y,hh*sx)}
  const c=document.createElement('canvas');c.width=w;c.height=Math.round(w*Hd/Wd);const x=c.getContext('2d');x.drawImage(cv,X,Y,Wd,Hd,0,0,c.width,c.height);camFilter(c,CAMF);
- if(CAMSELF){x.font='bold 12px sans-serif';x.fillStyle='rgba(255,255,255,.9)';x.fillText('💗 '+new Date().toLocaleDateString('vi-VN'),8,c.height-10)}return c.toDataURL('image/jpeg',.75)}
+ if(CAMSELF&&CAMB_SEL==='phone'){x.font='bold 12px sans-serif';x.fillStyle='rgba(255,255,255,.9)';x.fillText('💗 '+new Date().toLocaleDateString('vi-VN'),8,c.height-10)}return camLook(c,camOwn(CAMB_SEL)?CAMB_SEL:'phone').toDataURL('image/jpeg',.78)}
 /* ================= 🎮 Trò chơi trong điện thoại: kỷ lục chung của hai đứa ================= */
 const GAMES=[['flap','🐦','Chim Sẻ Vượt Tre','Chạm để vỗ cánh, bay qua khe giữa các thân tre'],['catch','💗','Hứng Tim','Kéo giỏ hứng tim, tránh bom 💣 · 3 mạng'],['memo','🃏','Lật Thẻ Ghép Đôi','Lật 2 thẻ giống nhau · càng ít lượt càng nhiều điểm'],['whack','🦟','Đập Muỗi','30 giây đập muỗi, đừng đập nhầm người yêu 😆'],['game','🐍','Rắn Săn Mồi','Game rắn cổ điển kiểu Nokia']];
 let GSC={},GM=null;
@@ -2089,7 +2118,7 @@ function drawPhone(){try{lvBigSync()}catch(e){}const av=UM.av||avOf(ME),wall=PH_
   <a class="ph-big g" style="display:block;text-align:center;text-decoration:none;margin-top:8px" href="https://www.tiktok.com/foryou" target="_blank" rel="noopener">🌐 Mở app TikTok thật</a>`;return}
  if(PHAPP==='msg'){const L=phLS('chat',[]);B.innerHTML=head('💬 '+esc(ctx.partnerName))+`<div class="ph-chat" id="phChat">${L.length?L.map(m=>`<div class="${m.who===ME?'me':''}"><span>${esc(m.text)}</span></div>`).join(''):'<p class="ph-note">Chưa có tin nhắn · gửi gì đó cho người ấy nhé 💌</p>'}</div><form id="phMsgF" class="ph-in"><input id="phMsgI" maxlength="80" placeholder="Nhắn tin…" autocomplete="off"><button>➤</button></form>`;const c=$('#phChat');c.scrollTop=c.scrollHeight;return}
  if(PHAPP==='call'){B.innerHTML=head('📞 Gọi')+`<div class="ph-center"><div class="ph-av">💗</div><b>${esc(ctx.partnerName)}</b><p class="ph-note">${livePa()?'đang ở trong phòng với bạn':'đang không ở phòng'}</p><button class="ph-big" data-go="call">📹 Gọi video</button><button class="ph-big g" data-go="callv">📞 Gọi thoại</button></div>`;return}
- if(PHAPP==='cam'){B.innerHTML=head('📷 Camera')+`<div class="ph-center"><div class="ph-camm"><button data-self="0" class="${CAMSELF?'':'on'}">CẢNH PHÒNG</button><button data-self="1" class="${CAMSELF?'on':''}">SELFIE</button></div><img id="phShot" class="ph-shot" alt=""><div class="ph-camf">${CAMFS.map(([k,n])=>`<button data-camf="${k}" class="${k===CAMF?'on':''}">${n}</button>`).join('')}</div><button class="ph-snap" data-act="snap" aria-label="Chụp"></button></div>`;camShot(false);return}
+ if(PHAPP==='cam'){B.innerHTML=head('📷 Camera')+`<div class="ph-center"><div class="ph-camm"><button data-self="0" class="${CAMSELF?'':'on'}">CẢNH PHÒNG</button><button data-self="1" class="${CAMSELF?'on':''}">SELFIE</button></div><div class="ph-camf">${CAMB.filter(b=>camOwn(b[0])).map(b=>`<button data-camb="${b[0]}" class="${b[0]===CAMB_SEL?'on':''}">${b[1]} ${b[2]}</button>`).join('')}<button data-camb="shop">🛍️ Mua máy ảnh</button></div><img id="phShot" class="ph-shot" alt=""><div class="ph-camf">${CAMFS.map(([k,n])=>`<button data-camf="${k}" class="${k===CAMF?'on':''}">${n}</button>`).join('')}</div><button class="ph-snap" data-act="snap" aria-label="Chụp"></button></div>`;camShot(false);return}
  if(PHAPP==='pics'){const P=phLS('pics',[]);B.innerHTML=head('🖼️ Ảnh')+(P.length?`<div class="ph-pics">${P.map((u,i)=>`<img src="${u}" data-pic="${i}" alt="">`).join('')}</div><p class="ph-note">Chạm ảnh để xem lớn, lưu, đặt làm hình nền</p>`:'<p class="ph-note">Chưa có ảnh · mở 📷 Camera để chụp</p>');return}
  if(PHAPP==='music'){const on=R.music&&soundOn,T=LOFI[LOFI_I];B.innerHTML=head('🎧 Lofi cho hai đứa')+`<div class="ph-center"><div class="ph-disc ${on?'spin':''}">💿</div><b>${T.e} ${esc(T.n)}</b><p class="ph-note">${on?'Đang phát trong phòng · '+T.bpm+' BPM':'Đang tạm dừng'}${raining()?' · 🌧️ kèm tiếng mưa':''}</p>
   <div style="display:flex;gap:8px;width:100%"><button class="ph-big g" data-act="lprev">⏮</button><button class="ph-big" data-act="music">${on?'⏸ Dừng':'▶ Phát'}</button><button class="ph-big g" data-act="lnext">⏭</button></div></div>
@@ -2133,15 +2162,17 @@ async function ttPost(){const cap=prompt('Viết caption cho clip của hai đ�
  send('emo',{e:'🎬',burst:'✨'});send('ttpost',{cap});toast('🎬 Đã đăng clip lên TikTok của hai đứa!');sfxChaching();TT.list=[];await ttLoad();ttDraw()}
 // chụp lại khung cảnh phòng (canvas chính) thu nhỏ
 function snapRoom(w=360,q=.7){const k=w/cv.width,c=document.createElement('canvas');c.width=w;c.height=Math.round(cv.height*k);c.getContext('2d').drawImage(cv,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q)}
-function camShot(take){const img=$('#phShot');if(img)img.src=shoot(300);if(!take)return;const u=shoot(CAMSELF?320:360);const P=phLS('pics',[]);P.unshift(u);phSet('pics',P.slice(0,8));
+function camShot(take){const img=$('#phShot');if(img)img.src=shoot(300);if(!take)return;const u=shoot(CAMB_SEL==='phone'?(CAMSELF?320:360):480);
+ if(['film','lomo','leica','fuji'].includes(CAMB_SEL))noise(.3,.22,900,'bandpass',.12);if(CAMB_SEL==='polaroid'||CAMB_SEL==='instax')noise(1,.14,500,'lowpass',.15);const P=phLS('pics',[]);P.unshift(u);phSet('pics',P.slice(0,8));
  noise(.05,.3,4000,'highpass');tone(1800,.04,'square',.04,.05);me.emo={e:'📸',t:NOW+1500};send('emo',{e:'📸',burst:'✨'});const f=document.createElement('div');f.className='ph-flash';$('#phS').append(f);setTimeout(()=>f.remove(),400);toast('📸 Đã lưu vào 🖼️ Ảnh trong điện thoại')}
 function savePic(u){const a=document.createElement('a');a.href=u;a.download='tomortle-'+Date.now()+'.jpg';document.body.append(a);a.click();a.remove()}
-$('#phBody').onclick=async e=>{const t=e.target.closest('[data-mc],[data-wh],[data-gnew],[data-app],[data-act],[data-go],[data-room],[data-wall],[data-pic],[data-lofi],[data-unlock],[data-camf],[data-self],[data-sd],[data-ck],[data-ndel],[data-pact],[data-go2]');if(!t)return;ac();
+$('#phBody').onclick=async e=>{const t=e.target.closest('[data-mc],[data-wh],[data-gnew],[data-app],[data-act],[data-go],[data-room],[data-wall],[data-pic],[data-lofi],[data-unlock],[data-camf],[data-camb],[data-self],[data-sd],[data-ck],[data-ndel],[data-pact],[data-go2]');if(!t)return;ac();
  if(t.dataset.mc){memoTap(+t.dataset.mc);return}
  if(t.dataset.wh){whackTap(+t.dataset.wh);return}
  if(t.dataset.gnew){t.dataset.gnew==='memo'?memoStart():whackStart();if(t.dataset.gnew==='memo')GM.iv=setInterval(()=>{if(!$('#gmemo'))gStop();else if(!GM.over)memoDraw()},1000);return}
  if(t.dataset.unlock){phUnlock(t.dataset.unlock);return}
  if(t.dataset.camf){CAMF=t.dataset.camf;phSet('camf',CAMF);drawPhone();return}
+ if(t.dataset.camb){if(t.dataset.camb==='shop'){nav('room.html?r=mall6'+(DEMO?'&demo':''));return}CAMB_SEL=t.dataset.camb;sfx.pop();drawPhone();return}
  if(t.dataset.self){CAMSELF=t.dataset.self==='1';drawPhone();return}
  if(t.dataset.sd){const[a,b]=t.dataset.sd.split(',').map(Number);snakeDir(a,b);return}
  if(t.dataset.ck){calcPress(t.dataset.ck);drawPhone();return}
