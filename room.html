@@ -175,6 +175,11 @@ h4.sub{margin:12px 0 4px;font-size:13px;color:var(--muted);text-transform:upperc
 .ps-act{display:flex;flex-direction:column;gap:6px;margin-top:4px}.ps-row{display:flex;gap:6px}.ps-row button{flex:none;border:0;border-radius:14px;padding:8px 12px;background:#ff6b35;color:#fff;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer}.ps-row button.g{background:rgba(255,255,255,.25)}
 .ps-pa{background:rgba(255,77,141,.35);border-radius:14px;padding:8px;font-size:12px;margin-top:6px}.ps-pa .ps-row{margin-top:6px}.ps-pa .ps-row button{flex:1}
 .lv{position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:264/310}.lv canvas{width:100%;height:100%;display:block}
+#mPhone.lv-big .ph-f{width:min(100vw,1100px)!important;height:calc(100dvh - 56px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;border-radius:22px!important;padding:5px!important}
+#mPhone.lv-big .ph-s{border-radius:18px}#mPhone.lv-big .ph-island{display:none}
+#mPhone.lv-big[data-dev=lap] .ph-f{--frame:#8e8e93;border-radius:14px 14px 6px 6px!important;border-bottom:16px solid #c7c7cc}
+#mPhone.lv-big .lv-c{font-size:15.5px}#mPhone.lv-big .lv-top{font-size:13px}#mPhone.lv-big .lv-title{font-size:14.5px;top:36px}#mPhone.lv-big .lv-item,#mPhone.lv-big .lv-pin{font-size:13px}#mPhone.lv-big .lv-item{top:62px}#mPhone.lv-big .lv-pin{top:112px}#mPhone.lv-big .lv-bar button{font-size:14px;padding:8px 11px}
+.lv-modes button.off{opacity:.45}
 .lv-top{position:absolute;top:6px;left:6px;right:6px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:10.5px;font-weight:700}.lv-top span,.lv-on{background:rgba(0,0,0,.45);border-radius:8px;padding:2px 6px}.lv-on{background:#ff2d55!important;animation:lvp 1.2s infinite}@keyframes lvp{50%{opacity:.6}}.lv-fl:empty{display:none}.lv-fl{background:#ffd60a!important;color:#222}
 .lv-title{position:absolute;top:30px;left:6px;right:40px;font-size:11px;font-weight:700;text-shadow:0 1px 3px #000}
 .lv-item{position:absolute;top:50px;left:6px;display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.92);color:#222;border-radius:10px;padding:4px 7px;font-size:10.5px;max-width:70%}.lv-item .ico{width:24px;height:24px}.lv-item b{display:block;color:#ff2d55}
@@ -2059,7 +2064,7 @@ function gamesScreen(B){const k=PHAPP;
 function drawTorch(){for(const c of[me,pa]){if(!c.torch||(c===pa&&!livePa()))continue;const[sx,sy]=charScreen(c),dir=(c.face==='f'?1:-1)*(c.flip?-1:1),ph=dayPhase(),k=ph==='night'?1:.5;
  g.save();g.globalCompositeOperation='lighter';const gx=sx+dir*44,gy=sy-8+(c.face==='f'?14:-14),gr=g.createRadialGradient(gx,gy,4,gx,gy,70);gr.addColorStop(0,`rgba(255,240,190,${.55*k})`);gr.addColorStop(1,'rgba(255,240,190,0)');g.fillStyle=gr;g.beginPath();g.moveTo(sx+dir*6,sy-22);g.lineTo(gx+dir*40,gy-40);g.lineTo(gx+dir*40,gy+40);g.closePath();g.fill();g.beginPath();g.arc(gx,gy,70,0,7);g.fill();g.restore()}}
 
-function drawPhone(){const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_WALL[0],d=new Date();
+function drawPhone(){try{lvBigSync()}catch(e){}const av=UM.av||avOf(ME),wall=PH_WALL[phLS('wall',0)]||PH_WALL[0],d=new Date();
  $('#phF').style.setProperty('--frame',av.phone||'#222');const wimg=phLS('wallImg','');$('#phS').style.background=wimg?`center/cover no-repeat url(${wimg})`:wall[1];if(PHAPP!==window.__lastApp){window.__lastApp=PHAPP;const bd=$('#phBody');bd.classList.remove('anim');void bd.offsetWidth;bd.classList.add('anim')}
  if(PHAPP==='msg')phSet('readMsg',Date.now());if(PHAPP==='tt'){phSet('ttSeen',Date.now());TT_PART=0}
  $('#phBar').innerHTML=`<b>${d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</b><span>Tomortle 5G ▂▄▆ 🔋${80+((d.getMinutes()*7)%20)}%</span>`;
@@ -2787,7 +2792,11 @@ function psText(v){if(PS.ban){toast('🔒 Tài khoản đang bị khoá');return
   psSave();drawPhone()}}
 $('#phBody').addEventListener('submit',e=>{if(e.target.id!=='psMsgF')return;e.preventDefault();const i=$('#psT'),v=(i&&i.value||'').trim();if(!v||!PS)return;i.value='';ac();psText(v)});
 /* ================= 🔴 Livestream trong điện thoại: bán hàng · makeup · mukbang · tâm sự · live ngủ · ăn cay · xem bói · khách ảo loạn cực độ · người ấy vào xem / live chung ================= */
-var LV=null,LVW=null,LV_RAF=0,LV_MODE='sell',LV_TITLE='';
+var LV=null,LVW=null,LV_RAF=0,LV_MODE='sell',LV_TITLE='',LV_DEV='phone',LV_BIG=false;
+// máy để live: điện thoại có sẵn; tablet/laptop phải mua ở TTTM tầng 6 · máy càng xịn khách vào càng đông
+const LV_DEVS={phone:['📱','Điện thoại',null,264,310,3],tab:['📱','Tablet',/ipad|galaxy tab/i,520,440,4.5],lap:['💻','Laptop',/macbook|xps|zephyrus|laptop/i,640,400,6]};
+const lvOwn=k=>!LV_DEVS[k][2]||(CLOSET[ME]||[]).some(x=>LV_DEVS[k][2].test(x.n));
+function lvBigSync(){const m=$('#mPhone');if(!m)return;m.classList.toggle('lv-big',!!(LV_BIG&&PHAPP==='live'));m.dataset.dev=LV&&LV.on?LV.dev||'phone':''}
 const LV_MODES={sell:['🛍️','Bán hàng chốt đơn','XẢ KHO GIÁ SỐC 🔥 chốt nhanh kẻo lỡ'],makeup:['💄','Makeup','Makeup đi hẹn hò 💄 xinh xỉu'],mukbang:['🍜','Mukbang','Ăn sập thế giới 🍜 không no không về'],chill:['💃','Tâm sự & nhảy','Tâm sự mỏng lúc nửa đêm 🌙'],
  sleep:['😴','Live ngủ (bựa)','Live ngủ 8 tiếng không cắt 😴'],spicy:['🌶️','Ăn cay (bựa)','Thử thách ớt cấp 10 🌶️🔥 khóc là thua'],tarot:['🔮','Xem bói (bựa)','Bói tình duyên miễn phí 🔮 linh như thật']};
 const LV_GIFT=[['rose','🌹','Hoa hồng',1000,50],['lolli','🍭','Kẹo mút',5000,25],['tea','🧋','Trà sữa',20000,12],['lion','🦁','Sư tử',100000,8],['rocket','🚀','Tên lửa',300000,4],['castle','🏰','Lâu đài',1000000,1]];
@@ -2850,7 +2859,7 @@ function lvTick(){if(!LV||!LV.on)return;const now=Date.now(),el=(now-LV.t0)/1000
  for(const h of LV.pend.slice())if(now-h.at>10e3){LV.pend.splice(LV.pend.indexOf(h),1);LV.rep++;lvBanner(`⚠️ Live bị báo cáo (${LV.rep}/5) · chạm hater để cấm!`,'warn');vib(30);if(LV.rep>=5){lvEnd('ban');return}}
  if(LV.flash&&now>=LV.flash.end)lvFlashEnd();
  if(LV.sleep&&(el|0)%3===0){me.emo={e:'💤',t:NOW+2500};noise(.8,.05,220,'lowpass')}
- send('lv',{a:'st',mode:LV.mode,title:LV.title,v:Math.round(LV.view),h:LV.hearts,f:LV.out.splice(0,10).map(c=>({id:c.id,nm:c.nm,t:c.t,k:c.k})),it:LV.item?{n:LV.item.n,e:LV.item.e,price:LV.item.price}:null,fe:LV.flash?LV.flash.end:0,ban:LV.outBan||null,t0:LV.t0,co:LV.co});LV.outBan=null;
+ send('lv',{a:'st',dev:LV.dev,mode:LV.mode,title:LV.title,v:Math.round(LV.view),h:LV.hearts,f:LV.out.splice(0,10).map(c=>({id:c.id,nm:c.nm,t:c.t,k:c.k})),it:LV.item?{n:LV.item.n,e:LV.item.e,price:LV.item.price}:null,fe:LV.flash?LV.flash.end:0,ban:LV.outBan||null,t0:LV.t0,co:LV.co});LV.outBan=null;
  lvStatPaint()}
 // ---- bán hàng ----
 async function lvSellTo(nm){const it=LV.item;if(!it)return;const boom=Math.random()<.2;LV.buyers=LV.buyers.filter(x=>x!==nm);
@@ -2865,7 +2874,7 @@ function lvEnd(why){if(!LV||!LV.on)return;LV.on=0;const dur=(Date.now()-LV.t0)/1
  const best=phLS('liveBest',{peak:0,net:0});if(LV.sum.peak>best.peak||net>best.net){phSet('liveBest',{peak:Math.max(best.peak,LV.sum.peak),net:Math.max(best.net,net)});LV.sum.rec=1}
  if(why==='ban'){sfxBoom();toast('🚫 Live bị khoá vì bị báo cáo quá nhiều!')}else tone(784,.2,'sine',.05);lvPaint()}
 // ---- người ấy ----
-function lvRecv(m){if(m.a==='on'||m.a==='st'){const was=LVW&&LVW.on;if(!was)LVW={on:1,feed:[],view:0,hearts:0,co:0};Object.assign(LVW,{mode:m.mode||LVW.mode,title:m.title||LVW.title,t0:m.t0||LVW.t0||Date.now()});
+function lvRecv(m){if(m.a==='on'||m.a==='st'){const was=LVW&&LVW.on;if(!was)LVW={on:1,feed:[],view:0,hearts:0,co:0};Object.assign(LVW,{dev:m.dev||LVW.dev||'phone',mode:m.mode||LVW.mode,title:m.title||LVW.title,t0:m.t0||LVW.t0||Date.now()});
   if(!was&&m.mode){sfxTing();toast(`🔴 ${ctx.partnerName} đang live: ${m.title||''}`,'📺 Vào xem',()=>openPhone('live'));lvPaint()}
   if(m.a==='st'){const dh=(m.h|0)-(LVW.hearts|0);LVW.view=m.v|0;LVW.hearts=m.h|0;LVW.item=m.it;LVW.fe=m.fe;LVW.co=m.co;for(const c of m.f||[])LVW.feed.push(c);LVW.feed=LVW.feed.slice(-60);if(m.ban)lvBanner(m.ban.t,m.ban.cls);if(dh>0)lvFloat(Math.min(dh,4));lvFeedPaint();lvStatPaint()}}
  else if(m.a==='off'){if(LVW){LVW.on=0;LVW.ended=m.why||1}toast(m.why==='ban'?`🚫 Live của ${ctx.partnerName} bị khoá vì báo cáo 😂`:`Live của ${ctx.partnerName} đã kết thúc`);lvPaint()}
@@ -2905,7 +2914,7 @@ function lvBar(){const L=LV,m=L.mode,B=[];
  if(m==='sleep')B.push(['sleep',L.sleep?'⏰ Thức dậy':'😴 Đi ngủ']);
  if(m==='spicy'){B.push(['chili',`🌶️ Ăn ớt cấp ${L.spicy+1}`]);B.push(['milk','🥛 Uống sữa'])}
  if(m==='tarot')B.push(['tarot','🔮 Bốc bài']);
- B.push(['heart','❤️ Xin tim']);B.push(['hi','👋 Chào']);B.push(['end','⏹️ Tắt live']);
+ B.push(['heart','❤️ Xin tim']);B.push(['hi','👋 Chào']);B.push(['big',LV_BIG?'🔎 Thu nhỏ':'🔍 Màn hình lớn']);B.push(['end','⏹️ Tắt live']);
  return`<div class="lv-bar">${B.map(([k,v])=>`<button data-lv="${k}" class="${k==='end'?'g':''}">${v}</button>`).join('')}</div>`+(L.sheet?lvSheet():'')}
 function lvSheet(){const sh=LV.sheet,cl=(CLOSET[ME]||[]).filter((x,i,a)=>a.findIndex(y=>y.n===x.n)===i);
  const L=sh==='mk'?cl.filter(x=>/^(lip|blush|scent|nail|eye|lash|base|contour|hl|brow|liner|gloss|lens|freck|glit):/.test(wearOf(x))):cl;
@@ -2916,17 +2925,18 @@ function lvDraw(B,head){const S=lvS();
    <p class="ph-note">Sàn thu phí 50% tiền quà 😤 · bạn nhận <b>${vnd(s.net)}</b>${s.sold.length?` · tiền bán hàng ${vnd(s.sold.reduce((a,x)=>a+x[1],0))} đã vào ví`:''}</p><button class="ph-big" data-lv="claim">💰 Nhận ${vnd(s.net)} & đóng</button></div>`;return}
   const best=phLS('liveBest',{peak:0,net:0});
   B.innerHTML=head('🔴 Live')+(LVW&&LVW.ended?'':'')+`<div class="ps-form"><b>Live gì hôm nay?</b><div class="lv-modes">${Object.entries(LV_MODES).map(([k,[e,n]])=>`<button data-lv="mode:${k}" class="${LV_MODE===k?'on':''}"><i>${e}</i>${n}</button>`).join('')}</div>
+   <b>Live bằng máy nào?</b><div class="lv-modes">${Object.entries(LV_DEVS).map(([k,[e,n]])=>`<button data-lv="dev:${k}" class="${LV_DEV===k?'on':''} ${lvOwn(k)?'':'off'}"><i>${e}</i>${n}${lvOwn(k)?'':' 🔒'}</button>`).join('')}</div>
    <b>Tiêu đề</b><input id="lvTitle" maxlength="60" value="${esc(LV_TITLE||LV_MODES[LV_MODE][2])}"><button class="ph-big" data-lv="start">🔴 Bắt đầu live</button>
    <small>🏆 Kỷ lục: ${best.peak.toLocaleString('vi-VN')} người xem · ${vnd(best.net)} tiền quà · khách ảo loạn cực độ, nhớ cấm hater kẻo bị khoá live 😈</small></div>`;return}
  const view=S===LVW,m=S.mode||'chill',it=view?S.item:LV.item;
- B.innerHTML=head(view?`📺 ${esc(ctx.partnerName)} đang live`:'🔴 Đang live')+`<div class="lv"><canvas id="lvCam" width="264" height="310"></canvas>
+ B.innerHTML=head(view?`📺 ${esc(ctx.partnerName)} đang live`:'🔴 Đang live')+`<div class="lv" style="aspect-ratio:${(LV_DEVS[S.dev]||LV_DEVS.phone)[3]}/${(LV_DEVS[S.dev]||LV_DEVS.phone)[4]}"><canvas id="lvCam" width="${(LV_DEVS[S.dev]||LV_DEVS.phone)[3]}" height="${(LV_DEVS[S.dev]||LV_DEVS.phone)[4]}"></canvas>
   <div class="lv-top"><b class="lv-on">LIVE</b><span id="lvT">00:00</span><span id="lvV">👁 0</span><span id="lvH">❤️ 0</span><span id="lvFl" class="lv-fl"></span></div>
   <div class="lv-title">${LV_MODES[m]?LV_MODES[m][0]:''} ${esc(S.title||'')}</div>
   ${it?`<div class="lv-item">${icoH(it.e,'ico')}<span>${esc(it.n)}<b>${vnd(it.price)}</b></span></div>`:''}
   ${!view&&LV.pin?`<div class="lv-pin">📌 <b>${esc(LV.pin.nm)}</b> ${esc(LV.pin.t)}</div>`:''}
   <div id="lvBan" class="lv-banner"></div><div id="lvHearts" class="lv-hearts"></div><div id="lvFeed" class="lv-feed">${lvFeedHTML(S)}</div></div>`+
   (view?`<div class="ps-row" style="margin-top:6px"><input id="lvMsg" maxlength="80" placeholder="Bình luận…"><button data-lv="vsay">Gửi</button></div>
-   <div class="lv-bar"><button data-lv="vheart">❤️ Tim</button>${LV_GIFT.map(g=>`<button data-lv="vgift:${g[0]}">${g[1]}</button>`).join('')}</div>
+   <div class="lv-bar"><button data-lv="big">${LV_BIG?'🔎 Thu nhỏ':'🔍 Màn hình lớn'}</button><button data-lv="vheart">❤️ Tim</button>${LV_GIFT.map(g=>`<button data-lv="vgift:${g[0]}">${g[1]}</button>`).join('')}</div>
    <div class="lv-bar"><button data-lv="vshill">🐔 Chim mồi</button><button data-lv="vrep">🚨 Báo cáo đùa</button><button data-lv="vyell">📢 Người yêu tui!</button>${S.co?'<button data-lv="vdance">💃 Nhảy cùng</button><button data-lv="vkiss">😘 Hôn gió</button>':'<button data-lv="vco">🎙️ Xin live chung</button>'}</div>`:lvBar());
  if(S.ban&&S.ban.until>Date.now()){const b=$('#lvBan');b.className='lv-banner on '+(S.ban.cls||'');b.textContent=S.ban.t}
  lvStatPaint();const f=$('#lvFeed');if(f)f.scrollTop=f.scrollHeight;B.scrollTop=LV&&LV.on&&LV.sheet?B.scrollHeight:0;if(!LV_RAF)LV_RAF=requestAnimationFrame(lvFrame)}
@@ -2934,9 +2944,12 @@ setInterval(()=>{if(LV&&LV.on)lvTick();else if(LVW&&LVW.on)lvStatPaint()},1000);
 if(DEMO)window.__lv={lvRecv,lvFromPa,get LV(){return LV}};// chỉ để thử ở demo
 $('#phBody').addEventListener('click',async e=>{const t=e.target.closest('[data-lv]');if(!t)return;ac();const[cmd,arg]=t.dataset.lv.split(/:(.*)/s);
  if(cmd==='mode'){LV_MODE=arg;LV_TITLE='';sfx.pop();drawPhone();return}
+ if(cmd==='dev'){try{CLOSET=await loadS('closet',{})||{}}catch(e){}if(!lvOwn(arg)){toast(`🔒 Chưa có ${LV_DEVS[arg][1].toLowerCase()} · mua ở TTTM Tầng 6 (quầy Laptop · tablet)`,'🛍️ Đi mua',()=>nav('room.html?r=mall6'+(DEMO?'&demo':'')));return}LV_DEV=arg;sfx.pop();drawPhone();return}
+ if(cmd==='big'){LV_BIG=!LV_BIG;sfx.pop();drawPhone();return}
  if(cmd==='start'){LV_TITLE=($('#lvTitle')&&$('#lvTitle').value.trim())||LV_MODES[LV_MODE][2];if(!PS)await psLoad();else{try{CLOSET=await loadS('closet',{})||{}}catch(e){}}
-  LV={on:1,mode:LV_MODE,title:LV_TITLE,t0:Date.now(),view:3,peak:3,hearts:0,coins:0,hype:3,feed:[],out:[],fid:0,bans:0,rep:0,pend:[],sold:[],buyers:[],item:null,flash:null,sleep:0,spicy:0,co:0,nextEv:Date.now()+10e3,sel:null,pin:null,sheet:null,mom:0};
-  send('lv',{a:'on',mode:LV.mode,title:LV.title,t0:LV.t0});tone(988,.08,'sine',.05);tone(1319,.12,'sine',.05,.1);me.emo={e:'🔴',t:NOW+2500};send('emo',{e:'🔴'});
+  if(!lvOwn(LV_DEV))LV_DEV='phone';const DV=LV_DEVS[LV_DEV];LV_BIG=LV_DEV!=='phone';
+  LV={on:1,dev:LV_DEV,mode:LV_MODE,title:LV_TITLE,t0:Date.now(),view:3,peak:3,hearts:0,coins:0,hype:DV[5],feed:[],out:[],fid:0,bans:0,rep:0,pend:[],sold:[],buyers:[],item:null,flash:null,sleep:0,spicy:0,co:0,nextEv:Date.now()+10e3,sel:null,pin:null,sheet:null,mom:0};
+  send('lv',{a:'on',mode:LV.mode,title:LV.title,t0:LV.t0,dev:LV.dev});if(LV.dev!=='phone')setTimeout(()=>lvAdd('Hệ thống',LV.dev==='lap'?'💻 Live bằng laptop: hình nét căng, khách vào đông hơn hẳn!':'📱 Live bằng tablet: màn to, khách vào đông hơn!','sys'),600);tone(988,.08,'sine',.05);tone(1319,.12,'sine',.05,.1);me.emo={e:'🔴',t:NOW+2500};send('emo',{e:'🔴'});
   lvAdd('Tomortle Live','Chào mừng đến live! Văn minh lịch sự nha 💗','sys');if(LV.mode==='sell')LV.sheet='pick';drawPhone();return}
  if(cmd==='claim'){const n=LV&&LV.sum?LV.sum.net:0;if(n)await walletAdd(n);if(n){sfxChaching();toast(`💰 +${vnd(n)} tiền quà live vào ví chung`)}LV=null;drawPhone();return}
  // người xem
